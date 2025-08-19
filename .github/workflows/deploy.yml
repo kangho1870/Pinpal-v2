@@ -103,7 +103,7 @@ jobs:
           SSHPASS: ${{ secrets.CAFE24_PASSWORD }}
 
       - name: Deploy to Cafe24
-        uses: appleboy/ssh-action@v1.0.4
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.CAFE24_HOST }}
           username: ${{ secrets.CAFE24_USERNAME }}
@@ -160,7 +160,7 @@ jobs:
           target: "/home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend"
 
       - name: Start frontend server
-        uses: appleboy/ssh-action@v1.0.4
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.CAFE24_HOST }}
           username: ${{ secrets.CAFE24_USERNAME }}
