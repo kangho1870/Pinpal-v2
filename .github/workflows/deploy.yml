@@ -195,7 +195,7 @@ jobs:
             fi
             echo "serve 경로: $SERVE_PATH"
             
-            # systemd 서비스 파일 생성 (더 안정적인 방법)
+            # systemd 서비스 파일 생성 (npx 사용)
             echo "systemd 서비스 파일 생성 중..."
             sudo tee /etc/systemd/system/pinpal-frontend.service > /dev/null <<EOF
             [Unit]
@@ -206,15 +206,13 @@ jobs:
             Type=simple
             User=${{ secrets.CAFE24_USERNAME }}
             WorkingDirectory=/home/${{ secrets.CAFE24_USERNAME }}
-            ExecStart=/bin/bash -c 'cd /home/${{ secrets.CAFE24_USERNAME }} && $SERVE_PATH -s pinpal-frontend -l 3000'
+            ExecStart=/usr/bin/npx serve -s pinpal-frontend -l 3000
             Restart=always
             RestartSec=10
             StandardOutput=journal
             StandardError=journal
             Environment=PATH=/usr/local/bin:/usr/bin:/bin
             Environment=NODE_ENV=production
-            
-            # 서비스가 정상적으로 시작되었는지 확인
             TimeoutStartSec=60
             TimeoutStopSec=30
             
