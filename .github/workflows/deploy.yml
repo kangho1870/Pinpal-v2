@@ -181,27 +181,22 @@ jobs:
             echo "프론트엔드 디렉토리 확인 중..."
             ls -la /home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend/
             
-            # 프론트엔드 소스 코드 복사
-            echo "프론트엔드 소스 코드 복사 중..."
-            cp -r /home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend/frontend-build/* /home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend/
+            # serve 패키지 설치
+            echo "serve 패키지 설치 중..."
+            sudo npm install -g serve
             
-            # npm install 실행
-            echo "npm install 실행 중..."
-            cd /home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend
-            npm install --legacy-peer-deps
-            
-            # systemd 서비스 파일 생성 (npm start 사용)
+            # systemd 서비스 파일 생성 (serve 사용)
             echo "systemd 서비스 파일 생성 중..."
             sudo tee /etc/systemd/system/pinpal-frontend.service > /dev/null <<EOF
             [Unit]
-            Description=Pinpal Frontend Server (npm start)
+            Description=Pinpal Frontend Server (serve)
             After=network.target
             
             [Service]
             Type=simple
             User=${{ secrets.CAFE24_USERNAME }}
-            WorkingDirectory=/home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend
-            ExecStart=/usr/bin/npm start
+            WorkingDirectory=/home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend/frontend-build
+            ExecStart=/usr/bin/npx serve -s . -l 3000 --single
             Restart=always
             RestartSec=10
             StandardOutput=journal
@@ -209,7 +204,6 @@ jobs:
             TimeoutStartSec=60
             TimeoutStopSec=30
             Environment=NODE_ENV=production
-            Environment=PORT=3000
             
             [Install]
             WantedBy=multi-user.target
