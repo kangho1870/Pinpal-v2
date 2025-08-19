@@ -177,9 +177,19 @@ jobs:
           timeout: 120s
           command_timeout: 120s
           script: |
+            # Node.js 설치
+            echo "Node.js 설치 중..."
+            curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+            
+            # Node.js 버전 확인
+            echo "Node.js 버전 확인:"
+            node --version
+            npm --version
+            
             # serve 패키지 설치
             echo "serve 패키지 설치 중..."
-            npm install -g serve || true
+            sudo npm install -g serve
             
             # 프론트엔드 디렉토리 확인
             echo "프론트엔드 디렉토리 확인 중..."
@@ -188,14 +198,9 @@ jobs:
             # serve 패키지 경로 확인
             echo "serve 패키지 경로 확인 중..."
             SERVE_PATH=$(which serve)
-            if [ -z "$SERVE_PATH" ]; then
-              echo "serve 패키지를 찾을 수 없습니다. 재설치 중..."
-              npm install -g serve
-              SERVE_PATH=$(which serve)
-            fi
             echo "serve 경로: $SERVE_PATH"
             
-            # systemd 서비스 파일 생성 (npx 사용)
+            # systemd 서비스 파일 생성
             echo "systemd 서비스 파일 생성 중..."
             sudo tee /etc/systemd/system/pinpal-frontend.service > /dev/null <<EOF
             [Unit]
@@ -206,7 +211,7 @@ jobs:
             Type=simple
             User=${{ secrets.CAFE24_USERNAME }}
             WorkingDirectory=/home/${{ secrets.CAFE24_USERNAME }}
-            ExecStart=/usr/bin/npx serve -s pinpal-frontend -l 3000
+            ExecStart=$SERVE_PATH -s pinpal-frontend -l 3000
             Restart=always
             RestartSec=10
             StandardOutput=journal
