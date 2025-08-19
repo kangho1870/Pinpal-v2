@@ -97,8 +97,6 @@ jobs:
           echo "SSH 연결 테스트 시작..."
           echo "포트 22로 시도..."
           sshpass -p '${{ secrets.CAFE24_PASSWORD }}' ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 ${{ secrets.CAFE24_USERNAME }}@${{ secrets.CAFE24_HOST }} -p 22 "echo 'SSH 연결 테스트 성공!'; whoami; pwd; date" || echo "포트 22 실패"
-          echo "포트 2222로 시도..."
-          sshpass -p '${{ secrets.CAFE24_PASSWORD }}' ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 ${{ secrets.CAFE24_USERNAME }}@${{ secrets.CAFE24_HOST }} -p 2222 "echo 'SSH 연결 테스트 성공!'; whoami; pwd; date" || echo "포트 2222 실패"
         env:
           SSHPASS: ${{ secrets.CAFE24_PASSWORD }}
 
@@ -194,13 +192,14 @@ jobs:
             
             # 프론트엔드 서버 시작 (3000 포트)
             echo "프론트엔드 서버 시작 중..."
-            nohup serve -s /home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend -l 3000 > /home/${{ secrets.CAFE24_USERNAME }}/frontend.log 2>&1 &
+            cd /home/${{ secrets.CAFE24_USERNAME }}/
+            nohup serve -s pinpal-frontend -l 3000 > frontend.log 2>&1 &
             
             # 프로세스 확인
             sleep 3
             echo "프론트엔드 프로세스 확인 중..."
             ps aux | grep serve
             echo "프론트엔드 로그 확인 중..."
-            tail -10 /home/${{ secrets.CAFE24_USERNAME }}/frontend.log || echo "로그 파일이 아직 생성되지 않았습니다."
+            tail -10 frontend.log || echo "로그 파일이 아직 생성되지 않았습니다."
             
             echo "Frontend server started on port 3000!"
