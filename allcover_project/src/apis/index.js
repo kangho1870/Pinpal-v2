@@ -1,8 +1,8 @@
 import axios from "axios";
 import { HOME_PATH } from "../constants";
 
-// 임시로 localhost로 하드코딩
-const ROOT_API_DOMAIN = 'http://localhost:8000';
+// 서버 환경에 따른 API 도메인 설정
+const ROOT_API_DOMAIN = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 // 현재 백엔드 API 구조에 맞춘 URL 정의
 const AUTH_API_URL = `${ROOT_API_DOMAIN}/api/auth`;

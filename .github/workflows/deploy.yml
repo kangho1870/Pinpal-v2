@@ -9,8 +9,8 @@ env:
   DOCKER_TAG: latest
 
 jobs:
-  build-and-push:
-    name: Build and Push Docker Image to DockerHub
+  build-backend:
+    name: Build Backend and Push Docker Image
     runs-on: ubuntu-latest
 
     steps:
@@ -46,19 +46,58 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: allcover_project/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd allcover_project
+          npm ci
+
+      - name: Build frontend
+        run: |
+          cd allcover_project
+          npm run build
+        env:
+          REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }}
+
+      - name: Upload frontend build
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: allcover_project/build/
+
   deploy:
     name: Deploy to Cafe24 Server
     runs-on: ubuntu-latest
-    needs: build-and-push
+    needs: [build-backend, build-frontend]
     if: github.ref == 'refs/heads/main'
 
     steps:
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend-build/
+
       - name: Deploy to Cafe24
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.CAFE24_HOST }}
           username: ${{ secrets.CAFE24_USERNAME }}
-          key: ${{ secrets.CAFE24_SSH_KEY }}
+          password: ${{ secrets.CAFE24_PASSWORD }}
           port: ${{ secrets.CAFE24_PORT }}
           script: |
             # Docker 이미지 pull
@@ -85,3 +124,32 @@ jobs:
             # 컨테이너 상태 확인
             docker ps
             docker logs pinpal-backend --tail 20
+
+      - name: Deploy frontend to Cafe24
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.CAFE24_HOST }}
+          username: ${{ secrets.CAFE24_USERNAME }}
+          password: ${{ secrets.CAFE24_PASSWORD }}
+          port: ${{ secrets.CAFE24_PORT }}
+          source: "frontend-build/*"
+          target: "/home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend"
+
+      - name: Start frontend server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.CAFE24_HOST }}
+          username: ${{ secrets.CAFE24_USERNAME }}
+          password: ${{ secrets.CAFE24_PASSWORD }}
+          port: ${{ secrets.CAFE24_PORT }}
+          script: |
+            # 기존 프론트엔드 프로세스 종료
+            pkill -f "serve.*pinpal-frontend" || true
+            
+            # serve 패키지 설치 (없다면)
+            npm install -g serve || true
+            
+            # 프론트엔드 서버 시작 (3000 포트)
+            nohup serve -s /home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend -l 3000 > /dev/null 2>&1 &
+            
+            echo "Frontend server started on port 3000!"
