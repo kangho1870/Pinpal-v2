@@ -92,6 +92,20 @@ jobs:
           name: frontend-build
           path: frontend-build/
 
+      - name: Test SSH connection
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.CAFE24_HOST }}
+          username: ${{ secrets.CAFE24_USERNAME }}
+          password: ${{ secrets.CAFE24_PASSWORD }}
+          port: ${{ secrets.CAFE24_PORT }}
+          timeout: 60s
+          script: |
+            echo "SSH 연결 테스트 성공!"
+            whoami
+            pwd
+            date
+
       - name: Deploy to Cafe24
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -99,6 +113,8 @@ jobs:
           username: ${{ secrets.CAFE24_USERNAME }}
           password: ${{ secrets.CAFE24_PASSWORD }}
           port: ${{ secrets.CAFE24_PORT }}
+          timeout: 60s
+          command_timeout: 60s
           script: |
             # Docker 이미지 pull
             docker pull ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
@@ -132,6 +148,7 @@ jobs:
           username: ${{ secrets.CAFE24_USERNAME }}
           password: ${{ secrets.CAFE24_PASSWORD }}
           port: ${{ secrets.CAFE24_PORT }}
+          timeout: 60s
           source: "frontend-build/*"
           target: "/home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend"
 
@@ -142,6 +159,8 @@ jobs:
           username: ${{ secrets.CAFE24_USERNAME }}
           password: ${{ secrets.CAFE24_PASSWORD }}
           port: ${{ secrets.CAFE24_PORT }}
+          timeout: 60s
+          command_timeout: 60s
           script: |
             # 기존 프론트엔드 프로세스 종료
             pkill -f "serve.*pinpal-frontend" || true
