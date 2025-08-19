@@ -1,0 +1,77 @@
+.bottomCategory {
+    display: flex;
+    justify-content: space-between;
+    box-shadow: 0 -2px 5px -2px rgba(0, 0, 0, 0.3);
+    height: 100%;
+    width: 100%;
+}
+
+.categoryBox {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(3px, 0.8vw, 8px) clamp(6px, 1.5vw, 12px);
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    margin: 2px;
+}
+
+.categoryBox:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    transform: translateY(-1px);
+}
+
+.categoryBox span {
+    font-size: clamp(9px, 2.2vw, 11px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    font-weight: 500;
+}
+
+.categoryBox.active {
+    background-color: rgba(0, 78, 162, 0.1);
+    color: #004EA2;
+}
+
+/* 모바일 최적화 */
+@media screen and (max-width: 480px) {
+    .categoryBox {
+        padding: clamp(2px, 0.6vw, 6px) clamp(4px, 1vw, 8px);
+        margin: 1px;
+    }
+    
+    .categoryBox span {
+        font-size: clamp(8px, 2vw, 10px);
+    }
+}
+
+/* 태블릿 최적화 */
+@media screen and (min-width: 481px) and (max-width: 768px) {
+    .categoryBox {
+        padding: clamp(4px, 1vw, 10px) clamp(8px, 2vw, 15px);
+    }
+    
+    .categoryBox span {
+        font-size: clamp(10px, 2.5vw, 12px);
+    }
+}
+
+/* 가로 모드 최적화 */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+    .categoryBox {
+        padding: clamp(1px, 0.4vw, 4px) clamp(3px, 0.8vw, 6px);
+        margin: 1px;
+    }
+    
+    .categoryBox span {
+        font-size: clamp(7px, 1.8vw, 9px);
+    }
+}

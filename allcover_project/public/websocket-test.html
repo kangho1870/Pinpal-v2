@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket 테스트</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .connected { background-color: #d4edda; color: #155724; }
+        .disconnected { background-color: #f8d7da; color: #721c24; }
+        .connecting { background-color: #fff3cd; color: #856404; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .connect { background-color: #28a745; color: white; }
+        .disconnect { background-color: #dc3545; color: white; }
+        .ping { background-color: #007bff; color: white; }
+        #log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>WebSocket 연결 테스트</h1>
+    
+    <div id="status" class="status disconnected">연결 안됨</div>
+    
+    <div>
+        <button class="connect" onclick="connect()">연결</button>
+        <button class="disconnect" onclick="disconnect()">연결 해제</button>
+        <button class="ping" onclick="sendPing()">핑 보내기</button>
+        <button onclick="clearLog()">로그 지우기</button>
+    </div>
+    
+    <div>
+        <label for="gameId">게임 ID:</label>
+        <input type="text" id="gameId" value="2" style="margin: 10px;">
+    </div>
+    
+    <div>
+        <label for="token">JWT 토큰:</label>
+        <input type="text" id="token" placeholder="JWT 토큰을 입력하세요" style="width: 400px; margin: 10px;">
+    </div>
+    
+    <h3>로그:</h3>
+    <div id="log"></div>
+
+    <script>
+        let socket = null;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 3;
+
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateStatus(status, className) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = status;
+            statusDiv.className = `status ${className}`;
+        }
+
+        function connect() {
+            const gameId = document.getElementById('gameId').value;
+            const token = document.getElementById('token').value;
+            
+            if (!gameId) {
+                alert('게임 ID를 입력하세요');
+                return;
+            }
+
+            const url = token ? 
+                `ws://localhost:8000/scoreboard/${gameId}?token=${token}` : 
+                `ws://localhost:8000/scoreboard/${gameId}`;
+
+            log(`연결 시도: ${url}`);
+
+            try {
+                socket = new WebSocket(url);
+
+                socket.onopen = function(event) {
+                    log('✅ WebSocket 연결 성공');
+                    updateStatus('연결됨', 'connected');
+                    reconnectAttempts = 0;
+                    
+                    // 연결 성공 후 자동으로 핑 메시지 전송
+                    setTimeout(() => {
+                        sendPing();
+                    }, 1000);
+                };
+
+                socket.onclose = function(event) {
+                    log(`🔌 WebSocket 연결 종료: 코드=${event.code}, 이유=${event.reason}, 깨끗한종료=${event.wasClean}`);
+                    updateStatus('연결 해제됨', 'disconnected');
+                    
+                    if (event.code !== 1000 && reconnectAttempts < maxReconnectAttempts) {
+                        reconnectAttempts++;
+                        log(`🔄 재연결 시도 ${reconnectAttempts}/${maxReconnectAttempts} (3초 후)`);
+                        setTimeout(connect, 3000);
+                    }
+                };
+
+                socket.onerror = function(error) {
+                    log(`❌ WebSocket 에러: ${error}`);
+                    updateStatus('연결 에러', 'error');
+                };
+
+                socket.onmessage = function(event) {
+                    log(`📨 메시지 수신: ${event.data}`);
+                };
+
+            } catch (error) {
+                log(`❌ WebSocket 생성 실패: ${error.message}`);
+                updateStatus('연결 실패', 'error');
+            }
+        }
+
+        function disconnect() {
+            if (socket) {
+                socket.close(1000, 'Manual disconnect');
+                socket = null;
+                log('연결 해제 요청됨');
+            }
+        }
+
+        function sendPing() {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                const pingMessage = JSON.stringify({
+                    action: "ping",
+                    timestamp: Date.now()
+                });
+                socket.send(pingMessage);
+                log(`🏓 핑 메시지 전송: ${pingMessage}`);
+            } else {
+                log('⚠️ WebSocket이 연결되지 않았습니다. 핑을 보낼 수 없습니다.');
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        // 페이지 로드 시 자동 연결 시도
+        window.onload = function() {
+            log('페이지 로드됨');
+            // 2초 후 자동 연결 시도
+            setTimeout(connect, 2000);
+        };
+    </script>
+</body>
+</html>

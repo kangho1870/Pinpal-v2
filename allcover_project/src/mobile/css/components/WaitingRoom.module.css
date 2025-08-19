@@ -1,0 +1,501 @@
+/* 메인 컨테이너 */
+.mainBox {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+    height: 100%;
+    background-color: #f8f9fa;
+    overflow-y: auto;
+}
+
+.contentsBox {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    padding: 16px;
+    background-color: #f8f9fa;
+    gap: 16px;
+    min-height: 100%;
+}
+
+/* 좌우 사이드 */
+.leftSide, .rightSide {
+    flex: 1;
+    display: flex;
+    height: 100%;
+    justify-content: flex-start;
+    padding: 0;
+    text-align: center;
+    flex-direction: column;
+    /* gap: 16px; */
+}
+
+.leftSide {
+    border-right: 1px solid #e9ecef;
+    padding-right: 16px;
+}
+
+.rightSide {
+    padding-left: 16px;
+}
+
+/* 확정 볼러 섹션 */
+.confirmedMemberBox {
+    background-color: white;
+    border: 1px solid #e9ecef;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    padding: 16px;
+    flex: 1;
+    overflow-y: auto;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    min-height: 200px;
+}
+
+.userBox {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 12px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    transition: all 0.2s ease;
+}
+
+.userBox:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.noBox {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 12px;
+    width: 28px;
+    height: 28px;
+    background-color: #007bff;
+    color: white;
+    border-radius: 50%;
+    font-size: 14px;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.nameCardBox {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+    padding: 8px 12px;
+    background-color: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    width: 100%;
+    min-height: 40px;
+}
+
+.checkIcon {
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+}
+
+.checkIcon h3 {
+    margin: 0;
+    font-size: 12px;
+    color: #495057;
+    font-weight: 600;
+}
+
+.description {
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #6c757d;
+}
+
+.description h2 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #212529;
+}
+
+.description p {
+    margin: 0;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+/* 설정 섹션 */
+.settingBoxTitle {
+    background-color: white;
+    border: 1px solid #e9ecef;
+    border-bottom: none;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    padding: 12px 16px;
+    margin: 0;
+}
+
+.settingBoxTitle h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #212529;
+}
+
+.userSettingBox {
+    background-color: white;
+    border: 1px solid #e9ecef;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    min-height: 120px;
+}
+
+.userSettingBox:nth-last-child(1) {
+    margin-bottom: 0;
+}
+
+.settingBox {
+    margin-bottom: 12px;
+}
+
+.settingBox:last-child {
+    margin-bottom: 0;
+}
+
+.sideJoinBox {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.sideJoinBtn {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sideJoinBtn:hover {
+    background-color: #5a6268;
+    transform: translateY(-1px);
+}
+
+.sideJoinedBtn {
+    background-color: #28a745;
+}
+
+.sideJoinedBtn:hover {
+    background-color: #218838;
+}
+
+.checkBox h4 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.btnBox {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.settingBtn {
+    flex: 1;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.settingBtn:hover {
+    background-color: #0056b3;
+    transform: translateY(-1px);
+}
+
+.settingBtn:nth-child(1) {
+    background-color: #28a745;
+}
+
+.settingBtn:nth-child(1):hover {
+    background-color: #218838;
+}
+
+.settingBtn2 {
+    width: 100%;
+    background-color: white;
+    color: #495057;
+    border: 1px solid #e9ecef;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 8px;
+}
+
+.settingBtn2:hover {
+    background-color: #f8f9fa;
+    border-color: #007bff;
+    transform: translateY(-1px);
+}
+
+.settingBtn2:last-child {
+    margin-bottom: 0;
+}
+
+.settingBtn2 h4 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* 대기 볼러 섹션 */
+.waitingUser {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 12px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    transition: all 0.2s ease;
+}
+
+.waitingUser:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.waitingUser > div:first-child {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 12px;
+    width: 28px;
+    height: 28px;
+    background-color: #ffc107;
+    color: white;
+    border-radius: 50%;
+    font-size: 14px;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.waitingUserInfoBox {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+    padding: 8px 12px;
+    background-color: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    width: 100%;
+    min-height: 40px;
+}
+
+.waitingUserDesBox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.waitingSpan {
+    font-size: 10px;
+    color: #6c757d;
+    font-weight: 500;
+    min-width: 40px;
+}
+
+.profileContainer {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.memberProfile {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e9ecef;
+}
+
+.staffImg {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.memberBox {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.userInfo {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #212529;
+}
+
+.gameSettingBox {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+}
+
+.gameSettingBox button {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+/* 모달 영역 */
+.modalArea {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+/* 반응형 디자인 */
+@media screen and (max-width: 768px) {
+    .contentsBox {
+        flex-direction: column;
+        padding: 12px;
+        gap: 12px;
+    }
+
+    .leftSide, .rightSide {
+        padding: 0;
+    }
+
+    .leftSide {
+        border-right: none;
+        border-bottom: 1px solid #e9ecef;
+        padding-bottom: 12px;
+    }
+
+    .rightSide {
+        padding-top: 12px;
+    }
+
+    .userBox, .waitingUser {
+        padding: 10px;
+    }
+
+    .nameCardBox {
+        padding: 6px 10px;
+    }
+
+    .userSettingBox {
+        padding: 12px;
+        min-height: 100px;
+    }
+
+    .settingBoxTitle {
+        padding: 10px 12px;
+    }
+
+    .profileContainer {
+        width: 36px;
+        height: 36px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .contentsBox {
+        padding: 8px;
+        gap: 8px;
+    }
+
+    .userBox, .waitingUser {
+        padding: 8px;
+        margin-bottom: 8px;
+    }
+
+    .nameCardBox {
+        padding: 6px 8px;
+    }
+
+    .userSettingBox {
+        padding: 10px;
+        min-height: 80px;
+    }
+
+    .settingBoxTitle {
+        padding: 8px 10px;
+    }
+
+    .btnBox {
+        gap: 6px;
+    }
+
+    .settingBtn, .settingBtn2 {
+        padding: 10px;
+    }
+
+    .sideJoinBox {
+        padding: 10px;
+    }
+
+    .sideJoinBtn {
+        padding: 6px 12px;
+        font-size: 11px;
+    }
+
+    .profileContainer {
+        width: 32px;
+        height: 32px;
+    }
+
+    .noBox, .waitingUser > div:first-child {
+        width: 24px;
+        height: 24px;
+        font-size: 12px;
+    }
+}

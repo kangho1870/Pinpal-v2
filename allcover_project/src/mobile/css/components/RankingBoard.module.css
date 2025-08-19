@@ -1,0 +1,849 @@
+/* 메인 컨테이너 */
+.rankingBoardMain {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    z-index: 10;
+    background-color: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 점수 카드 컨테이너 */
+.scoreCardBox {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 140px 20px 140px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    height: calc(100vh - 280px);
+    position: relative;
+    scroll-behavior: auto;
+    -webkit-overflow-scrolling: touch;
+    background-color: #fafafa;
+    box-sizing: border-box;
+}
+
+/* 점수 카드 기본 스타일 */
+.scoreCard {
+    background: white !important;
+    border-radius: 10px !important;
+    padding: 15px !important;
+    margin-bottom: 8px !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
+    border: 1px solid #e9ecef !important;
+    position: relative !important;
+    min-height: 240px !important;
+    max-height: 240px !important;
+    height: 240px !important;
+    width: calc(100% - 20px) !important;
+    max-width: 700px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    transition: all 0.3s ease !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+}
+
+.scoreCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* 중앙 카드 (가장 크고 선명) */
+.centerCard {
+    transform: scale(1.05) !important;
+    opacity: 1 !important;
+    min-height: 260px !important;
+    max-height: 260px !important;
+    height: 260px !important;
+    width: calc(100% - 10px) !important;
+    max-width: 750px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding: 18px !important;
+    border: 3px solid #4A90E2 !important;
+    box-shadow: 0 8px 25px rgba(74, 144, 226, 0.3) !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.centerCard::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, #4A90E2, #7B68EE, #4A90E2);
+    border-radius: 16px;
+    z-index: -1;
+    animation: borderGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes borderGlow {
+    0% {
+        opacity: 0.7;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* 근처 카드 (중앙보다 작고 약간 흐림) */
+.nearCard {
+    transform: scale(0.98) !important;
+    opacity: 0.8 !important;
+    min-height: 230px !important;
+    max-height: 230px !important;
+    height: 230px !important;
+    width: calc(100% - 30px) !important;
+    max-width: 580px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding: 18px !important;
+    overflow: hidden !important;
+}
+
+/* 멀리 있는 카드 (가장 작고 흐림) */
+.farCard {
+    transform: scale(0.95) !important;
+    opacity: 0.6 !important;
+    min-height: 220px !important;
+    max-height: 220px !important;
+    height: 220px !important;
+    width: calc(100% - 40px) !important;
+    max-width: 560px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding: 16px !important;
+    overflow: hidden !important;
+}
+
+/* 매우 멀리 있는 카드 */
+.veryFarCard {
+    transform: scale(0.92) !important;
+    opacity: 0.4 !important;
+    min-height: 210px !important;
+    max-height: 210px !important;
+    height: 210px !important;
+    width: calc(100% - 50px) !important;
+    max-width: 540px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding: 14px !important;
+    overflow: hidden !important;
+}
+
+.centerCard:hover {
+    transform: scale(1.02);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+.nearCard:hover {
+    transform: scale(0.92);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.farCard:hover {
+    transform: scale(0.82);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.veryFarCard:hover {
+    transform: scale(0.72);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* 내 점수 카드 강조 */
+.myScoreCard {
+    border: 3px solid #ff6b6b;
+    box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+    position: relative;
+    animation: myScorePulse 2s ease-in-out infinite;
+}
+
+@keyframes myScorePulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.02);
+    }
+}
+
+/* 내 점수 카드 호버 효과 */
+.myScoreCard:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 12px 35px rgba(255, 107, 107, 0.4);
+}
+
+/* 순위 배지 */
+.rankBadge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    z-index: 2;
+}
+
+.rankNumber {
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* 1등과의 핀 차이 표시 */
+.pinDifference {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #ff4757;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(255, 71, 87, 0.4);
+    z-index: 3;
+}
+
+/* 프로필 섹션 */
+.profileSection {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.profileImageContainer {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+}
+
+.profileImage {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+/* 기본 프로필 스타일 */
+.defaultProfile {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.defaultProfile i {
+    color: white;
+    font-size: 16px;
+}
+
+.roleBadge {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.memberInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.memberName {
+    font-size: 16px;
+    font-weight: bold;
+    color: #2c3e50;
+    margin: 0 0 3px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.memberDetails {
+    display: flex;
+    gap: 6px;
+    font-size: 11px;
+    color: #7f8c8d;
+}
+
+.gradeInfo, .avgInfo {
+    background: rgba(102, 126, 234, 0.1);
+    padding: 1px 4px;
+    border-radius: 6px;
+    color: #667eea;
+    font-weight: 500;
+}
+
+/* 점수 섹션 */
+.scoreSection {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.scoreGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    width: 100%;
+    max-width: 100%;
+}
+
+.scoreItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 2px;
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    width: 100%;
+    max-width: 100%;
+}
+
+.scoreItem:hover {
+    background: rgba(102, 126, 234, 0.1);
+    transform: translateY(-1px);
+}
+
+.gameLabel {
+    font-size: 9px;
+    font-weight: 600;
+    color: #7f8c8d;
+    text-transform: uppercase;
+}
+
+.gameScore {
+    font-size: 14px;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.highScore {
+    color: #e74c3c;
+    text-shadow: 0 1px 2px rgba(231, 76, 60, 0.2);
+}
+
+/* 총점 섹션 */
+.totalSection {
+    display: flex;
+    justify-content: space-around;
+    padding: 6px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.15));
+    border-radius: 10px;
+    border: 2px solid rgba(102, 126, 234, 0.3);
+    margin-top: 6px;
+    box-shadow: 0 2px 6px rgba(102, 126, 234, 0.15);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.totalItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+}
+
+.totalLabel {
+    font-size: 10px;
+    font-weight: 700;
+    color: #667eea;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.totalScore {
+    font-size: 18px;
+    font-weight: 800;
+    color: #2c3e50;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* 차이점 배지 */
+.differenceBadge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 4px 8px;
+    background: rgba(231, 76, 60, 0.9);
+    color: white;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    box-shadow: 0 1px 4px rgba(231, 76, 60, 0.3);
+}
+
+/* 내 점수 강조 효과 */
+.myScoreHighlight {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #ff6b6b, #ffa726);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+    z-index: 10;
+    animation: myScoreHighlightBounce 1s ease-in-out infinite;
+}
+
+.myScoreHighlight i {
+    margin-right: 4px;
+    animation: myScoreStarSpin 2s linear infinite;
+}
+
+@keyframes myScoreHighlightBounce {
+    0%, 100% {
+        transform: translateX(-50%) translateY(0);
+    }
+    50% {
+        transform: translateX(-50%) translateY(-3px);
+    }
+}
+
+@keyframes myScoreStarSpin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* 하단 버튼 컨테이너 */
+.modalContainer {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 100;
+    background-color: transparent;
+    width: calc(100% - 40px);
+    max-width: 500px;
+}
+
+.modalBox {
+    flex: 1;
+}
+
+.modal {
+    width: 100%;
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.modal:hover {
+    background-color: #f8f9fa;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.modal i {
+    font-size: 18px;
+    margin-bottom: 4px;
+}
+
+.title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #495057;
+}
+
+/* 비활성화된 버튼 스타일 */
+.disabled {
+    opacity: 0.6;
+}
+
+.disabledModal {
+    background-color: #e9ecef !important;
+    color: #6c757d !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.disabledModal:hover {
+    background-color: #e9ecef !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.disabledModal i {
+    color: #6c757d !important;
+}
+
+.disabledModal .title {
+    color: #6c757d !important;
+}
+
+/* 기존 색상 클래스들 유지 */
+.scoreCard0 {
+    border-left: 4px solid #95a5a6;
+}
+
+.scoreCard1 {
+    border-left: 4px solid #e74c3c;
+}
+
+.scoreCard2 {
+    border-left: 4px solid #f39c12;
+}
+
+.scoreCard3 {
+    border-left: 4px solid #f1c40f;
+}
+
+.scoreCard4 {
+    border-left: 4px solid #2ecc71;
+}
+
+.scoreCard5 {
+    border-left: 4px solid #3498db;
+}
+
+.scoreCard6 {
+    border-left: 4px solid #9b59b6;
+}
+
+/* 반응형 디자인 */
+@media screen and (max-width: 480px) {
+    .scoreCardBox {
+        padding: 130px 0 130px 0;
+        gap: 10px;
+        height: calc(100vh - 260px);
+    }
+
+    .scoreCard {
+        padding: 10px !important;
+        border-radius: 10px !important;
+        min-height: 110px !important;
+        max-height: 110px !important;
+        height: 110px !important;
+    }
+
+    .myScoreCard {
+        border-width: 2px;
+    }
+
+    .myScoreHighlight {
+        font-size: 10px;
+        padding: 4px 8px;
+        top: -8px;
+    }
+
+    .rankBadge {
+        width: 35px;
+        height: 35px;
+        top: 10px;
+        right: 10px;
+    }
+
+    .rankNumber {
+        font-size: 14px;
+    }
+
+    .pinDifference {
+        font-size: 9px;
+        padding: 1px 5px;
+        top: -6px;
+        right: -6px;
+    }
+
+    .profileSection {
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    .profileImageContainer {
+        width: 45px;
+        height: 45px;
+    }
+
+    .defaultProfile i {
+        font-size: 18px;
+    }
+
+    .memberName {
+        font-size: 16px;
+    }
+
+    .scoreGrid {
+        gap: 6px;
+    }
+
+    .scoreItem {
+        padding: 6px 3px;
+    }
+
+    .gameScore {
+        font-size: 14px;
+    }
+
+    .totalScore {
+        font-size: 18px;
+    }
+
+    .totalSection {
+        padding: 10px;
+        margin-top: 10px;
+    }
+
+    .totalLabel {
+        font-size: 10px;
+    }
+
+    .modalContainer {
+        bottom: 16px;
+        width: calc(100% - 32px);
+        gap: 6px;
+    }
+
+    .modal {
+        padding: 10px;
+    }
+
+    .title {
+        font-size: 10px;
+    }
+}
+
+@media screen and (min-width: 481px) and (max-width: 768px) {
+    .scoreCard {
+        padding: 12px !important;
+        min-height: 220px !important;
+        max-height: 220px !important;
+        height: 220px !important;
+        width: calc(100% - 30px) !important;
+        max-width: 500px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+
+    .myScoreCard {
+        border-width: 2.5px;
+    }
+
+    .myScoreHighlight {
+        font-size: 11px;
+        padding: 5px 10px;
+    }
+
+    .rankBadge {
+        width: 38px;
+        height: 38px;
+    }
+
+    .rankNumber {
+        font-size: 15px;
+    }
+
+    .profileImageContainer {
+        width: 48px;
+        height: 48px;
+    }
+
+    .defaultProfile i {
+        font-size: 19px;
+    }
+
+    .memberName {
+        font-size: 17px;
+    }
+
+    .totalScore {
+        font-size: 20px;
+    }
+
+    .totalSection {
+        padding: 10px;
+        margin-top: 4px;
+    }
+
+    .scoreGrid {
+        gap: 3px;
+    }
+
+    .scoreItem {
+        padding: 3px 1px;
+    }
+
+    .gameScore {
+        font-size: 12px;
+    }
+
+    .totalLabel {
+        font-size: 9px;
+    }
+
+    .modalContainer {
+        gap: 8px;
+    }
+
+    .modal {
+        padding: 12px;
+    }
+
+    .title {
+        font-size: 11px;
+    }
+}
+
+@media screen and (orientation: landscape) and (max-height: 500px) {
+    .scoreCardBox {
+        padding: 80px 0 80px 0;
+        gap: 6px;
+        height: calc(100vh - 160px);
+    }
+
+    .scoreCard {
+        padding: 8px !important;
+        min-height: 180px !important;
+        max-height: 180px !important;
+        height: 180px !important;
+        width: calc(100% - 40px) !important;
+        max-width: 400px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+
+    .totalScore {
+        font-size: 18px;
+    }
+
+    .totalSection {
+        padding: 8px;
+        margin-top: 4px;
+    }
+
+    .scoreGrid {
+        gap: 2px;
+    }
+
+    .scoreItem {
+        padding: 2px 1px;
+    }
+
+    .gameScore {
+        font-size: 11px;
+    }
+
+    .totalLabel {
+        font-size: 8px;
+    }
+
+    .myScoreCard {
+        border-width: 2px;
+    }
+
+    .myScoreHighlight {
+        font-size: 9px;
+        padding: 3px 6px;
+        top: -6px;
+    }
+
+    .rankBadge {
+        width: 32px;
+        height: 32px;
+        top: 8px;
+        right: 8px;
+    }
+
+    .rankNumber {
+        font-size: 13px;
+    }
+
+    .pinDifference {
+        font-size: 8px;
+        padding: 1px 4px;
+        top: -5px;
+        right: -5px;
+    }
+
+    .profileSection {
+        margin-bottom: 10px;
+    }
+
+    .profileImageContainer {
+        width: 40px;
+        height: 40px;
+    }
+
+    .defaultProfile i {
+        font-size: 16px;
+    }
+
+    .scoreSection {
+        gap: 10px;
+    }
+
+    .totalScore {
+        font-size: 18px;
+    }
+
+    .totalSection {
+        padding: 10px;
+        margin-top: 8px;
+    }
+
+    .modalContainer {
+        bottom: 12px;
+        gap: 6px;
+    }
+
+    .modal {
+        padding: 8px;
+    }
+
+    .title {
+        font-size: 9px;
+    }
+}

@@ -1,0 +1,96 @@
+.mainBox {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+    padding: clamp(3px, 1vw, 5px) clamp(8px, 2vw, 12px);
+    box-shadow: 0 2px 5px 2px rgba(0, 0, 0, 0.1);
+    height: 100%;
+    min-height: var(--header-height);
+}
+
+.categoryBox {
+    display: flex;
+    align-items: center;
+    gap: clamp(8px, 2vw, 12px);
+}
+
+.categoryBtn {
+    height: clamp(25px, 6vw, 35px);
+    width: clamp(25px, 6vw, 35px);
+    font-size: clamp(16px, 4vw, 22px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+}
+
+.categoryBtn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    transform: scale(1.05);
+}
+
+.logoBtn {
+    height: clamp(25px, 6vw, 35px);
+    width: clamp(25px, 6vw, 35px);
+    font-size: clamp(16px, 4vw, 22px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+}
+
+.logoBtn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    transform: scale(1.05);
+}
+
+/* 모바일 최적화 */
+@media screen and (max-width: 480px) {
+    .mainBox {
+        padding: clamp(2px, 0.8vw, 4px) clamp(6px, 1.5vw, 10px);
+    }
+    
+    .categoryBox {
+        gap: clamp(6px, 1.5vw, 10px);
+    }
+    
+    .categoryBtn,
+    .logoBtn {
+        height: clamp(22px, 5.5vw, 30px);
+        width: clamp(22px, 5.5vw, 30px);
+        font-size: clamp(14px, 3.5vw, 18px);
+    }
+}
+
+/* 태블릿 최적화 */
+@media screen and (min-width: 481px) and (max-width: 768px) {
+    .categoryBtn,
+    .logoBtn {
+        height: clamp(28px, 6.5vw, 38px);
+        width: clamp(28px, 6.5vw, 38px);
+        font-size: clamp(18px, 4.5vw, 24px);
+    }
+}
+
+/* 가로 모드 최적화 */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+    .mainBox {
+        padding: clamp(1px, 0.5vw, 3px) clamp(4px, 1vw, 8px);
+    }
+    
+    .categoryBtn,
+    .logoBtn {
+        height: clamp(18px, 4vw, 25px);
+        width: clamp(18px, 4vw, 25px);
+        font-size: clamp(12px, 3vw, 16px);
+    }
+}

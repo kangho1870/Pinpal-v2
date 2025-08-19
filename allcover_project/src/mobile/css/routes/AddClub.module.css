@@ -1,0 +1,176 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: calc(var(--vh, 1vh) * 100);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.top {
+    display: flex;
+    font-size: clamp(18px, 4.5vw, 22px);
+    align-items: center;
+    padding: clamp(3px, 1vw, 5px);
+    min-height: var(--header-height);
+    background-color: white;
+    border-bottom: 1px solid #eee;
+}
+
+.topCategory {
+    margin-right: clamp(15px, 4vw, 20px);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.topCategory:hover {
+    color: #004EA2;
+    transform: translateY(-1px);
+}
+
+.topCategoryTitle {
+    font-weight: 400;
+}
+
+.contents {
+    display: flex;
+    flex-direction: column;
+    padding: clamp(8px, 2vw, 12px);
+    flex: 1;
+}
+
+.inputBox {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    align-items: center;
+    margin-bottom: clamp(8px, 2vh, 12px);
+    gap: clamp(8px, 2vw, 12px);
+}
+
+.inputBox:nth-last-child(1) {
+    width: 100%;
+    height: clamp(200px, 40vh, 250px);
+    align-items: flex-start;
+}
+
+.inputText {
+    width: 100%;
+    height: clamp(40px, 5vh, 50px);
+    border: none;
+    background-color: #eeeeee;
+    border-radius: clamp(6px, 1.5vw, 10px);
+    padding: clamp(8px, 2vw, 12px);
+    font-size: clamp(13px, 3.2vw, 15px);
+    transition: all 0.2s ease;
+}
+
+.inputText:focus {
+    outline: none;
+    background-color: #f0f0f0;
+    box-shadow: 0 0 0 2px rgba(0, 78, 162, 0.2);
+}
+
+.clubAddBtnBox {
+    display: flex;
+    margin-top: clamp(30px, 6vh, 40px);
+    padding: clamp(8px, 2vw, 12px);
+    width: 100%;
+}
+
+.clubAddBtn {
+    display: flex;
+    width: 100%;
+    height: clamp(40px, 5vh, 50px);
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: clamp(6px, 1.5vw, 10px);
+    color: #fafafa;
+    background-color: #004EA2;
+    font-size: clamp(13px, 3.2vw, 15px);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.clubAddBtn:hover {
+    background-color: #003d7a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 78, 162, 0.3);
+}
+
+/* 모바일 최적화 */
+@media screen and (max-width: 480px) {
+    .top {
+        font-size: clamp(16px, 4vw, 20px);
+        padding: clamp(2px, 0.8vw, 4px);
+    }
+    
+    .topCategory {
+        margin-right: clamp(10px, 3vw, 15px);
+    }
+    
+    .contents {
+        padding: clamp(6px, 1.5vw, 10px);
+    }
+    
+    .inputText {
+        font-size: clamp(12px, 3vw, 14px);
+        height: clamp(35px, 4.5vh, 45px);
+    }
+    
+    .clubAddBtn {
+        font-size: clamp(12px, 3vw, 14px);
+        height: clamp(35px, 4.5vh, 45px);
+    }
+    
+    .inputBox:nth-last-child(1) {
+        height: clamp(150px, 35vh, 200px);
+    }
+}
+
+/* 태블릿 최적화 */
+@media screen and (min-width: 481px) and (max-width: 768px) {
+    .top {
+        font-size: clamp(20px, 5vw, 24px);
+    }
+    
+    .inputText {
+        font-size: clamp(14px, 3.5vw, 16px);
+    }
+    
+    .clubAddBtn {
+        font-size: clamp(14px, 3.5vw, 16px);
+    }
+}
+
+/* 가로 모드 최적화 */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+    .top {
+        font-size: clamp(14px, 3.5vw, 18px);
+        padding: clamp(1px, 0.5vw, 3px);
+    }
+    
+    .contents {
+        padding: clamp(4px, 1vw, 8px);
+    }
+    
+    .inputText {
+        height: clamp(30px, 4vh, 40px);
+        font-size: clamp(11px, 2.8vw, 13px);
+    }
+    
+    .clubAddBtn {
+        height: clamp(30px, 4vh, 40px);
+        font-size: clamp(11px, 2.8vw, 13px);
+    }
+    
+    .inputBox:nth-last-child(1) {
+        height: clamp(120px, 25vh, 180px);
+    }
+    
+    .clubAddBtnBox {
+        margin-top: clamp(20px, 4vh, 30px);
+    }
+}

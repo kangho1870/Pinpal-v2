@@ -1,0 +1,266 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    scrollbar-width: none;
+    height: calc(var(--vh, 1vh) * 100);
+    overflow: hidden;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.header {
+    position: sticky;
+    top: 0px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    z-index: 100;
+    height: var(--header-height);
+    min-height: var(--header-height);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.bottom {
+    position: fixed;
+    bottom: 0px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    width: 100%;
+    height: var(--bottom-nav-height);
+    min-height: var(--bottom-nav-height);
+    z-index: 100;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.contentsBox {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - var(--header-height) - var(--bottom-nav-height));
+    height: calc((var(--vh, 1vh) * 100) - var(--header-height) - var(--bottom-nav-height));
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+}
+
+.bottomCategory {
+    display: flex;
+    justify-content: space-between;
+    height: 100%;
+    padding: 8px 16px;
+}
+
+.categoryBox {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+}
+
+.categoryBox::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+}
+
+.categoryBox:hover {
+    background: rgba(102, 126, 234, 0.05);
+    transform: translateY(-2px);
+}
+
+.categoryBox:hover::before {
+    width: 80%;
+}
+
+.categoryBox i {
+    font-size: 20px;
+    margin-bottom: 4px;
+    transition: all 0.3s ease;
+}
+
+.categoryBox:hover i {
+    transform: scale(1.1);
+    color: #667eea !important;
+}
+
+.categoryBox span {
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    transition: all 0.3s ease;
+}
+
+.categoryBox:hover span {
+    color: #667eea !important;
+}
+
+.modalContainer {
+    display: flex;
+    position: fixed;
+    bottom: calc(var(--bottom-nav-height) + 20px);
+    right: 20px;
+    z-index: 200;
+}
+
+.modalBox {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.modal {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    align-items: center;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    height: 70px;
+    width: 70px;
+    border-radius: 50%;
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.modal:hover {
+    transform: scale(1.1) translateY(-4px);
+    box-shadow: 0 12px 32px rgba(102, 126, 234, 0.5);
+}
+
+.modal i {
+    font-size: 20px;
+    margin-bottom: 4px;
+}
+
+.title {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.loadingModal {
+    display: flex;
+    position: absolute;
+    width: 100%;
+    height: 100vh;
+    height: calc(var(--vh, 1vh) * 100);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(8px);
+}
+
+/* 모바일 최적화 */
+@media screen and (max-width: 480px) {
+    .categoryBox {
+        padding: 6px 8px;
+    }
+    
+    .categoryBox span {
+        font-size: 11px;
+    }
+    
+    .categoryBox i {
+        font-size: 18px;
+    }
+    
+    .modal {
+        height: 60px;
+        width: 60px;
+        font-size: 12px;
+    }
+    
+    .modal i {
+        font-size: 18px;
+    }
+    
+    .title {
+        font-size: 11px;
+    }
+}
+
+/* 태블릿 최적화 */
+@media screen and (min-width: 481px) and (max-width: 768px) {
+    .categoryBox span {
+        font-size: 13px;
+    }
+    
+    .categoryBox i {
+        font-size: 22px;
+    }
+    
+    .modal {
+        height: 75px;
+        width: 75px;
+        font-size: 15px;
+    }
+    
+    .modal i {
+        font-size: 22px;
+    }
+    
+    .title {
+        font-size: 13px;
+    }
+}
+
+/* 가로 모드 최적화 */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+    .header {
+        height: 40px;
+        min-height: 40px;
+    }
+    
+    .bottom {
+        height: 40px;
+        min-height: 40px;
+    }
+    
+    .contentsBox {
+        height: calc(100vh - 40px - 40px);
+    }
+    
+    .categoryBox span {
+        font-size: 10px;
+    }
+    
+    .categoryBox i {
+        font-size: 16px;
+    }
+    
+    .modal {
+        height: 50px;
+        width: 50px;
+        font-size: 11px;
+    }
+    
+    .modal i {
+        font-size: 16px;
+    }
+    
+    .title {
+        font-size: 10px;
+    }
+}

@@ -1,0 +1,364 @@
+/* ===== 공통 모달 스타일 ===== */
+
+.modalContainer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: clamp(10px, 2vw, 20px);
+}
+
+.modalBox {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: clamp(12px, 2.5vw, 20px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    width: clamp(280px, 90vw, 500px);
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+.smallModal {
+    width: clamp(280px, 90vw, 400px);
+}
+
+.largeModal {
+    width: clamp(320px, 95vw, 700px);
+    max-height: 85vh;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.modalTitle {
+    padding: clamp(16px, 3vw, 24px) clamp(20px, 4vw, 32px) clamp(12px, 2vw, 16px);
+    border-bottom: 1px solid #e9ecef;
+    background: linear-gradient(135deg, #004EA2 0%, #0056b3 100%);
+    color: white;
+    border-radius: clamp(12px, 2.5vw, 20px) clamp(12px, 2.5vw, 20px) 0 0;
+}
+
+.modalTitle h3 {
+    margin: 0;
+    font-size: clamp(18px, 3.5vw, 24px);
+    font-weight: 600;
+    text-align: center;
+}
+
+.modalContents {
+    padding: clamp(16px, 3vw, 24px) clamp(20px, 4vw, 32px);
+}
+
+.modalBtnBox {
+    display: flex;
+    gap: clamp(8px, 2vw, 12px);
+    padding: clamp(12px, 2vw, 16px) clamp(20px, 4vw, 32px) clamp(16px, 3vw, 24px);
+    border-top: 1px solid #e9ecef;
+    background-color: #f8f9fa;
+    border-radius: 0 0 clamp(12px, 2.5vw, 20px) clamp(12px, 2.5vw, 20px);
+}
+
+/* ===== 버튼 스타일 ===== */
+
+.btn {
+    flex: 1;
+    padding: clamp(10px, 2.5vw, 14px) clamp(16px, 3vw, 24px);
+    border: none;
+    border-radius: clamp(8px, 1.5vw, 12px);
+    font-size: clamp(14px, 2.5vw, 16px);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    min-height: clamp(40px, 8vw, 48px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn:active {
+    transform: translateY(1px);
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.disabledBtn {
+    flex: 1;
+    padding: clamp(10px, 2.5vw, 14px) clamp(16px, 3vw, 24px);
+    border: none;
+    border-radius: clamp(8px, 1.5vw, 12px);
+    font-size: clamp(14px, 2.5vw, 16px);
+    font-weight: 500;
+    cursor: not-allowed;
+    text-align: center;
+    min-height: clamp(40px, 8vw, 48px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #e9ecef;
+    color: #6c757d;
+    opacity: 0.6;
+    transform: none !important;
+}
+
+.disabledBtn:hover {
+    background-color: #e9ecef;
+    color: #6c757d;
+    transform: none !important;
+}
+
+.cancelBtn {
+    background-color: #6c757d;
+    color: white;
+}
+
+.cancelBtn:hover:not(:disabled) {
+    background-color: #5a6268;
+}
+
+.confirmBtn {
+    background: linear-gradient(135deg, #004EA2 0%, #0056b3 100%);
+    color: white;
+}
+
+.confirmBtn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #003d7a 0%, #004494 100%);
+}
+
+.randomBtn {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+}
+
+.randomBtn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #218838 0%, #1ea085 100%);
+}
+
+/* ===== 입력 필드 스타일 ===== */
+
+.inputField {
+    width: 100%;
+    padding: clamp(10px, 2.5vw, 14px);
+    border: 2px solid #e9ecef;
+    border-radius: clamp(6px, 1.5vw, 10px);
+    font-size: clamp(14px, 2.5vw, 16px);
+    transition: border-color 0.2s ease;
+    background-color: white;
+}
+
+.inputField:focus {
+    outline: none;
+    border-color: #004EA2;
+    box-shadow: 0 0 0 3px rgba(0, 78, 162, 0.1);
+}
+
+.inputField::placeholder {
+    color: #adb5bd;
+}
+
+/* ===== 카드 스타일 ===== */
+
+.card {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: clamp(8px, 1.5vw, 12px);
+    padding: clamp(12px, 2.5vw, 16px);
+    margin-bottom: clamp(8px, 2vw, 12px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+/* ===== 그리드 레이아웃 ===== */
+
+.grid {
+    display: grid;
+    gap: clamp(8px, 2vw, 12px);
+}
+
+.grid2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.grid3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.grid4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+/* ===== 반응형 그리드 ===== */
+
+@media (max-width: 480px) {
+    .grid2, .grid3, .grid4 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===== 유틸리티 클래스 ===== */
+
+.textCenter {
+    text-align: center;
+}
+
+.textLeft {
+    text-align: left;
+}
+
+.textRight {
+    text-align: right;
+}
+
+.mb0 { margin-bottom: 0; }
+.mb1 { margin-bottom: clamp(4px, 1vw, 8px); }
+.mb2 { margin-bottom: clamp(8px, 2vw, 16px); }
+.mb3 { margin-bottom: clamp(12px, 3vw, 24px); }
+
+.mt0 { margin-top: 0; }
+.mt1 { margin-top: clamp(4px, 1vw, 8px); }
+.mt2 { margin-top: clamp(8px, 2vw, 16px); }
+.mt3 { margin-top: clamp(12px, 3vw, 24px); }
+
+.p0 { padding: 0; }
+.p1 { padding: clamp(4px, 1vw, 8px); }
+.p2 { padding: clamp(8px, 2vw, 16px); }
+.p3 { padding: clamp(12px, 3vw, 24px); }
+
+/* ===== 색상 변수 ===== */
+
+:root {
+    --primary-color: #004EA2;
+    --primary-hover: #003d7a;
+    --secondary-color: #6c757d;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --light-color: #f8f9fa;
+    --dark-color: #343a40;
+    --border-color: #e9ecef;
+    --text-color: #212529;
+    --text-muted: #6c757d;
+}
+
+/* ===== 애니메이션 ===== */
+
+.fadeIn {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.slideUp {
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== 스크롤바 스타일 ===== */
+
+.modalBox::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modalBox::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.modalBox::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.modalBox::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* ===== 추가 유틸리티 ===== */
+
+.flex {
+    display: flex;
+}
+
+.flexCenter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.flexBetween {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.flexColumn {
+    display: flex;
+    flex-direction: column;
+}
+
+.gap1 { gap: clamp(4px, 1vw, 8px); }
+.gap2 { gap: clamp(8px, 2vw, 16px); }
+.gap3 { gap: clamp(12px, 3vw, 24px); }
+
+.wFull { width: 100%; }
+.hFull { height: 100%; }
+
+.rounded { border-radius: clamp(4px, 1vw, 8px); }
+.roundedFull { border-radius: 50%; }
+
+.shadow { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
+.shadowLg { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15); }
+
+.border { border: 1px solid #e9ecef; }
+.border2 { border: 2px solid #e9ecef; }
+
+.overflowHidden { overflow: hidden; }
+.overflowAuto { overflow: auto; }
+.overflowScroll { overflow: scroll; }
+
+.cursorPointer { cursor: pointer; }
+.cursorDefault { cursor: default; }
+
+.selectNone { user-select: none; }
+.selectText { user-select: text; }
+
+.transition { transition: all 0.2s ease; }
+.transitionFast { transition: all 0.1s ease; }
+.transitionSlow { transition: all 0.3s ease; }

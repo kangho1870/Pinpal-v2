@@ -1,0 +1,384 @@
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f8f9fa;
+    width: 100%;
+    min-height: 100vh;
+    padding: 20px 0;
+}
+
+.mainArea {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+    max-width: 800px;
+}
+
+.gameResultBox {
+    display: flex;
+    width: 95%;
+    flex-direction: column;
+    align-items: center;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    gap: 20px;
+}
+
+.resultHeader {
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.resultHeader h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.medalContainer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    color: white;
+}
+
+.total1stBox {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    align-items: center;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.memberBox {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+}
+
+.memberProfileBox {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.memberProfile {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    object-fit: cover;
+}
+
+.memberName {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+    text-align: center;
+}
+
+.awardTitle {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0;
+    text-align: center;
+}
+
+.totalScore, .avgScore {
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0;
+    opacity: 0.9;
+}
+
+.total1stImg {
+    width: 80px;
+    height: auto;
+}
+
+.sectionTitle {
+    font-size: 20px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0 0 12px 0;
+    text-align: center;
+}
+
+.gradeSection, .highScoreSection, .teamSection {
+    width: 100%;
+}
+
+.gradeGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+}
+
+.gradeCard {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.gradeCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.gradeHeader {
+    margin-bottom: 8px;
+}
+
+.gradeNumber {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.gradeCard .memberProfile {
+    width: 50px;
+    height: 50px;
+    border: 2px solid #e9ecef;
+}
+
+.gradeCard .memberName {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.highScoreGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+}
+
+.highScoreCard {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.highScoreCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.highScoreHeader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.highScoreImg {
+    width: 40px;
+    height: auto;
+}
+
+.genderLabel {
+    font-size: 14px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.teamCard {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.teamHeader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.teamLabel {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.grade1stImg {
+    width: 60px;
+    height: auto;
+}
+
+.teamMembers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 12px;
+}
+
+.teamMember {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.teamMember .memberProfile {
+    width: 50px;
+    height: 50px;
+    border: 2px solid #007bff;
+}
+
+.teamMember .memberName {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.gameStopSection {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.gameStopBtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 32px;
+    border: none;
+    border-radius: 25px;
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.gameStopBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(220, 53, 69, 0.4);
+}
+
+.gameStopBtn i {
+    font-size: 20px;
+}
+
+.countingContainer {
+    display: flex;
+    width: 100%;
+    height: 300px;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.countingBox {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.spinner img {
+    width: 120px;
+    height: auto;
+}
+
+.spinner h4 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #6c757d;
+    margin: 0;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .gameResultBox {
+        padding: 16px;
+        gap: 16px;
+    }
+    
+    .resultHeader h2 {
+        font-size: 24px;
+    }
+    
+    .medalContainer {
+        padding: 16px;
+        gap: 12px;
+    }
+    
+    .memberProfile {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .memberName {
+        font-size: 16px;
+    }
+    
+    .awardTitle {
+        font-size: 18px;
+    }
+    
+    .total1stImg {
+        width: 80px;
+    }
+    
+    .gradeGrid {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 12px;
+    }
+    
+    .highScoreGrid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .teamMembers {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 12px;
+    }
+    
+    .gameStopBtn {
+        padding: 14px 28px;
+        font-size: 16px;
+    }
+}
