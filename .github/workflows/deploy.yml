@@ -93,21 +93,17 @@ jobs:
           path: frontend-build/
 
       - name: Test SSH connection
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.CAFE24_HOST }}
-          username: ${{ secrets.CAFE24_USERNAME }}
-          password: ${{ secrets.CAFE24_PASSWORD }}
-          port: ${{ secrets.CAFE24_PORT }}
-          timeout: 60s
-          script: |
-            echo "SSH 연결 테스트 성공!"
-            whoami
-            pwd
-            date
+        run: |
+          echo "SSH 연결 테스트 시작..."
+          echo "포트 22로 시도..."
+          sshpass -p '${{ secrets.CAFE24_PASSWORD }}' ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 ${{ secrets.CAFE24_USERNAME }}@${{ secrets.CAFE24_HOST }} -p 22 "echo 'SSH 연결 테스트 성공!'; whoami; pwd; date" || echo "포트 22 실패"
+          echo "포트 2222로 시도..."
+          sshpass -p '${{ secrets.CAFE24_PASSWORD }}' ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 ${{ secrets.CAFE24_USERNAME }}@${{ secrets.CAFE24_HOST }} -p 2222 "echo 'SSH 연결 테스트 성공!'; whoami; pwd; date" || echo "포트 2222 실패"
+        env:
+          SSHPASS: ${{ secrets.CAFE24_PASSWORD }}
 
       - name: Deploy to Cafe24
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.0.4
         with:
           host: ${{ secrets.CAFE24_HOST }}
           username: ${{ secrets.CAFE24_USERNAME }}
@@ -117,13 +113,21 @@ jobs:
           command_timeout: 60s
           script: |
             # Docker 이미지 pull
+            echo "Docker 이미지 pull 중..."
             docker pull ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
             
-            # 기존 컨테이너 중지 및 삭제
-            docker stop pinpal-backend || true
-            docker rm pinpal-backend || true
+            # 기존 컨테이너 확인 및 정리
+            echo "기존 컨테이너 정리 중..."
+            if docker ps -a | grep -q pinpal-backend; then
+              echo "기존 컨테이너 중지 및 삭제..."
+              docker stop pinpal-backend || true
+              docker rm pinpal-backend || true
+            else
+              echo "기존 컨테이너가 없습니다."
+            fi
             
             # 새 컨테이너 실행
+            echo "새 컨테이너 실행 중..."
             docker run -d \
               --name pinpal-backend \
               --restart unless-stopped \
@@ -138,7 +142,10 @@ jobs:
               ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
             
             # 컨테이너 상태 확인
+            echo "컨테이너 상태 확인 중..."
+            sleep 5
             docker ps
+            echo "컨테이너 로그 확인 중..."
             docker logs pinpal-backend --tail 20
 
       - name: Deploy frontend to Cafe24
@@ -153,7 +160,7 @@ jobs:
           target: "/home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend"
 
       - name: Start frontend server
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.0.4
         with:
           host: ${{ secrets.CAFE24_HOST }}
           username: ${{ secrets.CAFE24_USERNAME }}
@@ -163,12 +170,27 @@ jobs:
           command_timeout: 60s
           script: |
             # 기존 프론트엔드 프로세스 종료
+            echo "기존 프론트엔드 프로세스 정리 중..."
             pkill -f "serve.*pinpal-frontend" || true
+            sleep 2
             
             # serve 패키지 설치 (없다면)
+            echo "serve 패키지 설치 중..."
             npm install -g serve || true
             
+            # 프론트엔드 디렉토리 확인
+            echo "프론트엔드 디렉토리 확인 중..."
+            ls -la /home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend/
+            
             # 프론트엔드 서버 시작 (3000 포트)
-            nohup serve -s /home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend -l 3000 > /dev/null 2>&1 &
+            echo "프론트엔드 서버 시작 중..."
+            nohup serve -s /home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend -l 3000 > /home/${{ secrets.CAFE24_USERNAME }}/frontend.log 2>&1 &
+            
+            # 프로세스 확인
+            sleep 3
+            echo "프론트엔드 프로세스 확인 중..."
+            ps aux | grep serve
+            echo "프론트엔드 로그 확인 중..."
+            tail -10 /home/${{ secrets.CAFE24_USERNAME }}/frontend.log || echo "로그 파일이 아직 생성되지 않았습니다."
             
             echo "Frontend server started on port 3000!"
