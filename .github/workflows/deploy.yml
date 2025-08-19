@@ -64,7 +64,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd allcover_project
-          npm ci
+          npm ci --legacy-peer-deps
 
       - name: Build frontend
         run: |
