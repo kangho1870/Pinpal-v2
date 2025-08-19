@@ -177,10 +177,10 @@ jobs:
           timeout: 120s
           command_timeout: 120s
           script: |
-            # Node.js 설치
-            echo "Node.js 설치 중..."
-            curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-            sudo apt-get install -y nodejs
+            # Node.js 및 npm 설치
+            echo "Node.js 및 npm 설치 중..."
+            sudo apt-get update
+            sudo apt-get install -y nodejs npm
             
             # Node.js 버전 확인
             echo "Node.js 버전 확인:"
