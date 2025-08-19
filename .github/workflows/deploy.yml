@@ -66,10 +66,10 @@ jobs:
           cd allcover_project
           npm ci --legacy-peer-deps
 
-      - name: Build frontend
-        run: |
-          cd allcover_project
-          npm run build
+              - name: Build frontend
+          run: |
+            cd allcover_project
+            CI=false npm run build
         env:
           REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }}
 

@@ -6,7 +6,7 @@ export default function Loading() {
     return (
         <div className={styles.loadingContainer}>
             <div className={styles.loadingModal}>
-                <img src={Spinner}></img>
+                <img src={Spinner} alt="로딩 스피너"></img>
             </div>
         </div>
     )

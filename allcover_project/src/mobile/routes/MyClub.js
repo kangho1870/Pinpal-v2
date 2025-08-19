@@ -573,7 +573,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
     return (
         <>
             <div className={`${styles.clubBannerArea}`}>
-                <img className={styles.bannerImage} src={require("../../imges/KakaoTalk_20241108_021010839.jpg")}></img>
+                <img className={styles.bannerImage} src={require("../../imges/KakaoTalk_20241108_021010839.jpg")} alt="배너 이미지"></img>
             </div>
             <div
                 className={`${styles.clubDescription} ${styles.commonDiv}`}
@@ -745,7 +745,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                 </div>
                                                 <div className={styles.scheduleContnet}>
                                                     <div className={styles.imgBox}>
-                                                        <img className={styles.scheduleImg} src={require("../../imges/club/bowlingGame.png")}></img>
+                                                        <img className={styles.scheduleImg} src={require("../../imges/club/bowlingGame.png")} alt="볼링 게임"></img>
                                                     </div>
                                                     <div className={styles.scheduleDescriptionArea}>
                                                         <div className={styles.scheduleDescriptionBox}>
