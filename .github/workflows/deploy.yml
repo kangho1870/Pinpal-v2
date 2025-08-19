@@ -177,28 +177,12 @@ jobs:
           timeout: 120s
           command_timeout: 120s
           script: |
-            # Node.js 및 npm 설치
-            echo "Node.js 및 npm 설치 중..."
-            sudo apt-get update
-            sudo apt-get install -y nodejs npm
-            
-            # Node.js 버전 확인
-            echo "Node.js 버전 확인:"
-            node --version
-            npm --version
-            
-            # serve 패키지 설치
-            echo "serve 패키지 설치 중..."
-            sudo npm install -g serve
-            
             # 프론트엔드 디렉토리 확인
             echo "프론트엔드 디렉토리 확인 중..."
             ls -la /home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend/
             
-            # serve 패키지 경로 확인
-            echo "serve 패키지 경로 확인 중..."
-            SERVE_PATH=$(which serve)
-            echo "serve 경로: $SERVE_PATH"
+            # Python HTTP 서버 사용 (Node.js 버전 문제 해결)
+            echo "Python HTTP 서버 설정 중..."
             
             # systemd 서비스 파일 생성
             echo "systemd 서비스 파일 생성 중..."
@@ -210,14 +194,12 @@ jobs:
             [Service]
             Type=simple
             User=${{ secrets.CAFE24_USERNAME }}
-            WorkingDirectory=/home/${{ secrets.CAFE24_USERNAME }}
-            ExecStart=$SERVE_PATH -s pinpal-frontend -l 3000
+            WorkingDirectory=/home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend/frontend-build
+            ExecStart=/usr/bin/python3 -m http.server 3000
             Restart=always
             RestartSec=10
             StandardOutput=journal
             StandardError=journal
-            Environment=PATH=/usr/local/bin:/usr/bin:/bin
-            Environment=NODE_ENV=production
             TimeoutStartSec=60
             TimeoutStopSec=30
             
