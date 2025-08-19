@@ -181,11 +181,6 @@ jobs:
             echo "프론트엔드 디렉토리 확인 중..."
             ls -la /home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend/
             
-            # Node.js 및 npm 설치
-            echo "Node.js 및 npm 설치 중..."
-            sudo apt-get update
-            sudo apt-get install -y nodejs npm
-            
             # 프론트엔드 소스 코드 복사
             echo "프론트엔드 소스 코드 복사 중..."
             cp -r /home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend/frontend-build/* /home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend/
