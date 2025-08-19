@@ -167,22 +167,17 @@ jobs:
           source: "frontend-build/*"
           target: "/home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend"
 
-      - name: Start frontend server
+      - name: Setup frontend service
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.CAFE24_HOST }}
           username: ${{ secrets.CAFE24_USERNAME }}
           password: ${{ secrets.CAFE24_PASSWORD }}
           port: ${{ secrets.CAFE24_PORT }}
-          timeout: 60s
-          command_timeout: 60s
+          timeout: 120s
+          command_timeout: 120s
           script: |
-            # 기존 프론트엔드 프로세스 종료
-            echo "기존 프론트엔드 프로세스 정리 중..."
-            pkill -f "serve.*pinpal-frontend" || true
-            sleep 2
-            
-            # serve 패키지 설치 (없다면)
+            # serve 패키지 설치
             echo "serve 패키지 설치 중..."
             npm install -g serve || true
             
@@ -190,16 +185,45 @@ jobs:
             echo "프론트엔드 디렉토리 확인 중..."
             ls -la /home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend/
             
-            # 프론트엔드 서버 시작 (3000 포트)
-            echo "프론트엔드 서버 시작 중..."
-            cd /home/${{ secrets.CAFE24_USERNAME }}/
-            nohup serve -s pinpal-frontend -l 3000 > frontend.log 2>&1 &
+            # systemd 서비스 파일 생성
+            echo "systemd 서비스 파일 생성 중..."
+            sudo tee /etc/systemd/system/pinpal-frontend.service > /dev/null <<EOF
+            [Unit]
+            Description=Pinpal Frontend Server
+            After=network.target
             
-            # 프로세스 확인
-            sleep 3
-            echo "프론트엔드 프로세스 확인 중..."
-            ps aux | grep serve
+            [Service]
+            Type=simple
+            User=${{ secrets.CAFE24_USERNAME }}
+            WorkingDirectory=/home/${{ secrets.CAFE24_USERNAME }}
+            ExecStart=/usr/bin/serve -s pinpal-frontend -l 3000
+            Restart=always
+            RestartSec=10
+            StandardOutput=journal
+            StandardError=journal
+            
+            [Install]
+            WantedBy=multi-user.target
+            EOF
+            
+            # 기존 서비스 중지 및 재시작
+            echo "프론트엔드 서비스 재시작 중..."
+            sudo systemctl daemon-reload
+            sudo systemctl stop pinpal-frontend || true
+            sudo systemctl start pinpal-frontend
+            sudo systemctl enable pinpal-frontend
+            
+            # 서비스 상태 확인
+            sleep 5
+            echo "프론트엔드 서비스 상태 확인 중..."
+            sudo systemctl status pinpal-frontend --no-pager
+            
+            # 포트 확인
+            echo "포트 3000 확인 중..."
+            netstat -tlnp | grep :3000 || echo "포트 3000이 열리지 않았습니다."
+            
+            # 로그 확인
             echo "프론트엔드 로그 확인 중..."
-            tail -10 frontend.log || echo "로그 파일이 아직 생성되지 않았습니다."
+            sudo journalctl -u pinpal-frontend --no-pager -n 10
             
-            echo "Frontend server started on port 3000!"
+            echo "Frontend service setup completed!"
