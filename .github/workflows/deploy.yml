@@ -134,12 +134,12 @@ jobs:
             export KAKAO_CLIENT_ID="${{ secrets.KAKAO_CLIENT_ID }}"
             export KAKAO_CLIENT_SECRET="${{ secrets.KAKAO_CLIENT_SECRET }}"
             
-            # 새 컨테이너 실행
-            echo "새 컨테이너 실행 중..."
+            # 새 컨테이너 실행 (호스트 네트워크 모드)
+            echo "새 컨테이너 실행 중 (호스트 네트워크 모드)..."
             docker run -d \
               --name pinpal-backend \
+              --network host \
               --restart unless-stopped \
-              -p 80:80 \
               -e "SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}" \
               -e "SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}" \
               -e "SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}" \
