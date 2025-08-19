@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import styles from "../css/routes/MyClub.module.css";
 import useSignInStore from "../../stores/useSignInStore";
 import { useCookies } from "react-cookie";
@@ -17,15 +17,7 @@ function MyClubs() {
     const token = cookies[ACCESS_TOKEN];
     const isMounted = useRef(true);
 
-    useEffect(() => {
-        isMounted.current = true;
-        if (token && signInUser) {
-            loadMyClubs();
-        }
-        return () => { isMounted.current = false; };
-    }, [token, signInUser]);
-
-    const loadMyClubs = async () => {
+    const loadMyClubs = useCallback(async () => {
         try {
             setLoading(true);
             const response = await getMyClubsRequest(token);
@@ -48,7 +40,15 @@ function MyClubs() {
                 setLoading(false);
             }
         }
-    };
+    }, [token]);
+
+    useEffect(() => {
+        isMounted.current = true;
+        if (token && signInUser) {
+            loadMyClubs();
+        }
+        return () => { isMounted.current = false; };
+    }, [token, signInUser, loadMyClubs]);
 
     const handleClubClick = (clubId) => {
         navigator(`/club/${clubId}`);
