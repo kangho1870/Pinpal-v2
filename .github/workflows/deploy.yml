@@ -114,7 +114,7 @@ jobs:
           script: |
             # Docker 이미지 pull
             echo "Docker 이미지 pull 중..."
-            docker pull ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
+            docker pull "${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}"
             
             # 기존 컨테이너 확인 및 정리
             echo "기존 컨테이너 정리 중..."
@@ -126,20 +126,30 @@ jobs:
               echo "기존 컨테이너가 없습니다."
             fi
             
+            # 환경 변수 설정
+            echo "환경 변수 설정 중..."
+            export SPRING_PROFILES_ACTIVE="prod"
+            export SPRING_DATASOURCE_URL="${{ secrets.DB_URL }}"
+            export SPRING_DATASOURCE_USERNAME="${{ secrets.DB_USERNAME }}"
+            export SPRING_DATASOURCE_PASSWORD="${{ secrets.DB_PASSWORD }}"
+            export JWT_SECRET="${{ secrets.JWT_SECRET }}"
+            export KAKAO_CLIENT_ID="${{ secrets.KAKAO_CLIENT_ID }}"
+            export KAKAO_CLIENT_SECRET="${{ secrets.KAKAO_CLIENT_SECRET }}"
+            
             # 새 컨테이너 실행
             echo "새 컨테이너 실행 중..."
             docker run -d \
               --name pinpal-backend \
               --restart unless-stopped \
               -p 80:80 \
-              -e SPRING_PROFILES_ACTIVE=prod \
-              -e SPRING_DATASOURCE_URL=${{ secrets.DB_URL }} \
-              -e SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USERNAME }} \
-              -e SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }} \
-              -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
-              -e KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }} \
-              -e KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }} \
-              ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
+              -e "SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}" \
+              -e "SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}" \
+              -e "SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}" \
+              -e "SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}" \
+              -e "JWT_SECRET=${JWT_SECRET}" \
+              -e "KAKAO_CLIENT_ID=${KAKAO_CLIENT_ID}" \
+              -e "KAKAO_CLIENT_SECRET=${KAKAO_CLIENT_SECRET}" \
+              "${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}"
             
             # 컨테이너 상태 확인
             echo "컨테이너 상태 확인 중..."
