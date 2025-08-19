@@ -185,6 +185,16 @@ jobs:
             echo "프론트엔드 디렉토리 확인 중..."
             ls -la /home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend/
             
+            # serve 패키지 경로 확인
+            echo "serve 패키지 경로 확인 중..."
+            SERVE_PATH=$(which serve)
+            if [ -z "$SERVE_PATH" ]; then
+              echo "serve 패키지를 찾을 수 없습니다. 재설치 중..."
+              npm install -g serve
+              SERVE_PATH=$(which serve)
+            fi
+            echo "serve 경로: $SERVE_PATH"
+            
             # systemd 서비스 파일 생성
             echo "systemd 서비스 파일 생성 중..."
             sudo tee /etc/systemd/system/pinpal-frontend.service > /dev/null <<EOF
@@ -196,11 +206,12 @@ jobs:
             Type=simple
             User=${{ secrets.CAFE24_USERNAME }}
             WorkingDirectory=/home/${{ secrets.CAFE24_USERNAME }}
-            ExecStart=/usr/bin/serve -s pinpal-frontend -l 3000
+            ExecStart=$SERVE_PATH -s pinpal-frontend -l 3000
             Restart=always
             RestartSec=10
             StandardOutput=journal
             StandardError=journal
+            Environment=PATH=/usr/local/bin:/usr/bin:/bin
             
             [Install]
             WantedBy=multi-user.target
