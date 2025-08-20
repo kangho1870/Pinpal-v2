@@ -155,6 +155,27 @@ jobs:
             docker ps
             echo "컨테이너 로그 확인 중..."
             docker logs pinpal-backend --tail 20
+            
+            # 상세한 문제 진단
+            echo "=== 상세 진단 시작 ==="
+            echo "1. Docker 컨테이너 상태:"
+            docker ps -a
+            
+            echo "2. Docker 네트워크 확인:"
+            docker network ls
+            
+            echo "3. 시스템 리소스 확인:"
+            free -h
+            df -h
+            
+            echo "4. 포트 사용 현황:"
+            netstat -tlnp | grep :8000 || echo "포트 8000이 사용되지 않음"
+            
+            echo "5. 컨테이너 상세 정보:"
+            docker inspect pinpal-backend 2>/dev/null || echo "컨테이너가 존재하지 않음"
+            
+            echo "6. 최근 Docker 로그:"
+            docker logs pinpal-backend --tail 50 2>/dev/null || echo "로그를 읽을 수 없음"
 
       - name: Deploy frontend to Cafe24
         uses: appleboy/scp-action@v0.1.7

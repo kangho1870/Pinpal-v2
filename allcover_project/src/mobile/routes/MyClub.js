@@ -434,16 +434,22 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
     }
 
     const formatShortDate = (date) => {
+        console.log('🔍 formatShortDate 호출됨:', { date, type: typeof date });
+        
         // 날짜 값이 없거나 잘못된 경우 처리
         if (!date) {
+            console.log('🔍 날짜 없음');
             return '날짜 없음';
         }
         
         try {
-            const dateObj = new Date(date);
+            // 한국 시간대로 처리
+            const dateObj = new Date(date + 'T00:00:00+09:00');
+            console.log('🔍 dateObj 생성됨:', dateObj);
             
             // 유효하지 않은 날짜인 경우
             if (isNaN(dateObj.getTime())) {
+                console.log('🔍 날짜 오류 - 유효하지 않은 날짜');
                 return '날짜 오류';
             }
             
@@ -453,7 +459,8 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                 weekday: 'short'
             }).format(dateObj);
             
-            return formattedDate.replace(/\./g, ' /').replace(') ', ')').replace('/(', ' (');
+            console.log('🔍 포맷된 날짜:', formattedDate);
+            return formattedDate.replace(/\./g, ' /').replace('/(', ' (');
         } catch (error) {
             console.error('날짜 포맷 오류:', error, '입력값:', date);
             return '날짜 오류';
@@ -461,16 +468,22 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
     };
 
     const formatDateTime = (date, time) => {
+        console.log('🔍 formatDateTime 호출됨:', { date, time, dateType: typeof date, timeType: typeof time });
+        
         // 날짜나 시간 값이 없는 경우 처리
         if (!date || !time) {
+            console.log('🔍 일시 없음 - 날짜 또는 시간이 없음');
             return '일시 없음';
         }
         
         try {
-            const dateTime = new Date(`${date}T${time}`);
+            // 한국 시간대로 처리
+            const dateTime = new Date(`${date}T${time}+09:00`);
+            console.log('🔍 dateTime 생성됨:', dateTime);
             
             // 유효하지 않은 날짜인 경우
             if (isNaN(dateTime.getTime())) {
+                console.log('🔍 일시 오류 - 유효하지 않은 날짜');
                 return '일시 오류';
             }
             
@@ -483,6 +496,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                 hour12: true
             }).format(dateTime);
         
+            console.log('🔍 포맷된 일시:', formattedDate);
             return formattedDate.replace(/\./g, '/').replace('/(', ' (');
         } catch (error) {
             console.error('일시 포맷 오류:', error, '입력값:', { date, time });
@@ -612,7 +626,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
     }
 
     const dateTimeCheck = (game) => {
-        const gameDateTime = new Date(`${game.gameDate}T${game.gameTime}`);
+        const gameDateTime = new Date(`${game.gameDate}T${game.gameTime}+09:00`);
         const now = new Date();
 
         // 게임 시간이 지났거나 게임이 종료된 경우 참석 불가
@@ -658,7 +672,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                     // 현재 시간보다 지나간 게임들을 필터링
                     const now = new Date();
                     const futureGames = games.filter(game => {
-                        const gameDateTime = new Date(`${game.gameDate}T${game.gameTime}`);
+                        const gameDateTime = new Date(`${game.gameDate}T${game.gameTime}+09:00`);
                         return gameDateTime > now; // 현재 시간보다 미래인 게임만 포함
                     });
 
@@ -795,9 +809,9 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                             <div key={`정기번개-${index}`}>
                                                 <div className={styles.scheduleBox}>
                                                     <div className={styles.scheduleTitle}>
-                                                        <p>{game.name}</p>
+                                                        <p>{game.gameName}</p>
                                                         <div className={styles.scheduleTitle}>
-                                                            <h5>{formatShortDate(game.date)}</h5>
+                                                            <h5>{formatShortDate(game.gameDate)}</h5>
                                                             {!dateTimeCheck(game) && (
                                                                 (() => {
                                                                     // 로컬 상태와 백엔드 멤버 목록을 모두 확인
@@ -816,7 +830,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                                     const isParticipating = backendParticipating || localParticipating;
                                                                     console.log('🔍 정기번개 참여 상태 확인:', {
                                                                         gameId: game.id,
-                                                                        gameName: game.name,
+                                                                        gameName: game.gameName,
                                                                         memberId,
                                                                         gameMembers: game.members,
                                                                         isParticipating
@@ -832,7 +846,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                             <button 
                                                                 className={styles.scheduleCancleBtn}
                                                                 onClick={() => {
-                                                                    const gameDateTime = new Date(`${game.date}T${game.time}`);
+                                                                    const gameDateTime = new Date(`${game.gameDate}T${game.gameTime}+09:00`);
                                                                     const now = new Date();
                                                                     const isGameTimePassed = now > gameDateTime;
                                                                     const isGameFinished = game.status === "FINISHED";
@@ -856,7 +870,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                     <div className={styles.scheduleDescriptionArea}>
                                                         <div className={styles.scheduleDescriptionBox}>
                                                             <span className={styles.descriptionSubTitle}>일시:</span>
-                                                            <h5 className={styles.descriptionSubContent}>{formatDateTime(game.date, game.time)}</h5>
+                                                            <h5 className={styles.descriptionSubContent}>{formatDateTime(game.gameDate, game.gameTime)}</h5>
                                                         </div>
                                                         <div className={styles.scheduleDescriptionBox}>
                                                             <span className={styles.descriptionSubTitle}>장소:</span>
@@ -888,17 +902,17 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                 </div>
                             )}
 
-                            {/* 기타 */}
+                                                        {/* 기타 */}
                             {gamesByType["기타"].length > 0 && (
                                 <div className={styles.gameTypeSection}>
                                     <h4 className={styles.gameTypeTitle}>기타</h4>
-                                    {gamesByType["기타"].map((game, index) => (
-                                        <div key={`기타-${index}`}>
-                                            <div className={styles.scheduleBox}>
-                                                <div className={styles.scheduleTitle}>
-                                                    <p>{game.name}</p>
+                                        {gamesByType["기타"].map((game, index) => (
+                                            <div key={`기타-${index}`}>
+                                                <div className={styles.scheduleBox}>
                                                     <div className={styles.scheduleTitle}>
-                                                        <h5>{formatShortDate(game.date)}</h5>
+                                                        <p>{game.gameName}</p>
+                                                        <div className={styles.scheduleTitle}>
+                                                            <h5>{formatShortDate(game.gameDate)}</h5>
                                                         {!dateTimeCheck(game) && (
                                                             (() => {
                                                                 // 로컬 상태와 백엔드 멤버 목록을 모두 확인
@@ -917,7 +931,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                                 const isParticipating = backendParticipating || localParticipating;
                                                                 console.log('🔍 기타 참여 상태 확인:', {
                                                                     gameId: game.id,
-                                                                    gameName: game.name,
+                                                                    gameName: game.gameName,
                                                                     memberId,
                                                                     gameMembers: game.members,
                                                                     isParticipating
@@ -933,7 +947,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                             <button 
                                                                 className={styles.scheduleCancleBtn}
                                                                 onClick={() => {
-                                                                    const gameDateTime = new Date(`${game.date}T${game.time}`);
+                                                                    const gameDateTime = new Date(`${game.gameDate}T${game.gameTime}+09:00`);
                                                                     const now = new Date();
                                                                     const isGameTimePassed = now > gameDateTime;
                                                                     const isGameFinished = game.status === "FINISHED";
@@ -1434,18 +1448,26 @@ function ClubSetting({ pageLoad, clubId }) {
     };
 
     const groupedMembers = updatedMembers.reduce((acc, member) => {
-        const { memberGrade } = member;
-        if (!acc[memberGrade]) {
-            acc[memberGrade] = [];
+        const { grade } = member; // memberGrade 대신 grade 사용
+        if (!acc[grade]) {
+            acc[grade] = [];
         }
-        acc[memberGrade].push(member);
+        acc[grade].push(member);
         return acc;
     }, {});
+
+    // 디버깅 로그 추가
+    console.log('🔍 멤버 데이터 확인:', {
+        members: members,
+        updatedMembers: updatedMembers,
+        groupedMembers: groupedMembers,
+        groupedMembersKeys: Object.keys(groupedMembers)
+    });
 
     const memberAvgUpdate = (memberId, newAvg) => {
         setUpdatedMembers(prev =>
             prev.map(member =>
-                String(member.memberId) === String(memberId) ? { ...member, memberAvg: newAvg == "" || newAvg.length <= 2 ? member.memberAvg : newAvg } : member
+                String(member.memberId) === String(memberId) ? { ...member, avg: newAvg == "" || newAvg.length <= 2 ? member.avg : newAvg } : member
             )
         );
     };
@@ -1453,7 +1475,7 @@ function ClubSetting({ pageLoad, clubId }) {
     const memberGradeUpdate = (memberId, newGrade) => {
         setUpdatedMembers(prev =>
             prev.map(member =>
-                String(member.memberId) === String(memberId) ? { ...member, memberGrade: newGrade } : member
+                String(member.memberId) === String(memberId) ? { ...member, grade: newGrade } : member
             )
         );
     };
@@ -1480,8 +1502,8 @@ function ClubSetting({ pageLoad, clubId }) {
         if((getCurrentUserRole() === "STAFF" || getCurrentUserRole() === "MASTER")) {
             const dto = {
                 ids: updatedMembers.map(member => member.memberId),
-                avg: updatedMembers.map(member => member.memberAvg),
-                grades: updatedMembers.map(member => member.memberGrade),
+                avg: updatedMembers.map(member => member.avg), // memberAvg 대신 avg 사용
+                grades: updatedMembers.map(member => member.grade), // memberGrade 대신 grade 사용
             }
             clubMemberAvgUpdateRequest(dto, token).then(memberAvgUpdateResponse);
         } else {
@@ -1524,13 +1546,30 @@ function ClubSetting({ pageLoad, clubId }) {
 
                             return (
                                 <div key={rangeIndex} className={styles.gradesAvg}>
-                                    {Object.keys(groupedMembers).map((grade) => {
+                                    {Object.keys(groupedMembers).length === 0 ? (
+                                        <div className={styles.nodataContainer}>
+                                            <p>멤버 데이터가 없습니다.</p>
+                                        </div>
+                                    ) : (
+                                        Object.keys(groupedMembers).map((grade) => {
+                                        // 디버깅 로그 추가
+                                        console.log('🔍 grade 조건 확인:', {
+                                            grade,
+                                            gradeType: typeof grade,
+                                            range,
+                                            condition1: range === "0-2" && grade != 0 && grade < 3,
+                                            condition2: range === "3-4" && grade > 2 && grade < 5,
+                                            condition3: range === "5-6" && grade > 4 && grade < 7,
+                                            condition4: range === "new" && grade == 0
+                                        });
+                                        
                                         // 해당 범위에 해당하는 grade만 출력
+                                        const gradeNum = parseInt(grade);
                                         if (
-                                            (range === "0-2" && grade != 0 && grade < 3) ||
-                                            (range === "3-4" && grade > 2 && grade < 5) ||
-                                            (range === "5-6" && grade > 4 && grade < 7) ||
-                                            (range === "new" && grade == 0)
+                                            (range === "0-2" && gradeNum != 0 && gradeNum < 3) ||
+                                            (range === "3-4" && gradeNum > 2 && gradeNum < 5) ||
+                                            (range === "5-6" && gradeNum > 4 && gradeNum < 7) ||
+                                            (range === "new" && gradeNum == 0)
                                         ) {
                                             return (
                                                 <div key={grade} className={styles.gradeGroup}>
@@ -1548,7 +1587,7 @@ function ClubSetting({ pageLoad, clubId }) {
                                                                 <p>{member.memberName}</p>
                                                             </div>
                                                             <div className={styles.memberAvgBox}>
-                                                                <p>{members.find((findMember) => findMember.memberId === member.memberId).memberAvg}</p>
+                                                                <p>{members.find((findMember) => findMember.memberId === member.memberId).avg}</p>
                                                             </div>
                                                             <div className={styles.memberAvgBox}>
                                                                 <input
@@ -1562,7 +1601,7 @@ function ClubSetting({ pageLoad, clubId }) {
                                                             </div>
                                                             <div className={styles.memberAvgBox}>
                                                                 <select 
-                                                                    value={grade === 0 ? "신입" : member.memberGrade}
+                                                                    value={grade === 0 ? "신입" : member.grade}
                                                                     className={styles.avgSelect}
                                                                     onChange={(e) => memberGradeUpdate(member.memberId, e.target.value)}
                                                                 >
@@ -1588,7 +1627,9 @@ function ClubSetting({ pageLoad, clubId }) {
                                                 </div>
                                             );
                                         }
-                                    })}
+                                        return null;
+                                    })
+                                    )}
                                 </div>
                             );
                         })}
