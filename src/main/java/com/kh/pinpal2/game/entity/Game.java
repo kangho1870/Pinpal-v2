@@ -84,4 +84,8 @@ public class Game extends BaseUpdatableEntity {
             this.status = gameUpdateDto.status();
         }
     }
+
+    public void updateStatus(String finished) {
+        this.status = finished;
+    }
 }

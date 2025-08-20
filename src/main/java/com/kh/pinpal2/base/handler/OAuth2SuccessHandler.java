@@ -127,7 +127,11 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         // Host 헤더 확인
         clientHost = request.getHeader("Host");
         if (clientHost != null && !clientHost.isEmpty()) {
-            // 백엔드 포트(80)를 프론트엔드 포트(3000)로 변경
+            // 로컬 개발 환경 (포트 8000 -> 3000)
+            if (clientHost.contains(":8000")) {
+                return clientHost.replace(":8000", ":3000");
+            }
+            // 서버 배포 환경 (포트 80 -> 3000)
             if (clientHost.contains(":80")) {
                 return clientHost.replace(":80", ":3000");
             }
@@ -151,8 +155,11 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             }
         }
 
-        // 기본값으로 서버 프론트엔드 주소 설정
+        // 기본값 설정 (로컬 개발 우선)
         log.warn("클라이언트 호스트를 찾을 수 없어 기본값 사용");
+        if (clientHost != null && clientHost.contains("localhost")) {
+            return "localhost:3000";
+        }
         return "211.37.173.106:3000";
     }
 

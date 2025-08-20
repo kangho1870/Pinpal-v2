@@ -12,4 +12,6 @@ public interface CeremonyUserRepository extends JpaRepository<CeremonyUser,Long>
     @Modifying
     @Query("DELETE FROM CeremonyUser cu WHERE cu.ceremony.id IN :ceremonyIds")
     void deleteByCeremonyIds(@Param("ceremonyIds") List<Long> ceremonyIds);
+
+    List<CeremonyUser> findAllByCeremonyId(Long id);
 }

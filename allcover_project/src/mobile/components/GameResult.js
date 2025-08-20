@@ -16,8 +16,15 @@ export default function GameResult() {
     const [scoreCounting, setScoreCounting] = useState(true);
     const [searchParams] = useSearchParams();
     const gameId = searchParams.get("gameId");
-    const clubId = signInUser?.clubId || null;
-    const roles = signInUser?.clubRole || null;
+    const clubId = searchParams.get("clubId");
+    
+    // 현재 사용자의 클럽 역할은 멤버 목록에서 가져와야 함
+    const getCurrentUserClubRole = () => {
+        if (!members || !signInUser) return null;
+        const currentMember = members.find(member => member.memberId === signInUser.id);
+        return currentMember?.memberRole || null;
+    };
+    const roles = getCurrentUserClubRole();
 
     const findCurrentUser = useCallback(() => {
         if (members.length > 0 && members[0] && typeof members[0].scoreCounting !== 'undefined') {
@@ -121,6 +128,9 @@ export default function GameResult() {
     const highScoreOfMan = getHighScoreMember(0);
     const highScoreOfGirl = getHighScoreMember(1);
 
+    // 팀 1등 멤버들의 ID만 추출
+    const team1stMemberIds = team1stMember?.members?.map(member => member.memberId) || [];
+    
     const resultSetOfLong = {
         gameId: gameId,
         clubId: clubId,
@@ -134,21 +144,34 @@ export default function GameResult() {
         grade6st: grade6stId,
         highScoreOfMan: highScoreOfMan?.memberId || null,
         highScoreOfGirl: highScoreOfGirl?.memberId || null,
-        team1stIds: team1stMember
+        team1stIds: team1stMemberIds
     }
 
     const stopGameResponse = (responseBody) => {
-        const message = 
-            !responseBody ? '서버에 문제가 있습니다.' :
-            responseBody.code === 'VF' ? '올바른 데이터가 아닙니다.' :
-            responseBody.code === 'DBE' ? '서버에 문제가 있습니다.' :
-            responseBody.code === 'SU' ? '게임이 종료되었습니다.' : '';
-        const isSuccessed = responseBody !== null && responseBody.code === 'SU';
-        if (!isSuccessed) {
+        console.log('게임 종료 응답:', responseBody);
+        
+        // void 응답의 경우 responseBody가 null이거나 빈 객체일 수 있음
+        // HTTP 200 OK이면 성공으로 처리
+        if (responseBody === null || responseBody === undefined || Object.keys(responseBody).length === 0) {
+            alert('게임이 종료되었습니다.');
+            // 게임 종료 후 페이지 새로고침하여 최신 상태 반영
+            window.location.reload();
+            return;
+        }
+        
+        // 에러 응답이 있는 경우
+        if (responseBody.code && responseBody.code !== 'SU') {
+            const message = 
+                responseBody.code === 'VF' ? '올바른 데이터가 아닙니다.' :
+                responseBody.code === 'DBE' ? '서버에 문제가 있습니다.' :
+                responseBody.message || '게임 종료 중 오류가 발생했습니다.';
             alert(message);
             return;
         }
-        alert(message);
+        
+        // 기타 성공 응답
+        alert('게임이 종료되었습니다.');
+        window.location.reload();
     };
     const stopGameRequest = () => {
         scoreboardGameStop(resultSetOfLong, token).then(stopGameResponse);

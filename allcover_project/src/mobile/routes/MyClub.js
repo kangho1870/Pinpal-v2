@@ -23,7 +23,18 @@ function MyClub() {
     const [page, setPage] = useState(0);
     const { clubId } = useParams();
     const memberId = signInUser?.id || null;
-    const roles = signInUser?.clubRole || null;
+    // 현재 사용자의 클럽 역할은 멤버 목록에서 가져와야 함
+    const getCurrentUserClubRole = () => {
+        if (!members || !signInUser) return null;
+        const currentMember = members.find(member => member.memberId === signInUser.id);
+        return currentMember?.clubRole || null;
+    };
+    const roles = getCurrentUserClubRole();
+    
+    // 현재 사용자의 클럽 역할을 가져오는 헬퍼 함수
+    const getCurrentUserRole = () => {
+        return getCurrentUserClubRole();
+    };
     const isMounted = useRef(true);
 
     // 디버깅 로그
@@ -105,10 +116,16 @@ function MyClub() {
             return;
         }
         
-        // 백엔드에서 CeremonyRespDto 배열을 직접 반환하는 경우
-        if (Array.isArray(responseBody)) {
-            if (isMounted.current) setCeremonys(responseBody);
-            console.log('🔍 시상 목록 설정 완료:', responseBody);
+        // 백엔드에서 Map<Long, List<CeremonyRespDto>> 구조를 반환하는 경우
+        if (typeof responseBody === 'object' && !Array.isArray(responseBody)) {
+            // Map 구조를 배열로 변환하여 기존 코드와 호환성 유지
+            const ceremoniesArray = Object.entries(responseBody).map(([gameId, ceremonies]) => ({
+                gameId: parseInt(gameId),
+                ceremonies: ceremonies
+            }));
+            
+            if (isMounted.current) setCeremonys(ceremoniesArray);
+            console.log('🔍 시상 목록 설정 완료:', ceremoniesArray);
             return;
         }
         
@@ -329,7 +346,7 @@ function MyClub() {
                         {(() => {
                             // 현재 사용자의 클럽 역할 찾기
                             const currentMember = members.find((member) => String(member.memberId) === String(memberId));
-                            const userClubRole = currentMember?.clubRole || signInUser?.clubRole;
+                            const userClubRole = currentMember?.clubRole || getCurrentUserRole();
                             
                             return userClubRole === "STAFF" || userClubRole === "MASTER";
                         })() &&
@@ -341,13 +358,13 @@ function MyClub() {
                     {page === 0 && <ClubHome clubInfo={clubInfo} setLoading={setLoading} pageLoad={pageLoad} participatedGames={participatedGames} setParticipatedGames={setParticipatedGames} clubId={clubId}></ClubHome>}
                     {page === 1 && <ClubCeremony setLoading={setLoading}></ClubCeremony>}
                     {page === 3 && <ClubRanking setLoading={setLoading}></ClubRanking>}
-                    {page === 4 && <ClubSetting setLoading={setLoading} pageLoad={pageLoad}></ClubSetting>}
+                    {page === 4 && <ClubSetting setLoading={setLoading} pageLoad={pageLoad} clubId={clubId}></ClubSetting>}
                 </div>
             </div>
             {page === 0 && (() => {
                 // 현재 사용자의 클럽 역할 찾기
                 const currentMember = members.find((member) => String(member.memberId) === String(memberId));
-                const userClubRole = currentMember?.clubRole || signInUser?.clubRole;
+                const userClubRole = currentMember?.clubRole || getCurrentUserRole();
                 
                 return userClubRole === "STAFF" || userClubRole === "MASTER";
             })() && (
@@ -363,7 +380,7 @@ function MyClub() {
             {addGameModal && (() => {
                 // 현재 사용자의 클럽 역할 찾기
                 const currentMember = members.find((member) => String(member.memberId) === String(memberId));
-                const userClubRole = currentMember?.clubRole || signInUser?.clubRole;
+                const userClubRole = currentMember?.clubRole || getCurrentUserRole();
                 
                 return userClubRole === "STAFF" || userClubRole === "MASTER";
             })() && (
@@ -390,7 +407,13 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
     const token = cookies[ACCESS_TOKEN];
 
     const memberId = signInUser?.id || null;
-    const roles = signInUser?.clubRole ? signInUser.clubRole : null;
+    // 현재 사용자의 클럽 역할은 멤버 목록에서 가져와야 함
+    const getCurrentUserClubRoleInHome = () => {
+        if (!members || !signInUser) return null;
+        const currentMember = members.find(member => member.memberId === signInUser.id);
+        return currentMember?.clubRole || null;
+    };
+    const roles = getCurrentUserClubRoleInHome();
 
     console.log('ClubHome - clubId:', clubId);
     console.log('ClubHome - signInUser:', signInUser);
@@ -411,27 +434,60 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
     }
 
     const formatShortDate = (date) => {
-        const formattedDate = new Intl.DateTimeFormat('ko-KR', {
-            month: 'numeric',
-            day: 'numeric',
-            weekday: 'short'
-        }).format(new Date(date));
+        // 날짜 값이 없거나 잘못된 경우 처리
+        if (!date) {
+            return '날짜 없음';
+        }
         
-        return formattedDate.replace(/\./g, ' /').replace(') ', ')').replace('/(', ' (');
+        try {
+            const dateObj = new Date(date);
+            
+            // 유효하지 않은 날짜인 경우
+            if (isNaN(dateObj.getTime())) {
+                return '날짜 오류';
+            }
+            
+            const formattedDate = new Intl.DateTimeFormat('ko-KR', {
+                month: 'numeric',
+                day: 'numeric',
+                weekday: 'short'
+            }).format(dateObj);
+            
+            return formattedDate.replace(/\./g, ' /').replace(') ', ')').replace('/(', ' (');
+        } catch (error) {
+            console.error('날짜 포맷 오류:', error, '입력값:', date);
+            return '날짜 오류';
+        }
     };
 
     const formatDateTime = (date, time) => {
-        const dateTime = new Date(`${date}T${time}`);
-        const formattedDate = new Intl.DateTimeFormat('ko-KR', {
-            month: 'numeric',
-            day: 'numeric',
-            weekday: 'short',
-            hour: 'numeric',
-            minute: 'numeric',
-            hour12: true
-        }).format(dateTime);
-    
-        return formattedDate.replace(/\./g, '/').replace('/(', ' (');
+        // 날짜나 시간 값이 없는 경우 처리
+        if (!date || !time) {
+            return '일시 없음';
+        }
+        
+        try {
+            const dateTime = new Date(`${date}T${time}`);
+            
+            // 유효하지 않은 날짜인 경우
+            if (isNaN(dateTime.getTime())) {
+                return '일시 오류';
+            }
+            
+            const formattedDate = new Intl.DateTimeFormat('ko-KR', {
+                month: 'numeric',
+                day: 'numeric',
+                weekday: 'short',
+                hour: 'numeric',
+                minute: 'numeric',
+                hour12: true
+            }).format(dateTime);
+        
+            return formattedDate.replace(/\./g, '/').replace('/(', ' (');
+        } catch (error) {
+            console.error('일시 포맷 오류:', error, '입력값:', { date, time });
+            return '일시 오류';
+        }
     };
 
     const gameJoinResponse = (responseBody) => {
@@ -555,12 +611,15 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
         }
     }
 
-    const dateTimeCheck = (date, time) => {
-        const gameDateTime = new Date(`${date}T${time}`);
+    const dateTimeCheck = (game) => {
+        const gameDateTime = new Date(`${game.gameDate}T${game.gameTime}`);
         const now = new Date();
 
-        const result = (now < gameDateTime || now == gameDateTime);
-        return result;
+        // 게임 시간이 지났거나 게임이 종료된 경우 참석 불가
+        const isGameTimePassed = now > gameDateTime;
+        const isGameFinished = game.status === "FINISHED";
+        
+        return isGameTimePassed || isGameFinished;
     }
 
     useEffect(() => {
@@ -585,14 +644,29 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
             </div>
             <div className={`${styles.clubSchedule}`}>
                 {(() => {
-                    // 미래 게임들을 필터링
-                    const futureGames = games.filter((game) => {
-                        const gameDate = new Date(game.gameDate);
-                        const today = new Date();
-                        return (
-                            gameDate.toDateString() === today.toDateString() || // 같은 날짜인 경우
-                            gameDate >= today // 미래 날짜인 경우
-                        );
+                    // 디버깅을 위한 로그 추가
+                    console.log('🔍 게임 데이터 확인:', games);
+                    console.log('🔍 게임 날짜 필드 확인:', games.map(game => ({
+                        id: game.id,
+                        gameName: game.gameName,
+                        gameDate: game.gameDate,
+                        gameTime: game.gameTime,
+                        date: game.date,
+                        time: game.time
+                    })));
+
+                    // 현재 시간보다 지나간 게임들을 필터링
+                    const now = new Date();
+                    const futureGames = games.filter(game => {
+                        const gameDateTime = new Date(`${game.gameDate}T${game.gameTime}`);
+                        return gameDateTime > now; // 현재 시간보다 미래인 게임만 포함
+                    });
+
+                    console.log('🔍 필터링된 미래 게임:', futureGames);
+                    console.log('🔍 게임 타입별 분류:', {
+                        정기모임: futureGames.filter(game => game.gameType === "정기모임"),
+                        정기번개: futureGames.filter(game => game.gameType === "정기번개"),
+                        기타: futureGames.filter(game => game.gameType === "기타")
                     });
 
                     if (futureGames.length === 0) {
@@ -612,7 +686,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
 
                     return (
                         <>
-                                                        {/* 정기모임 */}
+                            {/* 정기모임 */}
                             {gamesByType["정기모임"].length > 0 && (
                                 <div className={styles.gameTypeSection}>
                                     <h4 className={styles.gameTypeTitle}>정기모임</h4>
@@ -623,7 +697,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                         <p>{game.gameName}</p>
                                                         <div className={styles.scheduleTitle}>
                                                             <h5>{formatShortDate(game.gameDate)}</h5>
-                                                            {!dateTimeCheck(game.gameDate, game.gameTime) && (
+                                                            {!dateTimeCheck(game) && (
                                                                 (() => {
                                                                     // 로컬 상태와 백엔드 멤버 목록을 모두 확인
                                                                     const backendParticipating = game.members.some((member) => {
@@ -653,8 +727,24 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                                     );
                                                                 })()
                                                             )}
-                                                        {dateTimeCheck(game.gameDate, game.gameTime) && (
-                                                            <button className={styles.scheduleCancleBtn}>참석불가</button>
+                                                        {dateTimeCheck(game) && (
+                                                            <button 
+                                                                className={styles.scheduleCancleBtn}
+                                                                onClick={() => {
+                                                                    const gameDateTime = new Date(`${game.gameDate}T${game.gameTime}`);
+                                                                    const now = new Date();
+                                                                    const isGameTimePassed = now > gameDateTime;
+                                                                    const isGameFinished = game.status === "FINISHED";
+                                                                    
+                                                                    if (isGameTimePassed) {
+                                                                        alert("게임 시간이 지나서 참석할 수 없습니다.");
+                                                                    } else if (isGameFinished) {
+                                                                        alert("게임이 종료되어 참석할 수 없습니다.");
+                                                                    }
+                                                                }}
+                                                            >
+                                                                참석불가
+                                                            </button>
                                                         )}
                                                     </div>
                                                 </div>
@@ -705,10 +795,10 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                             <div key={`정기번개-${index}`}>
                                                 <div className={styles.scheduleBox}>
                                                     <div className={styles.scheduleTitle}>
-                                                        <p>{game.gameName}</p>
+                                                        <p>{game.name}</p>
                                                         <div className={styles.scheduleTitle}>
-                                                            <h5>{formatShortDate(game.gameDate)}</h5>
-                                                            {!dateTimeCheck(game.gameDate, game.gameTime) && (
+                                                            <h5>{formatShortDate(game.date)}</h5>
+                                                            {!dateTimeCheck(game) && (
                                                                 (() => {
                                                                     // 로컬 상태와 백엔드 멤버 목록을 모두 확인
                                                                     const backendParticipating = game.members.some((member) => {
@@ -726,7 +816,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                                     const isParticipating = backendParticipating || localParticipating;
                                                                     console.log('🔍 정기번개 참여 상태 확인:', {
                                                                         gameId: game.id,
-                                                                        gameName: game.gameName,
+                                                                        gameName: game.name,
                                                                         memberId,
                                                                         gameMembers: game.members,
                                                                         isParticipating
@@ -738,8 +828,24 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                                     );
                                                                 })()
                                                             )}
-                                                        {dateTimeCheck(game.gameDate, game.gameTime) && (
-                                                            <button className={styles.scheduleCancleBtn}>참석불가</button>
+                                                        {dateTimeCheck(game) && (
+                                                            <button 
+                                                                className={styles.scheduleCancleBtn}
+                                                                onClick={() => {
+                                                                    const gameDateTime = new Date(`${game.date}T${game.time}`);
+                                                                    const now = new Date();
+                                                                    const isGameTimePassed = now > gameDateTime;
+                                                                    const isGameFinished = game.status === "FINISHED";
+                                                                    
+                                                                    if (isGameTimePassed) {
+                                                                        alert("게임 시간이 지나서 참석할 수 없습니다.");
+                                                                    } else if (isGameFinished) {
+                                                                        alert("게임이 종료되어 참석할 수 없습니다.");
+                                                                    }
+                                                                }}
+                                                            >
+                                                                참석불가
+                                                            </button>
                                                         )}
                                                     </div>
                                                 </div>
@@ -750,7 +856,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                     <div className={styles.scheduleDescriptionArea}>
                                                         <div className={styles.scheduleDescriptionBox}>
                                                             <span className={styles.descriptionSubTitle}>일시:</span>
-                                                            <h5 className={styles.descriptionSubContent}>{formatDateTime(game.gameDate, game.gameTime)}</h5>
+                                                            <h5 className={styles.descriptionSubContent}>{formatDateTime(game.date, game.time)}</h5>
                                                         </div>
                                                         <div className={styles.scheduleDescriptionBox}>
                                                             <span className={styles.descriptionSubTitle}>장소:</span>
@@ -790,10 +896,10 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                         <div key={`기타-${index}`}>
                                             <div className={styles.scheduleBox}>
                                                 <div className={styles.scheduleTitle}>
-                                                    <p>{game.gameName}</p>
+                                                    <p>{game.name}</p>
                                                     <div className={styles.scheduleTitle}>
-                                                        <h5>{formatShortDate(game.gameDate)}</h5>
-                                                        {!dateTimeCheck(game.gameDate, game.gameTime) && (
+                                                        <h5>{formatShortDate(game.date)}</h5>
+                                                        {!dateTimeCheck(game) && (
                                                             (() => {
                                                                 // 로컬 상태와 백엔드 멤버 목록을 모두 확인
                                                                 const backendParticipating = game.members.some((member) => {
@@ -811,7 +917,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                                 const isParticipating = backendParticipating || localParticipating;
                                                                 console.log('🔍 기타 참여 상태 확인:', {
                                                                     gameId: game.id,
-                                                                    gameName: game.gameName,
+                                                                    gameName: game.name,
                                                                     memberId,
                                                                     gameMembers: game.members,
                                                                     isParticipating
@@ -823,8 +929,24 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                                 );
                                                             })()
                                                         )}
-                                                        {dateTimeCheck(game.gameDate, game.gameTime) && (
-                                                            <button className={styles.scheduleCancleBtn}>참석불가</button>
+                                                        {dateTimeCheck(game) && (
+                                                            <button 
+                                                                className={styles.scheduleCancleBtn}
+                                                                onClick={() => {
+                                                                    const gameDateTime = new Date(`${game.date}T${game.time}`);
+                                                                    const now = new Date();
+                                                                    const isGameTimePassed = now > gameDateTime;
+                                                                    const isGameFinished = game.status === "FINISHED";
+                                                                    
+                                                                    if (isGameTimePassed) {
+                                                                        alert("게임 시간이 지나서 참석할 수 없습니다.");
+                                                                    } else if (isGameFinished) {
+                                                                        alert("게임이 종료되어 참석할 수 없습니다.");
+                                                                    }
+                                                                }}
+                                                            >
+                                                                참석불가
+                                                            </button>
                                                         )}
                                                     </div>
                                                 </div>
@@ -876,52 +998,38 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
             </div>
             <div className={`${styles.clubRecentGame} ${styles.commonDiv}`}>
                 {ceremonys.length > 0 ? (
-                    ceremonys.map((ceremony, i) => (
-                        <div className={styles.recentGameBox}>
-                            <p>{ceremony.gameName}</p>
-                            <div className={styles.recentGameCeremony}>
-                                <div className={styles.recentGameDescriptionBox}>
-                                    <span className={styles.recentGameSubTitle}>1등</span>
-                                    <h5 className={styles.recentGameSubContent}>{ceremony.total1stId}</h5>
-                                </div>
-                                <div className={styles.recentGameDescriptionBox}>
-                                    <span className={styles.recentGameSubTitle}>에버1등</span>
-                                    <h5 className={styles.recentGameSubContent}>{ceremony.avg1stId}</h5>
-                                </div>
+                    ceremonys.map((gameCeremony, i) => {
+                        // 해당 게임의 정보 찾기
+                        const game = games.find(g => g.id === gameCeremony.gameId);
+                        const gameName = game ? game.gameName : `게임 ${gameCeremony.gameId}`;
+                        
+                        return (
+                            <div key={gameCeremony.gameId} className={styles.recentGameBox}>
+                                <p>{gameName}</p>
+                                {gameCeremony.ceremonies.map((ceremony, j) => (
+                                    <div key={j} className={styles.recentGameCeremony}>
+                                        <div className={styles.recentGameDescriptionBox}>
+                                            <span className={styles.recentGameSubTitle}>
+                                                {ceremony.type === 'pin1st' ? '1등' : 
+                                                 ceremony.type === 'team1st' ? '팀 1등' : 
+                                                 ceremony.type}
+                                            </span>
+                                            <h5 className={styles.recentGameSubContent}>
+                                                {ceremony.winners && ceremony.winners.length > 0 
+                                                    ? ceremony.winners.join(', ') 
+                                                    : '-'}
+                                            </h5>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                            <div className={styles.recentGameCeremony}>
-                                <div className={styles.recentGameDescriptionBox}>
-                                    <span className={styles.recentGameSubTitle}>1군 1등</span>
-                                    <h5 className={styles.recentGameSubContent}>{ceremony.grade1_1stId == "" ? "-" : ceremony.grade1_1stId}</h5>
-                                </div>
-                                <div className={styles.recentGameDescriptionBox}>
-                                    <span className={styles.recentGameSubTitle}>2군 1등</span>
-                                    <h5 className={styles.recentGameSubContent}>{ceremony.grade2_1stId == "" ? "-" : ceremony.grade2_1stId}</h5>
-                                </div>
-                            </div>
-                            <div className={styles.recentGameCeremony}>
-                                <div className={styles.recentGameDescriptionBox}>
-                                    <span className={styles.recentGameSubTitle}>3군 1등</span>
-                                    <h5 className={styles.recentGameSubContent}>{ceremony.grade3_1stId == "" ? "-" : ceremony.grade3_1stId}</h5>
-                                </div>
-                                <div className={styles.recentGameDescriptionBox}>
-                                    <span className={styles.recentGameSubTitle}>4군 1등</span>
-                                    <h5 className={styles.recentGameSubContent}>{ceremony.grade4_1stId == "" ? "-" : ceremony.grade4_1stId}</h5>
-                                </div>
-                            </div>
-                            <div className={styles.recentGameTeamCeremony}>
-                                <span className={styles.recentGameSubTitle}>팀 1등</span>
-                                <h5 className={styles.recentGameSubContent}>{ceremony.team1stIds}</h5>
-                            </div>
-                        </div>
-                    ))): 
-                    (
-                        <div className={styles.nodataContainer}>
-                            <Nodata text={"최근 게임 데이터가 없습니다."}></Nodata>
-                        </div>
-                    )
-                }
-                
+                        );
+                    })
+                ) : (
+                    <div className={styles.nodataContainer}>
+                        <Nodata text={"최근 게임 데이터가 없습니다."}></Nodata>
+                    </div>
+                )}
             </div>
             <div className={styles.divSection}></div>
             <div className={styles.subTitle}>
@@ -1266,7 +1374,7 @@ function ClubCeremony({ setLoading }) {
     )
 };
 
-function ClubSetting({ pageLoad }) {
+function ClubSetting({ pageLoad, clubId }) {
     const { members } = useClubStore();
     const { signInUser } = useSignInStore();
     const [cookies] = useCookies();
@@ -1274,8 +1382,19 @@ function ClubSetting({ pageLoad }) {
     const [page, setPage] = useState(0);
     const [updatedMembers, setUpdatedMembers] = useState([]);
     
-    const clubId = signInUser?.clubId;
-    const roles = signInUser?.clubRole ? signInUser.clubRole : null;
+    // clubId는 URL 파라미터에서 가져오므로 제거
+    // 현재 사용자의 클럽 역할은 멤버 목록에서 가져와야 함
+    const getCurrentUserClubRoleInSetting = () => {
+        if (!members || !signInUser) return null;
+        const currentMember = members.find(member => member.memberId === signInUser.id);
+        return currentMember?.clubRole || null;
+    };
+    const roles = getCurrentUserClubRoleInSetting();
+    
+    // 현재 사용자의 클럽 역할을 가져오는 헬퍼 함수
+    const getCurrentUserRole = () => {
+        return getCurrentUserClubRoleInSetting();
+    };
 
 
 
@@ -1358,7 +1477,7 @@ function ClubSetting({ pageLoad }) {
     }
 
     const memberAvgUpdateRequest = () => {
-        if((signInUser?.clubRole === "STAFF" || signInUser?.clubRole === "MASTER")) {
+        if((getCurrentUserRole() === "STAFF" || getCurrentUserRole() === "MASTER")) {
             const dto = {
                 ids: updatedMembers.map(member => member.memberId),
                 avg: updatedMembers.map(member => member.memberAvg),
@@ -1372,7 +1491,7 @@ function ClubSetting({ pageLoad }) {
     }
 
     useEffect(() => {
-        if(!(signInUser?.clubRole === "MASTER" || signInUser?.clubRole === "STAFF")) {
+        if(!(getCurrentUserRole() === "MASTER" || getCurrentUserRole() === "STAFF")) {
             alert("접근 권한이 없습니다.")
             window.location.href = CLUB_DETAIL_PATH(clubId);
         }
@@ -1499,9 +1618,9 @@ function ClubSetting({ pageLoad }) {
                                                         value={member.clubRole}
                                                         onChange={(e) => handleRoleChange(e, member.memberId)}
                                                         className={styles.roleSelect}
-                                                        disabled={signInUser?.clubRole !== "MASTER"}
+                                                        disabled={getCurrentUserRole() !== "MASTER"}
                                                     >
-                                                        {signInUser?.clubRole === "MASTER" && (
+                                                        {getCurrentUserRole() === "MASTER" && (
                                                             <option value="MASTER">클럽장</option>
                                                         )}
                                                         <option value="STAFF">운영진</option>
@@ -1783,8 +1902,13 @@ function ClubRanking({ setLoading }) {
             return;
         }
         
-        // responseBody가 배열인 경우 (시상 목록)
-        if (Array.isArray(responseBody)) {
+        // 새로운 Map 구조 응답 처리
+        if (typeof responseBody === 'object' && !Array.isArray(responseBody)) {
+            // 이 함수는 랭킹 계산용이므로 새로운 ceremony 구조와는 맞지 않음
+            // 현재는 빈 배열로 처리
+            calculateMemberAverages([]);
+        } else if (Array.isArray(responseBody)) {
+            // 기존 배열 구조인 경우
             calculateMemberAverages(responseBody);
         } else {
             // 에러 응답인 경우

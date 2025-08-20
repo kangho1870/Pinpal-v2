@@ -12,14 +12,11 @@ function RankingBoard({ sideRankingModalToggle, scoreInputModalToggle }) {
     const myScoreRef = useRef(null);
     const scrollContainerRef = useRef(null);
 
-    // 게임 종료 상태 확인 (첫 번째 멤버의 게임 상태를 기준으로)
-    const isGameEnded = members.length > 0 && members[0]?.game?.status === "END";
-    
-    // 점수 집계 종료 상태 확인 (첫 번째 멤버의 scoreCounting 상태를 기준으로)
+    // 점수 집계 종료 상태 확인 (게임 종료와 동일)
     const isScoreCountingStopped = members.length > 0 && members[0]?.scoreCounting === false;
     
-    // 점수 입력이 차단되어야 하는 상태 (게임 종료 또는 점수 집계 종료)
-    const isScoreInputBlocked = isGameEnded || isScoreCountingStopped;
+    // 점수 입력이 차단되어야 하는 상태 (점수 집계 종료)
+    const isScoreInputBlocked = isScoreCountingStopped;
 
     const getCardClass = (grade) => {
         switch (grade) {
@@ -237,7 +234,7 @@ function RankingBoard({ sideRankingModalToggle, scoreInputModalToggle }) {
                     >
                         <i className="fa-solid fa-plus-minus"></i>
                         <span className={styles.title}>
-                            {isGameEnded ? "게임 종료" : isScoreCountingStopped ? "점수 집계 종료" : "점수 입력"}
+                            {isScoreCountingStopped ? "점수 집계 종료" : "점수 입력"}
                         </span>
                     </div>
                 </div>

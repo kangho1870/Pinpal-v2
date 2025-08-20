@@ -1,13 +1,12 @@
 package com.kh.pinpal2.ceremony.dto;
 
+import com.kh.pinpal2.ceremony_user.dto.CeremonyUserRespDto;
 import java.time.Instant;
+import java.util.List;
 
 public record CeremonyRespDto(
-        Long id,
         String type,
-        int grade,
-        int rank,
-        Instant createdAt
+        List<String> winners
 ) {
 }
 

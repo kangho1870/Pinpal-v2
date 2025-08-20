@@ -1,5 +1,7 @@
 package com.kh.pinpal2.scoreboard.service;
 
-public interface ScoreboardService {
+import com.kh.pinpal2.scoreboard.dto.GameStopRequestDto;
 
+public interface ScoreboardService {
+    void stopGame(GameStopRequestDto requestDto);
 }

@@ -22,14 +22,11 @@ export default function ScoreInputModal() {
     const memberId = signInUser?.id || null;
     const member = members.find(member => member?.memberId == memberId);
     
-    // 게임 종료 상태 확인
-    const isGameEnded = members.length > 0 && members[0]?.game?.status === "END";
-    
-    // 점수 집계 종료 상태 확인
+    // 점수 집계 종료 상태 확인 (게임 종료와 동일)
     const isScoreCountingStopped = members.length > 0 && members[0]?.scoreCounting === false;
     
-    // 점수 입력이 차단되어야 하는 상태 (게임 종료 또는 점수 집계 종료)
-    const isScoreInputBlocked = isGameEnded || isScoreCountingStopped;
+    // 점수 입력이 차단되어야 하는 상태 (점수 집계 종료)
+    const isScoreInputBlocked = isScoreCountingStopped;
 
     const [game1Score, setGame1Score] = useState(member?.game1 || "");
     const [game2Score, setGame2Score] = useState(member?.game2 || "");
@@ -52,16 +49,13 @@ export default function ScoreInputModal() {
         }
     }, [member]);
 
-    // 게임이 종료된 경우 모달 닫기
+    // 점수 집계가 종료된 경우 모달 닫기
     useEffect(() => {
         if (isScoreInputBlocked) {
-            const message = isGameEnded 
-                ? "게임이 종료되어 점수 입력이 불가능합니다." 
-                : "점수 집계가 종료되어 점수 입력이 불가능합니다.";
-            alert(message);
+            alert("점수 집계가 종료되어 점수 입력이 불가능합니다.");
             toggleScoreInputModal();
         }
-    }, [isScoreInputBlocked, isGameEnded, toggleScoreInputModal]);
+    }, [isScoreInputBlocked, toggleScoreInputModal]);
 
     const scoreChangeHandler = (e, gameNumber) => {
         // 게임이 종료되거나 점수 집계가 종료된 경우 입력 차단
@@ -93,19 +87,16 @@ export default function ScoreInputModal() {
     };
 
     const scoreInputSocket = () => {
-        // 게임이 종료되거나 점수 집계가 종료된 경우 전송 차단
+        // 점수 집계가 종료된 경우 전송 차단
         if (isScoreInputBlocked) {
-            const message = isGameEnded 
-                ? "게임이 종료되어 점수 입력이 불가능합니다." 
-                : "점수 집계가 종료되어 점수 입력이 불가능합니다.";
-            alert(message);
+            alert("점수 집계가 종료되어 점수 입력이 불가능합니다.");
             return;
         }
         
         const scoreInput = {
             action: "updateScore",
             gameId: gameId,
-            memberId: memberId,
+            userId: memberId,
             score: scores
         }
         
@@ -124,7 +115,7 @@ export default function ScoreInputModal() {
             onClick: toggleScoreInputModal
         },
         {
-            text: isGameEnded ? "게임 종료" : isScoreCountingStopped ? "점수 집계 종료" : "확인",
+            text: isScoreCountingStopped ? "점수 집계 종료" : "확인",
             className: isScoreInputBlocked ? styles.disabledBtn : styles.confirmBtn,
             onClick: isScoreInputBlocked ? null : scoreInputSocket,
             disabled: isScoreInputBlocked

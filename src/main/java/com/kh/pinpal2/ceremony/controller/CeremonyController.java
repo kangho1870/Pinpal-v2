@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -17,8 +18,8 @@ public class CeremonyController {
     private final CeremonyService ceremonyService;
 
     @GetMapping("/club/{clubId}")
-    public ResponseEntity<List<CeremonyRespDto>> getCeremoniesByClubId(@PathVariable Long clubId) {
-        List<CeremonyRespDto> response = ceremonyService.getCeremoniesByClubId(clubId);
+    public ResponseEntity<Map<Long, List<CeremonyRespDto>>> getCeremoniesByClubId(@PathVariable Long clubId) {
+        Map<Long, List<CeremonyRespDto>> response = ceremonyService.getCeremoniesByClubId(clubId);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 }

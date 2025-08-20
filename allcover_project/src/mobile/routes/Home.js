@@ -12,7 +12,7 @@ function Home() {
     const { signInUser } = useSignInStore();
     const [cookies] = useCookies();
     const navigator = useNavigate();
-    const clubId = signInUser?.clubId || null;
+    // clubId는 현재 클럽 컨텍스트에서만 유효하므로 제거
     const [page, setPage] = useState(0);
     const [loading, setLoading] = useState(false);
 
