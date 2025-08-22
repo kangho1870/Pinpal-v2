@@ -128,22 +128,35 @@ jobs:
               --restart unless-stopped \
               -p 8000:8000 \
               -e SPRING_PROFILES_ACTIVE=prod \
-              -e SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/pinpal \
-              -e SPRING_DATASOURCE_USERNAME=postgres \
-              -e SPRING_DATASOURCE_PASSWORD=postgres \
-              -e JWT_SECRET=your-secret-key \
-              -e KAKAO_CLIENT_ID=your-kakao-client-id \
-              -e KAKAO_CLIENT_SECRET=your-kakao-client-secret \
-              -e KAKAO_REDIRECT_URI=http://211.37.173.106:3000/auth/kakao/callback \
-              pinpal-backend:latest
+              -e SPRING_DATASOURCE_URL=${{ secrets.SPRING_DATASOURCE_URL }} \
+              -e SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }} \
+              -e SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }} \
+              -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
+              -e KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }} \
+              -e KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }} \
+              -e KAKAO_REDIRECT_URI=${{ secrets.KAKAO_REDIRECT_URI }} \
+              kangho1870/pinpal:latest
             
             # 컨테이너 상태 확인
             echo "컨테이너 상태 확인 중..."
             docker ps
             
-            # 컨테이너 로그 확인
-            echo "컨테이너 로그 확인 중..."
-            docker logs pinpal-backend --tail 20
+            # 컨테이너가 실행되지 않은 경우 로그 확인
+            if ! docker ps | grep -q pinpal-backend; then
+              echo "❌ 컨테이너가 실행되지 않았습니다. 로그를 확인합니다..."
+              docker logs pinpal-backend --tail 50 2>/dev/null || echo "로그를 읽을 수 없음"
+              
+              # 컨테이너 재시작 시도
+              echo "🔄 컨테이너 재시작을 시도합니다..."
+              docker start pinpal-backend || echo "재시작 실패"
+              sleep 10
+              docker logs pinpal-backend --tail 30 2>/dev/null || echo "재시작 후 로그를 읽을 수 없음"
+            else
+              echo "✅ 컨테이너가 정상적으로 실행 중입니다."
+              # 컨테이너 로그 확인
+              echo "컨테이너 로그 확인 중..."
+              docker logs pinpal-backend --tail 20
+            fi
             
             # 상세한 문제 진단
             echo "=== 상세 진단 시작 ==="
@@ -165,6 +178,12 @@ jobs:
             
             echo "6. 최근 Docker 로그:"
             docker logs pinpal-backend --tail 50 2>/dev/null || echo "로그를 읽을 수 없음"
+            
+            echo "7. 데이터베이스 연결 테스트:"
+            PGPASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }} psql -U ${{ secrets.SPRING_DATASOURCE_USERNAME }} -h localhost -p 5432 -d pinpal -c "SELECT version();" 2>/dev/null || echo "데이터베이스 연결 실패"
+            
+            echo "8. 애플리케이션 헬스 체크:"
+            curl -f http://localhost:8000/actuator/health 2>/dev/null || echo "애플리케이션 헬스 체크 실패"
 
       - name: Get Public IP
         id: ip
