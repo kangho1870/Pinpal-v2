@@ -1,5 +1,7 @@
 package com.kh.pinpal2.game.repository;
 
+import com.kh.pinpal2.game.entity.Game;
+import com.kh.pinpal2.game.entity.GameType;
 import com.kh.pinpal2.game.entity.QGame;
 import com.kh.pinpal2.scoreboard.entity.QScoreboard;
 import com.querydsl.core.BooleanBuilder;
@@ -9,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 
 @Repository
@@ -61,5 +65,33 @@ public class GameCustomRepositoryImpl implements GameCustomRepository {
                 .from(game)
                 .where(builder)
                 .fetchOne();
+    }
+
+    @Override
+    public List<Game> findAllByClubIdAndFilter(Long clubId, LocalDate startDate, LocalDate endDate, String type) {
+        QGame game = QGame.game;
+
+        BooleanBuilder builder = new BooleanBuilder();
+        builder.and(game.club.id.eq(clubId));
+
+        // 날짜 범위 필터링
+        if (startDate != null) {
+            builder.and(game.date.goe(startDate));
+        }
+        if (endDate != null) {
+            builder.and(game.date.loe(endDate));
+        }
+
+        // 게임 타입 필터링
+        if (type != null && !type.isEmpty()) {
+            builder.and(game.type.eq(GameType.valueOf(type)));
+        }
+
+        return queryFactory
+                .select(game)
+                .from(game)
+                .where(builder)
+                .orderBy(game.date.desc(), game.time.desc())
+                .fetch();
     }
 }

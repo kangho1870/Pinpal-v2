@@ -106,53 +106,42 @@ jobs:
           host: ${{ secrets.CAFE24_HOST }}
           username: ${{ secrets.CAFE24_USERNAME }}
           password: ${{ secrets.CAFE24_PASSWORD }}
-          port: ${{ secrets.CAFE24_PORT }}
-          timeout: 60s
-          command_timeout: 60s
+          port: 22
           script: |
-            # Docker 이미지 pull
-            echo "Docker 이미지 pull 중..."
-            docker pull "${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}"
+            # GitHub Actions에서 사용하는 실제 IP 확인
+            echo "=== GitHub Actions IP 확인 ==="
+            echo "현재 연결된 IP: $(curl -s ifconfig.me)"
+            echo "현재 연결된 IP (다른 방법): $(curl -s ipinfo.io/ip)"
+            echo "현재 연결된 IP (또 다른 방법): $(curl -s icanhazip.com)"
+            echo ""
             
-            # 기존 컨테이너 확인 및 정리
-            echo "기존 컨테이너 정리 중..."
-            if docker ps -a | grep -q pinpal-backend; then
-              echo "기존 컨테이너 중지 및 삭제..."
-              docker stop pinpal-backend || true
-              docker rm pinpal-backend || true
-            else
-              echo "기존 컨테이너가 없습니다."
-            fi
+            # 기존 배포 스크립트
+            echo "배포 시작..."
             
-            # 환경 변수 설정
-            echo "환경 변수 설정 중..."
-            export SPRING_PROFILES_ACTIVE="prod"
-            export SPRING_DATASOURCE_URL="${{ secrets.DB_URL }}"
-            export SPRING_DATASOURCE_USERNAME="${{ secrets.DB_USERNAME }}"
-            export SPRING_DATASOURCE_PASSWORD="${{ secrets.DB_PASSWORD }}"
-            export JWT_SECRET="${{ secrets.JWT_SECRET }}"
-            export KAKAO_CLIENT_ID="${{ secrets.KAKAO_CLIENT_ID }}"
-            export KAKAO_CLIENT_SECRET="${{ secrets.KAKAO_CLIENT_SECRET }}"
+            # 기존 컨테이너 중지 및 제거
+            docker stop pinpal-backend || true
+            docker rm pinpal-backend || true
             
-            # 새 컨테이너 실행 (호스트 네트워크 모드)
-            echo "새 컨테이너 실행 중 (호스트 네트워크 모드)..."
+            # 새 이미지로 컨테이너 실행
             docker run -d \
               --name pinpal-backend \
-              --network host \
               --restart unless-stopped \
-              -e "SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}" \
-              -e "SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}" \
-              -e "SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}" \
-              -e "SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}" \
-              -e "JWT_SECRET=${JWT_SECRET}" \
-              -e "KAKAO_CLIENT_ID=${KAKAO_CLIENT_ID}" \
-              -e "KAKAO_CLIENT_SECRET=${KAKAO_CLIENT_SECRET}" \
-              "${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}"
+              -p 8000:8000 \
+              -e SPRING_PROFILES_ACTIVE=prod \
+              -e SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/pinpal \
+              -e SPRING_DATASOURCE_USERNAME=postgres \
+              -e SPRING_DATASOURCE_PASSWORD=postgres \
+              -e JWT_SECRET=your-secret-key \
+              -e KAKAO_CLIENT_ID=your-kakao-client-id \
+              -e KAKAO_CLIENT_SECRET=your-kakao-client-secret \
+              -e KAKAO_REDIRECT_URI=http://211.37.173.106:3000/auth/kakao/callback \
+              pinpal-backend:latest
             
             # 컨테이너 상태 확인
             echo "컨테이너 상태 확인 중..."
-            sleep 5
             docker ps
+            
+            # 컨테이너 로그 확인
             echo "컨테이너 로그 확인 중..."
             docker logs pinpal-backend --tail 20
             
@@ -176,6 +165,19 @@ jobs:
             
             echo "6. 최근 Docker 로그:"
             docker logs pinpal-backend --tail 50 2>/dev/null || echo "로그를 읽을 수 없음"
+
+      - name: Get Public IP
+        id: ip
+        uses: haythem/public-ip@v1.3
+
+      - name: Print Public IP
+        run: |
+          echo "GitHub Actions에서 사용하는 공인 IP: ${{ steps.ip.outputs.ipv4 }}"
+          echo "이 IP를 Cafe24 방화벽에 추가해야 합니다!"
+          echo "방화벽에서 '허용 IP 추가' 버튼을 클릭하고 다음을 입력하세요:"
+          echo "프로토콜: tcp"
+          echo "포트: 22"
+          echo "접근허용 IP: ${{ steps.ip.outputs.ipv4 }}"
 
       - name: Deploy frontend to Cafe24
         uses: appleboy/scp-action@v0.1.7

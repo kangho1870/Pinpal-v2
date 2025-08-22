@@ -1,12 +1,10 @@
 package com.kh.pinpal2.game.service;
 
 import com.kh.pinpal2.base.dto.PageResponse;
-import com.kh.pinpal2.game.dto.GameCreateDto;
-import com.kh.pinpal2.game.dto.GameRespDto;
-import com.kh.pinpal2.game.dto.GameUpdateDto;
-import com.kh.pinpal2.game.dto.GameParticipantDto;
+import com.kh.pinpal2.game.dto.*;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
 public interface GameService {
@@ -23,4 +21,6 @@ public interface GameService {
     GameRespDto joinCancelGame(Long gameId);
 
     List<GameParticipantDto> getGameParticipants(Long gameId);
+
+    List<GameScoreboardsRespDto> getScoreboardByClubId(Long clubId, LocalDate startDate, LocalDate endDate, String type);
 }

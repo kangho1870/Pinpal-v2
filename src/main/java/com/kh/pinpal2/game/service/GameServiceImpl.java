@@ -5,19 +5,18 @@ import com.kh.pinpal2.base.exception.PermissionDeniedException;
 import com.kh.pinpal2.base.exception.club.ClubNotFoundException;
 import com.kh.pinpal2.base.exception.game.GameNotFoundException;
 import com.kh.pinpal2.base.exception.game.UserAlreadyJoinedGameException;
+import com.kh.pinpal2.base.exception.user.UserNotFoundException;
 import com.kh.pinpal2.base.mapper.PageResponseMapper;
 import com.kh.pinpal2.base.util.SecurityUtil;
 import com.kh.pinpal2.ceremony.repository.CeremonyRepository;
 import com.kh.pinpal2.ceremony_user.repository.CeremonyUserRepository;
 import com.kh.pinpal2.club.entity.Club;
 import com.kh.pinpal2.club.repository.ClubRepository;
-import com.kh.pinpal2.game.dto.GameCreateDto;
-import com.kh.pinpal2.game.dto.GameRespDto;
-import com.kh.pinpal2.game.dto.GameUpdateDto;
-import com.kh.pinpal2.game.dto.GameParticipantDto;
+import com.kh.pinpal2.game.dto.*;
 import com.kh.pinpal2.game.entity.Game;
 import com.kh.pinpal2.game.mapper.GameMapper;
 import com.kh.pinpal2.game.repository.GameRepository;
+import com.kh.pinpal2.scoreboard.dto.ScoreboardRespDto;
 import com.kh.pinpal2.scoreboard.entity.Scoreboard;
 import com.kh.pinpal2.scoreboard.repository.ScoreboardRepository;
 import com.kh.pinpal2.user.entity.User;
@@ -31,6 +30,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -218,5 +219,35 @@ public class GameServiceImpl implements GameService {
                         scoreboard.getUser().getRole().name()
                 ))
                 .toList();
+    }
+
+    @Override
+    public List<GameScoreboardsRespDto> getScoreboardByClubId(Long clubId, LocalDate startDate, LocalDate endDate, String type) {
+        clubRepository.findById(clubId).orElseThrow(ClubNotFoundException::new);
+
+        List<GameRespDto> games = gameRepository.findAllByClubIdAndFilter(clubId, startDate, endDate, type).stream()
+                .map(game -> gameMapper.toDto(game, 0))
+                .toList();
+
+        List<GameScoreboardsRespDto> result = new ArrayList<>();
+
+        games.forEach(game -> {
+            result.add(new GameScoreboardsRespDto(
+                    game, scoreboardRepository.findAllByGameId(game.id()).stream()
+                    .map(scoreboard -> new ScoreboardRespDto(
+                            scoreboard.getUser().getId(),
+                            scoreboard.getScore1(),
+                            scoreboard.getScore2(),
+                            scoreboard.getScore3(),
+                            scoreboard.getScore4(),
+                            scoreboard.getGrade(),
+                            userClubRepository.findByClubIdAndUserId(clubId, scoreboard.getUser().getId()).orElseThrow(
+                                    UserNotFoundException::new
+                            ).getAvg()
+                    )).toList()
+            ));
+        });
+
+        return result;
     }
 }

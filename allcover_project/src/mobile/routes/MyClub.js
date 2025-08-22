@@ -5,7 +5,7 @@ import { useCookies } from "react-cookie";
 import { ACCESS_TOKEN, CLUB_DETAIL_PATH, ROOT_PATH, SCOREBOARD_PATH } from "../../constants";
 import { useNavigate, useParams } from "react-router-dom";
 import { onClickBackBtn } from "../../hooks";
-import { addGameRequest, clubJoinRequest, clubMemberAvgUpdateRequest, clubMemberRoleUpdateRequest, getCeremoniesRequest, getClubInfoRequest, getClubMembersRequest, getGameListRequest, getMemberListRequest, gameJoinRequest, gameJoinCancelRequest, getGameParticipantsRequest } from "../../apis";
+import { addGameRequest, clubJoinRequest, clubMemberAvgUpdateRequest, clubMemberRoleUpdateRequest, getCeremoniesRequest, getClubInfoRequest, getClubMembersRequest, getGameListRequest, getMemberListRequest, gameJoinRequest, gameJoinCancelRequest, getGameParticipantsRequest, getScoreboardMembers, getClubScoreboardsRequest } from "../../apis";
 import Loading from "../components/loading/Loading";
 import useClubStore from "../../stores/useClubStore";
 import { tr } from "framer-motion/client";
@@ -37,11 +37,6 @@ function MyClub() {
     };
     const isMounted = useRef(true);
 
-    // 디버깅 로그
-    // console.log('MyClub - signInUser:', signInUser);
-    // console.log('MyClub - roles:', roles);
-    // console.log('MyClub - clubId:', clubId);
-
     useEffect(() => {
         isMounted.current = true;
         if(cookies[ACCESS_TOKEN] && clubId) {
@@ -51,7 +46,6 @@ function MyClub() {
     }, [cookies, clubId, signInUser]);
 
     const getMembersResponse = (responseBody) => {
-        console.log('🔍 멤버 목록 응답 받음:', responseBody);
         
         if (!responseBody) {
             alert('서버에 문제가 있습니다.');
@@ -78,7 +72,6 @@ function MyClub() {
             
             if (isMounted.current) setMembers(transformedMembers);
             if (isMounted.current) setLoading(false);
-            console.log('🔍 멤버 목록 설정 완료:', transformedMembers);
             return;
         }
         
@@ -86,7 +79,6 @@ function MyClub() {
         if (responseBody.code === 'SU' && responseBody.members) {
             if (isMounted.current) setMembers(responseBody.members);
             if (isMounted.current) setLoading(false);
-            console.log('멤버 목록 설정 완료:', responseBody.members);
         } else if (responseBody.code === 'ERROR') {
             // 새로운 ErrorResponse 구조
             alert(responseBody.message || '멤버 목록을 불러오는데 실패했습니다.');
@@ -96,12 +88,10 @@ function MyClub() {
                 responseBody.code === 'AF' ? '잘못된 접근입니다.' :
                 responseBody.code === 'DBE' ? '서버에 문제가 있습니다.' : 
                 '멤버 목록을 불러오는데 실패했습니다.';
-            console.log('멤버 목록 응답:', responseBody);
             alert(message);
         }
     }
     const getMembersRequest = () => {
-        console.log('🔍 멤버 목록 요청 시작:', { clubId, token });
         setLoading(true);
         getClubMembersRequest(clubId, token).then(getMembersResponse)
     }
@@ -109,8 +99,7 @@ function MyClub() {
         setAddGameModal(!addGameModal);
     }
     const getCeremonysListResponse = (responseBody) => {
-        console.log('🔍 시상 목록 응답:', responseBody);
-        
+
         if (!responseBody) {
             alert('서버에 문제가 있습니다.');
             return;
@@ -125,7 +114,7 @@ function MyClub() {
             }));
             
             if (isMounted.current) setCeremonys(ceremoniesArray);
-            console.log('🔍 시상 목록 설정 완료:', ceremoniesArray);
+
             return;
         }
         
@@ -142,6 +131,7 @@ function MyClub() {
     }
     const getCeremonysList = () => {
         console.log('🔍 시상 목록 요청 시작:', { clubId, token });
+        // 현재는 간단한 시상 목록만 가져오므로 필터링은 프론트엔드에서 처리
         getCeremoniesRequest(clubId, token).then(getCeremonysListResponse);
     }
 
@@ -149,14 +139,12 @@ function MyClub() {
     const checkGameParticipation = async (gameId) => {
         try {
             const response = await getGameParticipantsRequest(gameId, token);
-            console.log('🔍 게임 참여자 조회 응답:', response);
-            
+
             if (response && Array.isArray(response)) {
                 // 현재 사용자가 참여자 목록에 있는지 확인
                 const isParticipating = response.some(participant => 
                     String(participant.userId || participant.id || participant.memberId) === String(memberId)
                 );
-                console.log('🔍 게임 참여 상태 확인:', { gameId, memberId, isParticipating, participants: response });
                 return isParticipating;
             }
             return false;
@@ -180,13 +168,11 @@ function MyClub() {
                 console.error(`게임 ${game.id} 참여 상태 확인 실패:`, error);
             }
         }
-        
-        console.log('🔍 참여한 게임 목록:', Array.from(participatedGameIds));
+
         setParticipatedGames(participatedGameIds);
     };
 
     const getGamesResponse = (responseBody) => {
-        console.log('🔍 게임 목록 응답:', responseBody);
         
         if (!responseBody) {
             alert('서버에 문제가 있습니다.');
@@ -195,7 +181,6 @@ function MyClub() {
         
         // 백엔드에서 PageResponse<GameRespDto>를 반환하는 경우
         if (responseBody.content !== undefined) {
-            console.log('🔍 페이지네이션 응답 처리');
             const { content: games } = responseBody;
             
             if (games && Array.isArray(games)) {
@@ -215,16 +200,13 @@ function MyClub() {
                     clubId: clubId
                 }));
                 
-                console.log('🔍 게임 변환 전:', games);
-                console.log('🔍 게임 변환 후:', transformedGames);
-                
                 if (isMounted.current) setGames(transformedGames);
                 
                 // 각 게임의 참여 상태 확인
                 checkAllGamesParticipation(transformedGames);
                 
                 if (isMounted.current) setLoading(false);
-                console.log('🔍 게임 목록 설정 완료:', transformedGames);
+
                 return;
             }
         }
@@ -233,7 +215,7 @@ function MyClub() {
         if (Array.isArray(responseBody)) {
             if (isMounted.current) setGames(responseBody);
             if (isMounted.current) setLoading(false);
-            console.log('🔍 게임 목록 설정 완료:', responseBody);
+
             return;
         }
         
@@ -253,7 +235,6 @@ function MyClub() {
         getGameListRequest(clubId, token).then(getGamesResponse);
     }
     const getClubInfoResponse = (responseBody) => {
-        console.log('🔍 클럽 정보 응답:', responseBody);
         
         if (!responseBody) {
             alert('서버에 문제가 있습니다.');
@@ -266,7 +247,7 @@ function MyClub() {
                 clubName: responseBody.name, 
                 clubDescription: responseBody.description 
             });
-            console.log('🔍 클럽 정보 설정 완료:', responseBody);
+
             return;
         }
         
@@ -285,7 +266,7 @@ function MyClub() {
                 responseBody.code === 'AF' ? '잘못된 접근입니다.' :
                 responseBody.code === 'DBE' ? '서버에 문제가 있습니다.' : 
                 '클럽 정보를 불러오는데 실패했습니다.';
-            console.log('클럽 정보 응답:', responseBody);
+
             alert(message);
         }
     }
@@ -429,12 +410,11 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
         }
         
         const targetPath = `${SCOREBOARD_PATH}?gameId=${gameId}&clubId=${String(clubId)}`;
-        console.log('이동할 경로:', targetPath);
+
         navigator(targetPath);
     }
 
     const formatShortDate = (date) => {
-        console.log('🔍 formatShortDate 호출됨:', { date, type: typeof date });
         
         // 날짜 값이 없거나 잘못된 경우 처리
         if (!date) {
@@ -445,8 +425,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
         try {
             // 한국 시간대로 처리
             const dateObj = new Date(date + 'T00:00:00+09:00');
-            console.log('🔍 dateObj 생성됨:', dateObj);
-            
+
             // 유효하지 않은 날짜인 경우
             if (isNaN(dateObj.getTime())) {
                 console.log('🔍 날짜 오류 - 유효하지 않은 날짜');
@@ -459,7 +438,6 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                 weekday: 'short'
             }).format(dateObj);
             
-            console.log('🔍 포맷된 날짜:', formattedDate);
             return formattedDate.replace(/\./g, ' /').replace('/(', ' (');
         } catch (error) {
             console.error('날짜 포맷 오류:', error, '입력값:', date);
@@ -479,7 +457,6 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
         try {
             // 한국 시간대로 처리
             const dateTime = new Date(`${date}T${time}+09:00`);
-            console.log('🔍 dateTime 생성됨:', dateTime);
             
             // 유효하지 않은 날짜인 경우
             if (isNaN(dateTime.getTime())) {
@@ -496,7 +473,6 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                 hour12: true
             }).format(dateTime);
         
-            console.log('🔍 포맷된 일시:', formattedDate);
             return formattedDate.replace(/\./g, '/').replace('/(', ' (');
         } catch (error) {
             console.error('일시 포맷 오류:', error, '입력값:', { date, time });
@@ -505,7 +481,6 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
     };
 
     const gameJoinResponse = (responseBody) => {
-        console.log('게임 참여 응답:', responseBody);
         
         if (!responseBody) {
             alert('서버에 문제가 있습니다.');
@@ -534,7 +509,6 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
     }
 
     const gameJoinCancelResponse = (responseBody) => {
-        console.log('게임 참여 취소 응답:', responseBody);
         
         if (!responseBody) {
             alert('서버에 문제가 있습니다.');
@@ -570,14 +544,12 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
     const checkGameParticipation = async (gameId) => {
         try {
             const response = await getGameParticipantsRequest(gameId, token);
-            console.log('🔍 게임 참여자 조회 응답:', response);
             
             if (response && Array.isArray(response)) {
                 // 현재 사용자가 참여자 목록에 있는지 확인
                 const isParticipating = response.some(participant => 
                     String(participant.userId || participant.id || participant.memberId) === String(memberId)
                 );
-                console.log('🔍 게임 참여 상태 확인:', { gameId, memberId, isParticipating, participants: response });
                 return isParticipating;
             }
             return false;
@@ -598,9 +570,6 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
             gameJoinRequest(gameId, token)
                 .then(gameJoinResponse)
                 .catch((error) => {
-                    console.error('게임 참여 에러:', error);
-                    console.error('에러 응답:', error.response?.data);
-                    
                     const errorMessage = error.response?.data?.details || error.response?.data?.message || error.message;
                     if (errorMessage.includes('이미 참여한 게임입니다')) {
                         alert('이미 참여한 게임입니다.');
@@ -617,8 +586,6 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
             gameJoinCancelRequest(gameId, token)
                 .then(gameJoinCancelResponse)
                 .catch((error) => {
-                    console.error('게임 참여 취소 에러:', error);
-                    console.error('에러 응답:', error.response?.data);
                     alert('게임 참여 취소에 실패했습니다: ' + (error.response?.data?.message || error.message));
                     setLoading(false);
                 });
@@ -658,29 +625,11 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
             </div>
             <div className={`${styles.clubSchedule}`}>
                 {(() => {
-                    // 디버깅을 위한 로그 추가
-                    console.log('🔍 게임 데이터 확인:', games);
-                    console.log('🔍 게임 날짜 필드 확인:', games.map(game => ({
-                        id: game.id,
-                        gameName: game.gameName,
-                        gameDate: game.gameDate,
-                        gameTime: game.gameTime,
-                        date: game.date,
-                        time: game.time
-                    })));
-
                     // 현재 시간보다 지나간 게임들을 필터링
                     const now = new Date();
                     const futureGames = games.filter(game => {
                         const gameDateTime = new Date(`${game.gameDate}T${game.gameTime}+09:00`);
                         return gameDateTime > now; // 현재 시간보다 미래인 게임만 포함
-                    });
-
-                    console.log('🔍 필터링된 미래 게임:', futureGames);
-                    console.log('🔍 게임 타입별 분류:', {
-                        정기모임: futureGames.filter(game => game.gameType === "정기모임"),
-                        정기번개: futureGames.filter(game => game.gameType === "정기번개"),
-                        기타: futureGames.filter(game => game.gameType === "기타")
                     });
 
                     if (futureGames.length === 0) {
@@ -717,23 +666,11 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                                     const backendParticipating = game.members.some((member) => {
                                                                         const memberIdToCheck = member.memberId || member.id || member.userId;
                                                                         const result = String(memberIdToCheck) === String(memberId);
-                                                                        console.log('🔍 정기모임 멤버 참여 확인:', {
-                                                                            member,
-                                                                            memberIdToCheck,
-                                                                            currentMemberId: memberId,
-                                                                            result
-                                                                        });
                                                                         return result;
                                                                     });
                                                                     const localParticipating = participatedGames.has(game.id);
                                                                     const isParticipating = backendParticipating || localParticipating;
-                                                                    console.log('🔍 정기모임 참여 상태 확인:', {
-                                                                        gameId: game.id,
-                                                                        gameName: game.gameName,
-                                                                        memberId,
-                                                                        gameMembers: game.members,
-                                                                        isParticipating
-                                                                    });
+
                                                                     return isParticipating ? (
                                                                         <button className={styles.scheduleCancleBtn} onClick={() => handleGameJoin(game.id, false)}>취소</button>
                                                                     ) : (
@@ -818,23 +755,11 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                                     const backendParticipating = game.members.some((member) => {
                                                                         const memberIdToCheck = member.memberId || member.id || member.userId;
                                                                         const result = String(memberIdToCheck) === String(memberId);
-                                                                        console.log('🔍 정기번개 멤버 참여 확인:', {
-                                                                            member,
-                                                                            memberIdToCheck,
-                                                                            currentMemberId: memberId,
-                                                                            result
-                                                                        });
+
                                                                         return result;
                                                                     });
                                                                     const localParticipating = participatedGames.has(game.id);
                                                                     const isParticipating = backendParticipating || localParticipating;
-                                                                    console.log('🔍 정기번개 참여 상태 확인:', {
-                                                                        gameId: game.id,
-                                                                        gameName: game.gameName,
-                                                                        memberId,
-                                                                        gameMembers: game.members,
-                                                                        isParticipating
-                                                                    });
                                                                     return isParticipating ? (
                                                                         <button className={styles.scheduleCancleBtn} onClick={() => handleGameJoin(game.id, false)}>취소</button>
                                                                     ) : (
@@ -1456,14 +1381,6 @@ function ClubSetting({ pageLoad, clubId }) {
         return acc;
     }, {});
 
-    // 디버깅 로그 추가
-    console.log('🔍 멤버 데이터 확인:', {
-        members: members,
-        updatedMembers: updatedMembers,
-        groupedMembers: groupedMembers,
-        groupedMembersKeys: Object.keys(groupedMembers)
-    });
-
     const memberAvgUpdate = (memberId, newAvg) => {
         setUpdatedMembers(prev =>
             prev.map(member =>
@@ -1552,17 +1469,7 @@ function ClubSetting({ pageLoad, clubId }) {
                                         </div>
                                     ) : (
                                         Object.keys(groupedMembers).map((grade) => {
-                                        // 디버깅 로그 추가
-                                        console.log('🔍 grade 조건 확인:', {
-                                            grade,
-                                            gradeType: typeof grade,
-                                            range,
-                                            condition1: range === "0-2" && grade != 0 && grade < 3,
-                                            condition2: range === "3-4" && grade > 2 && grade < 5,
-                                            condition3: range === "5-6" && grade > 4 && grade < 7,
-                                            condition4: range === "new" && grade == 0
-                                        });
-                                        
+
                                         // 해당 범위에 해당하는 grade만 출력
                                         const gradeNum = parseInt(grade);
                                         if (
@@ -1613,14 +1520,6 @@ function ClubSetting({ pageLoad, clubId }) {
                                                                     <option value={5}>5군</option>
                                                                     <option value={6}>6군</option>
                                                                 </select>
-                                                                {/* <input
-                                                                    type="number"
-                                                                    placeholder="군"
-                                                                    className={styles.avgInput}
-                                                                    onChange={(e) =>
-                                                                        memberGradeUpdate(member.memberId, e.target.value)
-                                                                    }
-                                                                /> */}
                                                             </div>
                                                         </div>
                                                     ))}
@@ -1850,10 +1749,10 @@ function ClubRanking({ setLoading }) {
     const [endDay, setEndDay] = useState("");
     const [cookies] = useCookies();
     const [gameType, setGameType] = useState(0);
+    const { clubId } = useParams(); // URL 파라미터에서 clubId 가져오기
 
     const token = cookies[ACCESS_TOKEN];
-    const clubId = signInUser?.clubId || 0;
-    const memberId = signInUser?.memberId
+    const memberId = signInUser?.id;
 
     const moreInfoHandler = (index) => {
         setOpenMore((prev) => {
@@ -1945,9 +1844,29 @@ function ClubRanking({ setLoading }) {
         
         // 새로운 Map 구조 응답 처리
         if (typeof responseBody === 'object' && !Array.isArray(responseBody)) {
-            // 이 함수는 랭킹 계산용이므로 새로운 ceremony 구조와는 맞지 않음
-            // 현재는 빈 배열로 처리
-            calculateMemberAverages([]);
+            // Map<Long, List<CeremonyRespDto>> 구조 처리
+            console.log('새로운 ceremony 구조:', responseBody);
+            
+            // 백엔드의 새로운 scoreboard API 사용
+            const gameTypeParam = gameType === 0 ? null : 
+                gameType === 1 ? '정기모임' : 
+                gameType === 2 ? '정기번개' : 
+                gameType === 3 ? '기타' : null;
+            
+            getClubScoreboardsRequest(clubId, startDay, endDay, gameTypeParam, token).then((scoreboardResponse) => {
+                if (scoreboardResponse && Array.isArray(scoreboardResponse)) {
+                    console.log('Scoreboard 데이터:', scoreboardResponse);
+                    
+                    // 백엔드에서 받은 scoreboard 데이터로 랭킹 계산
+                    calculateMemberAveragesFromScoreboards(scoreboardResponse);
+                } else {
+                    console.log('Scoreboard 데이터가 없습니다.');
+                    calculateMemberAverages([]);
+                }
+            }).catch((error) => {
+                console.error('Scoreboard 데이터 요청 실패:', error);
+                calculateMemberAverages([]);
+            });
         } else if (Array.isArray(responseBody)) {
             // 기존 배열 구조인 경우
             calculateMemberAverages(responseBody);
@@ -1961,10 +1880,91 @@ function ClubRanking({ setLoading }) {
         }
     }
 
+    const calculateMemberAveragesFromScoreboards = (gameScoreboards) => {
+        const memberScores = {};
+
+        // GameScoreboardsRespDto 구조: [{ game: GameRespDto, scoreboards: [ScoreboardRespDto] }]
+        gameScoreboards.forEach((gameScoreboard) => {
+            const game = gameScoreboard.game;
+            const scoreboards = gameScoreboard.scoreboards;
+
+            scoreboards.forEach((scoreboard) => {
+                const memberId = scoreboard.memberId;
+                
+                // ScoreboardRespDto에서 점수 정보 추출
+                const gameScores = [scoreboard.score1, scoreboard.score2, scoreboard.score3, scoreboard.score4].filter(score => score !== null && score > 0);
+                const game1Scores = [scoreboard.score1].filter(score => score !== null && score > 0);
+                const game2Scores = [scoreboard.score2].filter(score => score !== null && score > 0);
+                const game3Scores = [scoreboard.score3].filter(score => score !== null && score > 0);
+                const game4Scores = [scoreboard.score4].filter(score => score !== null && score > 0);
+
+                // 평균 계산
+                const averageScore = gameScores.length > 0 ? gameScores.reduce((acc, score) => acc + score, 0) / gameScores.length : 0;
+                const average1Score = game1Scores.length > 0 ? game1Scores.reduce((acc, score) => acc + score, 0) / game1Scores.length : 0;
+                const average2Score = game2Scores.length > 0 ? game2Scores.reduce((acc, score) => acc + score, 0) / game2Scores.length : 0;
+                const average3Score = game3Scores.length > 0 ? game3Scores.reduce((acc, score) => acc + score, 0) / game3Scores.length : 0;
+                const average4Score = game4Scores.length > 0 ? game4Scores.reduce((acc, score) => acc + score, 0) / game4Scores.length : 0;
+
+                // 멤버 ID를 키로 사용하여 점수 저장
+                const memberKey = String(memberId);
+
+                // 점수를 합산하여 저장
+                if (memberScores[memberKey]) {
+                    memberScores[memberKey].totalScore += averageScore;
+                    memberScores[memberKey].count += 1;
+                    memberScores[memberKey].total1Score += average1Score;
+                    memberScores[memberKey].total2Score += average2Score;
+                    memberScores[memberKey].total3Score += average3Score;
+                    memberScores[memberKey].total4Score += average4Score;
+                } else {
+                    memberScores[memberKey] = { 
+                        totalScore: averageScore, 
+                        count: 1, 
+                        total1Score: average1Score, 
+                        total2Score: average2Score, 
+                        total3Score: average3Score, 
+                        total4Score: average4Score
+                    };
+                }
+            });
+        });
+
+        // 각 멤버의 평균 점수 계산
+        const membersWithAverages = members.map((member) => {
+            const memberScore = memberScores[String(member.memberId)] || { 
+                totalScore: 0, count: 1, total1Score: 0, total2Score: 0, total3Score: 0, total4Score: 0 
+            };
+            
+            const avgScore = memberScore.totalScore / memberScore.count;
+            const average1Score = memberScore.total1Score / memberScore.count;
+            const average2Score = memberScore.total2Score / memberScore.count;
+            const average3Score = memberScore.total3Score / memberScore.count;
+            const average4Score = memberScore.total4Score / memberScore.count;
+            
+            return { 
+                ...member, 
+                avgScore, 
+                average1Score, 
+                average2Score, 
+                average3Score, 
+                average4Score 
+            };
+        });
+
+        // 평균 점수 기준으로 멤버 정렬
+        const sorted = membersWithAverages.sort((a, b) => b.avgScore - a.avgScore);
+        setSortedMembers(sorted);
+        setLoading(false);
+    };
+
     const getCeremonysList = () => {
-        console.log('🔍 랭킹 시상 목록 요청 시작:', { clubId, token, startDate, endDate, gameType });
+        console.log('🔍 시상 목록 요청 시작:', { clubId, token });
         // 현재는 간단한 시상 목록만 가져오므로 필터링은 프론트엔드에서 처리
         getCeremoniesRequest(clubId, token).then(getCeremonysListResponse);
+    }
+
+    const getGamesRequest = (clubId, token) => {
+        return getGameListRequest(clubId, token);
     }
 
     useEffect(() => {
@@ -2043,11 +2043,11 @@ function ClubRanking({ setLoading }) {
                                             <p>{member.memberName}</p>
                                         </div>
                                     </td>
-                                    <td className={`${styles.rankScoreTd} `}>{member.average1Score}</td>
-                                    <td className={`${styles.rankScoreTd} `}>{member.average2Score}</td>
-                                    <td className={`${styles.rankScoreTd} `}>{member.average3Score}</td>
-                                    <td className={`${styles.rankScoreTd} `}>{member.average4Score}</td>
-                                    <td className={styles.rankScoreTd}>{member.avgScore == 0 ? "0" : member.avgScore.toFixed(2)}</td>
+                                    <td className={`${styles.rankScoreTd} `}>{member.average1Score ? (Number.isInteger(member.average1Score) ? member.average1Score : member.average1Score.toFixed(1)) : "0"}</td>
+                                    <td className={`${styles.rankScoreTd} `}>{member.average2Score ? (Number.isInteger(member.average2Score) ? member.average2Score : member.average2Score.toFixed(1)) : "0"}</td>
+                                    <td className={`${styles.rankScoreTd} `}>{member.average3Score ? (Number.isInteger(member.average3Score) ? member.average3Score : member.average3Score.toFixed(1)) : "0"}</td>
+                                    <td className={`${styles.rankScoreTd} `}>{member.average4Score ? (Number.isInteger(member.average4Score) ? member.average4Score : member.average4Score.toFixed(1)) : "0"}</td>
+                                    <td className={styles.rankScoreTd}>{member.avgScore == 0 ? "0" : (Number.isInteger(member.avgScore) ? member.avgScore : member.avgScore.toFixed(1))}</td>
                                     <td className={styles.rankScoreTd} onClick={() => moreInfoHandler(member.memberId)}>
                                         {!openMore.includes(member.memberId) ? (
                                             <i class="fa-solid fa-chevron-down"></i>

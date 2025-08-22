@@ -1,10 +1,7 @@
 package com.kh.pinpal2.game.controller;
 
 import com.kh.pinpal2.base.dto.PageResponse;
-import com.kh.pinpal2.game.dto.GameCreateDto;
-import com.kh.pinpal2.game.dto.GameRespDto;
-import com.kh.pinpal2.game.dto.GameUpdateDto;
-import com.kh.pinpal2.game.dto.GameParticipantDto;
+import com.kh.pinpal2.game.dto.*;
 import com.kh.pinpal2.game.service.GameService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -12,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -45,6 +43,12 @@ public class GameController {
     public ResponseEntity<Void> deleteGame(@RequestParam Long gameId) {
         gameService.deleteGame(gameId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    @GetMapping("/{clubId}/scoreboards")
+    public ResponseEntity<?> getScoreboardByGameId(@PathVariable Long clubId, LocalDate startDate, LocalDate endDate, String type) {
+        List<GameScoreboardsRespDto> response = gameService.getScoreboardByClubId(clubId, startDate, endDate, type);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @PostMapping("/{gameId}/scoreboards")

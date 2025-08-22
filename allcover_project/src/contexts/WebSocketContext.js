@@ -22,12 +22,14 @@ export const WebSocketProvider = ({ children, gameId }) => {
     const [connectionAttempts, setConnectionAttempts] = useState(0);
     const maxConnectionAttempts = 3;
     
-    const wsUrl = gameId ? `ws://localhost:8000/scoreboard/${gameId}` : null;
+    // 서버 환경에 따른 WebSocket URL 설정
+    const ROOT_API_DOMAIN = process.env.REACT_APP_API_URL || 'http://211.37.173.106:8000';
+    const wsUrl = gameId ? `${ROOT_API_DOMAIN.replace('http', 'ws')}/scoreboard/${gameId}` : null;
 
     // 서버 상태 확인 함수 (메모이제이션)
     const checkServerStatus = useCallback(async () => {
         try {
-            await fetch('http://localhost:8000/actuator/health', {
+            await fetch(`${ROOT_API_DOMAIN}/actuator/health`, {
                 method: 'GET',
                 mode: 'no-cors'
             });
@@ -35,7 +37,7 @@ export const WebSocketProvider = ({ children, gameId }) => {
         } catch (error) {
             return false;
         }
-    }, []);
+    }, [ROOT_API_DOMAIN]);
 
     // WebSocket 연결 시도 (메모이제이션)
     const attemptConnection = useCallback(async () => {

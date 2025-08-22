@@ -2,7 +2,7 @@ import axios from "axios";
 import { HOME_PATH } from "../constants";
 
 // 서버 환경에 따른 API 도메인 설정
-const ROOT_API_DOMAIN = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const ROOT_API_DOMAIN = process.env.REACT_APP_API_URL || 'http://211.37.173.106:8000';
 
 // 현재 백엔드 API 구조에 맞춘 URL 정의
 const AUTH_API_URL = `${ROOT_API_DOMAIN}/api/auth`;
@@ -247,6 +247,27 @@ export const getCurrentUserRequest = async (accessToken) => {
 // ===== Scoreboard 관련 함수 (기존 구조 유지) =====
 export const getScoreboardMembers = async (gameId, clubId, accessToken) => {
     const responseBody = await axios.get(GET_SCOREBOARD_MEMBER_API_URL(gameId, clubId), bearerAuthorization(accessToken))
+        .then(responseDataHandler)
+        .catch(responseErrorHandler);
+    return responseBody;
+};
+
+// 특정 게임의 scoreboard 데이터 조회
+export const getScoreboardRequest = async (gameId, accessToken) => {
+    const responseBody = await axios.get(`${SCOREBOARD_API_URL}/game/${gameId}`, bearerAuthorization(accessToken))
+        .then(responseDataHandler)
+        .catch(responseErrorHandler);
+    return responseBody;
+};
+
+// 클럽의 scoreboard 데이터 조회 (날짜 범위, 게임 타입 필터링)
+export const getClubScoreboardsRequest = async (clubId, startDate, endDate, gameType, accessToken) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    if (gameType) params.append('type', gameType);
+    
+    const responseBody = await axios.get(`${GAME_API_URL}/${clubId}/scoreboards?${params.toString()}`, bearerAuthorization(accessToken))
         .then(responseDataHandler)
         .catch(responseErrorHandler);
     return responseBody;
