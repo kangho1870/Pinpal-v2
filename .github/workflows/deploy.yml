@@ -128,13 +128,13 @@ jobs:
               --restart unless-stopped \
               -p 8000:8000 \
               -e SPRING_PROFILES_ACTIVE=prod \
-              -e SPRING_DATASOURCE_URL=${{ secrets.SPRING_DATASOURCE_URL }} \
-              -e SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }} \
-              -e SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }} \
-              -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
-              -e KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }} \
-              -e KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }} \
-              -e KAKAO_REDIRECT_URI=${{ secrets.KAKAO_REDIRECT_URI }} \
+              -e SPRING_DATASOURCE_URL="${{ secrets.DB_URL }}" \
+              -e SPRING_DATASOURCE_USERNAME="${{ secrets.DB_USERNAME }}" \
+              -e SPRING_DATASOURCE_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+              -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+              -e KAKAO_CLIENT_ID="${{ secrets.KAKAO_CLIENT_ID }}" \
+              -e KAKAO_CLIENT_SECRET="${{ secrets.KAKAO_CLIENT_SECRET }}" \
+              -e KAKAO_REDIRECT_URI="http://211.37.173.106:3000/auth/kakao/callback" \
               kangho1870/pinpal:latest
             
             # 컨테이너 상태 확인
@@ -180,7 +180,7 @@ jobs:
             docker logs pinpal-backend --tail 50 2>/dev/null || echo "로그를 읽을 수 없음"
             
             echo "7. 데이터베이스 연결 테스트:"
-            PGPASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }} psql -U ${{ secrets.SPRING_DATASOURCE_USERNAME }} -h localhost -p 5432 -d pinpal -c "SELECT version();" 2>/dev/null || echo "데이터베이스 연결 실패"
+            PGPASSWORD="${{ secrets.DB_PASSWORD }}" psql -U "${{ secrets.DB_USERNAME }}" -h localhost -p 5432 -d pinpal -c "SELECT version();" 2>/dev/null || echo "데이터베이스 연결 실패"
             
             echo "8. 애플리케이션 헬스 체크:"
             curl -f http://localhost:8000/actuator/health 2>/dev/null || echo "애플리케이션 헬스 체크 실패"
