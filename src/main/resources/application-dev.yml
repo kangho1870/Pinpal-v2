@@ -35,6 +35,7 @@ spring:
       hibernate:
         format_sql: true
         default_schema: pinpal
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
 jwt:
   secret: ${JWT_SECRET:dev-jwt-secret-key-for-local-development}
