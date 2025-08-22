@@ -128,9 +128,9 @@ jobs:
               --restart unless-stopped \
               -p 8000:8000 \
               -e SPRING_PROFILES_ACTIVE=prod \
-              -e SPRING_DATASOURCE_URL="${{ secrets.DB_URL }}" \
-              -e SPRING_DATASOURCE_USERNAME="${{ secrets.DB_USERNAME }}" \
-              -e SPRING_DATASOURCE_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+              -e DB_URL="${{ secrets.DB_URL }}" \
+              -e DB_USERNAME="${{ secrets.DB_USERNAME }}" \
+              -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
               -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
               -e KAKAO_CLIENT_ID="${{ secrets.KAKAO_CLIENT_ID }}" \
               -e KAKAO_CLIENT_SECRET="${{ secrets.KAKAO_CLIENT_SECRET }}" \
