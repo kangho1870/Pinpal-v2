@@ -28,10 +28,10 @@ public class User extends BaseUpdatableEntity {
     @Column
     private Role role;
 
-    @Column(name = "sns_id")
+    @Column
     private String snsId;
 
-    @Column(name = "join_path")
+    @Column
     private String joinPath;
 
     @Column
