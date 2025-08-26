@@ -16,10 +16,7 @@ spring:
   sql:
     init:
       mode: never
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.jdbc.JdbcRepositoriesAutoConfiguration
+
   security:
     oauth2:
       client:
