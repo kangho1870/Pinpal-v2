@@ -3,9 +3,9 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/pinpal
-    username: pinpal
-    password: pinpal1234
+    url: jdbc:postgresql://211.37.173.106:5432/pinpal
+    username: pinpal_admin
+    password: 85061621
     driver-class-name: org.postgresql.Driver
   security:
     oauth2:
@@ -34,7 +34,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        default_schema: pinpal
+        default_schema: public
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
 jwt:

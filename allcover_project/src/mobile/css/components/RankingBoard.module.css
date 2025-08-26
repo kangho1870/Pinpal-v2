@@ -642,6 +642,23 @@
     border-left: 4px solid #9b59b6;
 }
 
+/* 핸디캡 점수 스타일 */
+.handicapScore {
+    color: #ff4757;
+    font-weight: 700;
+    font-size: 14px !important;
+    line-height: 1;
+    display: inline;
+}
+
+/* 여자 유저 점수 전체 컨테이너 스타일 */
+.femaleScoreContainer {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    display: inline-block;
+}
+
 /* 반응형 디자인 */
 @media screen and (max-width: 480px), (max-width: 480px) and (orientation: portrait), (max-width: 480px) and (orientation: landscape) {
     .scoreCardBox {

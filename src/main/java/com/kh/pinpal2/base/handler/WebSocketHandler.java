@@ -349,7 +349,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
                 memberData.put("scoreCounting", scoreboard.scoreCounting());
                 memberData.put("memberRole", scoreboard.memberRole());
                 memberData.put("memberAvg", scoreboard.memberAvg());
-                
+                memberData.put("gender", scoreboard.gender());
 
                 
                 data.add(memberData);

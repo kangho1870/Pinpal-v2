@@ -16,22 +16,22 @@ import java.time.Instant;
 public class Scoreboard extends BaseUpdatableEntity {
 
     @Column
-    private int score1;
+    private Integer score1;
 
     @Column
-    private int score2;
+    private Integer score2;
 
     @Column
-    private int score3;
+    private Integer score3;
 
     @Column
-    private int score4;
+    private Integer score4;
 
     @Column
-    private int grade;
+    private Integer grade;
 
     @Column
-    private int avg;
+    private Integer avg;
 
     @Column
     private boolean confirmed;
@@ -40,7 +40,7 @@ public class Scoreboard extends BaseUpdatableEntity {
     private Instant confirmDate;
 
     @Column
-    private int teamNumber;
+    private Integer teamNumber;
 
     @Column
     private boolean side;

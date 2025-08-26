@@ -5,7 +5,7 @@ import useScoreboard from "../../stores/useScoreboardStore";
 import useSignInStore from "../../stores/useSignInStore";
 
 function RankingBoard({ sideRankingModalToggle, scoreInputModalToggle }) {
-    const { members = [] } = useScoreboard();
+    const { members = [], femaleHandicap } = useScoreboard();
     const { signInUser } = useSignInStore();
     const memberId = signInUser?.id || null;
     const [showMyScore, setShowMyScore] = useState(false);
@@ -53,16 +53,39 @@ function RankingBoard({ sideRankingModalToggle, scoreInputModalToggle }) {
         return Number.isInteger(avg) ? avg : avg.toFixed(0);
     }
 
+    // 여자 유저의 점수에 핸디캡 적용
+    const getScoreWithHandicap = (score, gender) => {
+        if (score === null || score === undefined || score === 0) return score;
+        if (gender === 1) { // 여자
+            return score + femaleHandicap;
+        }
+        return score;
+    };
+
+    // 여자 유저의 점수를 "원점수 / 핸디캡점수" 형태로 표시 (핸디캡 점수가 200점 넘으면 빨간색)
+    const getScoreDisplay = (score, gender) => {
+        if (score === null || score === undefined || score === 0) return score;
+        if (gender === 1) { // 여자
+            const handicapScore = score + femaleHandicap;
+            return (
+                <span className={`${styles.gameScore} ${styles.femaleScoreContainer} ${(score && score >= 200) ? styles.highScore : ""}`}>
+                    {score} / <span className={handicapScore >= 200 ? styles.handicapScore : styles.gameScore}>{handicapScore}</span>
+                </span>
+            );
+        }
+        return score;
+    };
+
     const sortedMembers = useMemo(() => {
         return Array.isArray(members) ? [...members].sort((a, b) => {
-            const totalA = (a?.game1 || 0) + (a?.game2 || 0) + (a?.game3 || 0) + (a?.game4 || 0);
-            const totalB = (b?.game1 || 0) + (b?.game2 || 0) + (b?.game3 || 0) + (b?.game4 || 0);
+            const totalA = getScoreWithHandicap(a?.game1 || 0, a?.gender) + getScoreWithHandicap(a?.game2 || 0, a?.gender) + getScoreWithHandicap(a?.game3 || 0, a?.gender) + getScoreWithHandicap(a?.game4 || 0, a?.gender);
+            const totalB = getScoreWithHandicap(b?.game1 || 0, b?.gender) + getScoreWithHandicap(b?.game2 || 0, b?.gender) + getScoreWithHandicap(b?.game3 || 0, b?.gender) + getScoreWithHandicap(b?.game4 || 0, b?.gender);
             return totalB - totalA;
         }) : [];
-    }, [members]);
+    }, [members, femaleHandicap]);
 
     const topTotalScore = sortedMembers.length > 0 
-        ? (sortedMembers[0]?.game1 || 0) + (sortedMembers[0]?.game2 || 0) + (sortedMembers[0]?.game3 || 0) + (sortedMembers[0]?.game4 || 0) 
+        ? getScoreWithHandicap(sortedMembers[0]?.game1 || 0, sortedMembers[0]?.gender) + getScoreWithHandicap(sortedMembers[0]?.game2 || 0, sortedMembers[0]?.gender) + getScoreWithHandicap(sortedMembers[0]?.game3 || 0, sortedMembers[0]?.gender) + getScoreWithHandicap(sortedMembers[0]?.game4 || 0, sortedMembers[0]?.gender)
         : 0;
 
     // 사이드 순위 계산 함수들
@@ -136,7 +159,7 @@ function RankingBoard({ sideRankingModalToggle, scoreInputModalToggle }) {
             >
                 {sortedMembers.map((member, index) => {
                     if (!member) return null;
-                    const memberTotalScore = (member?.game1 || 0) + (member?.game2 || 0) + (member?.game3 || 0) + (member?.game4 || 0);
+                    const memberTotalScore = getScoreWithHandicap(member?.game1 || 0, member?.gender) + getScoreWithHandicap(member?.game2 || 0, member?.gender) + getScoreWithHandicap(member?.game3 || 0, member?.gender) + getScoreWithHandicap(member?.game4 || 0, member?.gender);
                     const scoreDifference = topTotalScore - memberTotalScore;
                     const isMyScore = memberId === member?.memberId;
                     
@@ -202,25 +225,25 @@ function RankingBoard({ sideRankingModalToggle, scoreInputModalToggle }) {
                                     <div className={styles.scoreItem}>
                                         <span className={styles.gameLabel}>1G</span>
                                         <span className={`${styles.gameScore} ${(member && member?.game1 >= 200) ? styles.highScore : ""}`}>
-                                            {member?.game1 == null ? "-" : member?.game1}
+                                            {member?.game1 == null ? "-" : getScoreDisplay(member?.game1, member?.gender)}
                                         </span>
                                     </div>
                                     <div className={styles.scoreItem}>
                                         <span className={styles.gameLabel}>2G</span>
                                         <span className={`${styles.gameScore} ${(member && member?.game2 >= 200) ? styles.highScore : ""}`}>
-                                            {member?.game2 == null ? "-" : member?.game2}
+                                            {member?.game2 == null ? "-" : getScoreDisplay(member?.game2, member?.gender)}
                                         </span>
                                     </div>
                                     <div className={styles.scoreItem}>
                                         <span className={styles.gameLabel}>3G</span>
                                         <span className={`${styles.gameScore} ${(member && member?.game3 >= 200) ? styles.highScore : ""}`}>
-                                            {member?.game3 == null ? "-" : member?.game3}
+                                            {member?.game3 == null ? "-" : getScoreDisplay(member?.game3, member?.gender)}
                                         </span>
                                     </div>
                                     <div className={styles.scoreItem}>
                                         <span className={styles.gameLabel}>4G</span>
                                         <span className={`${styles.gameScore} ${(member && member?.game4 >= 200) ? styles.highScore : ""}`}>
-                                            {member?.game4 == null ? "-" : member?.game4}
+                                            {member?.game4 == null ? "-" : getScoreDisplay(member?.game4, member?.gender)}
                                         </span>
                                     </div>
                                 </div>
@@ -228,14 +251,14 @@ function RankingBoard({ sideRankingModalToggle, scoreInputModalToggle }) {
                                 <div className={styles.totalSection}>
                                     <div className={styles.totalItem}>
                                         <span className={styles.totalLabel}>평균</span>
-                                        <span className={`${styles.totalScore} ${getAvgScore(member?.game1, member?.game2, member?.game3, member?.game4) >= 200 ? styles.highScore : ""}`}>
-                                            {getAvgScore(member?.game1, member?.game2, member?.game3, member?.game4)}
+                                        <span className={`${styles.totalScore} ${getAvgScore(getScoreWithHandicap(member?.game1, member?.gender), getScoreWithHandicap(member?.game2, member?.gender), getScoreWithHandicap(member?.game3, member?.gender), getScoreWithHandicap(member?.game4, member?.gender)) >= 200 ? styles.highScore : ""}`}>
+                                            {getAvgScore(getScoreWithHandicap(member?.game1, member?.gender), getScoreWithHandicap(member?.game2, member?.gender), getScoreWithHandicap(member?.game3, member?.gender), getScoreWithHandicap(member?.game4, member?.gender))}
                                         </span>
                                     </div>
                                     <div className={styles.totalItem}>
                                         <span className={styles.totalLabel}>총점</span>
-                                        <span className={`${styles.totalScore} ${(member && memberTotalScore >= 800) ? styles.highScore : ""}`}>
-                                            {memberTotalScore}
+                                        <span className={`${styles.totalScore} ${(member && (getScoreWithHandicap(member?.game1, member?.gender) + getScoreWithHandicap(member?.game2, member?.gender) + getScoreWithHandicap(member?.game3, member?.gender) + getScoreWithHandicap(member?.game4, member?.gender)) >= 800) ? styles.highScore : ""}`}>
+                                            {getScoreWithHandicap(member?.game1, member?.gender) + getScoreWithHandicap(member?.game2, member?.gender) + getScoreWithHandicap(member?.game3, member?.gender) + getScoreWithHandicap(member?.game4, member?.gender)}
                                         </span>
                                     </div>
                                 </div>

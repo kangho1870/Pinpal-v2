@@ -30,9 +30,18 @@
     /* gap: 16px; */
 }
 
+.rightSide {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto;
+}
+
 .leftSide {
     border-right: 1px solid #e9ecef;
     padding-right: 16px;
+    max-height: 300px;
+    flex-shrink: 0;
 }
 
 .rightSide {
@@ -45,18 +54,27 @@
     border: 1px solid #e9ecef;
     border-bottom-left-radius: 12px;
     border-bottom-right-radius: 12px;
-    padding: 16px;
-    flex: 1;
-    overflow-y: auto;
+    padding: 12px;
+    flex: 0 1 auto;
+    overflow-y: scroll;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    min-height: 200px;
+    height: 100%;
+    min-height: 500px;
+}
+
+.confirmedMemberBox:empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+    font-style: italic;
 }
 
 .userBox {
     display: flex;
     align-items: center;
-    margin-bottom: 12px;
-    padding: 12px;
+    margin-bottom: 8px;
+    padding: 8px;
     background-color: #f8f9fa;
     border-radius: 8px;
     border: 1px solid #e9ecef;
@@ -163,10 +181,84 @@
     margin-bottom: 16px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     min-height: 120px;
+    flex-shrink: 0;
 }
 
 .userSettingBox:nth-last-child(1) {
     margin-bottom: 0;
+}
+
+.waitingMemberBox {
+    background-color: white;
+    border: 1px solid #e9ecef;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    flex: 1;
+    overflow-y: auto;
+    min-height: 200px;
+}
+
+@media (max-width: 768px) {
+    .contentsBox {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .leftSide, .rightSide {
+        width: 100%;
+        flex: none;
+    }
+    
+    .leftSide {
+        border-right: none;
+        border-bottom: 1px solid #e9ecef;
+        padding-right: 0;
+        padding-bottom: 16px;
+    }
+    
+    .rightSide {
+        padding-left: 0;
+        padding-top: 16px;
+    }
+    
+    .confirmedMemberBox {
+        min-height: 40px;
+        max-height: 300px;
+    }
+    
+    .waitingMemberBox {
+        min-height: 150px;
+        max-height: 300px;
+    }
+}
+
+@media (max-width: 480px) {
+    .contentsBox {
+        padding: 12px;
+        gap: 8px;
+    }
+    
+    .confirmedMemberBox {
+        min-height: 30px;
+        max-height: 300px;
+        padding: 8px;
+    }
+    
+    .waitingMemberBox {
+        min-height: 120px;
+        max-height: 250px;
+        padding: 12px;
+    }
+    
+    .userSettingBox {
+        padding: 12px;
+    }
 }
 
 .settingBox {
@@ -497,5 +589,84 @@
         width: 24px;
         height: 24px;
         font-size: 12px;
+    }
+}
+
+/* 핸디캡 설정 스타일 */
+.handicapInputBox {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.handicapInput {
+    padding: 8px 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 14px;
+    background-color: white;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.handicapInput:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.handicapButtons {
+    display: flex;
+    gap: 8px;
+}
+
+.handicapConfirmBtn, .handicapCancelBtn {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.handicapConfirmBtn {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+}
+
+.handicapConfirmBtn:hover {
+    background: linear-gradient(135deg, #0056b3, #004085);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+.handicapCancelBtn {
+    background: linear-gradient(135deg, #6c757d, #545b62);
+    color: white;
+}
+
+.handicapCancelBtn:hover {
+    background: linear-gradient(135deg, #545b62, #3d4449);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+}
+
+/* 반응형 핸디캡 스타일 */
+@media screen and (max-width: 480px) {
+    .handicapInput {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+    
+    .handicapConfirmBtn, .handicapCancelBtn {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+    
+    .handicapButtons {
+        gap: 6px;
     }
 }

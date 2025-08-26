@@ -12,7 +12,7 @@ export default function GameResult() {
     const { signInUser } = useSignInStore();
     const [cookies] = useCookies();
     const token = cookies[ACCESS_TOKEN];
-    const { members = [], team1stMember } = useScoreboard();
+    const { members = [], team1stMember, setTeam1stMember } = useScoreboard();
     const [scoreCounting, setScoreCounting] = useState(true);
     const [searchParams] = useSearchParams();
     const gameId = searchParams.get("gameId");
@@ -37,6 +37,74 @@ export default function GameResult() {
     useEffect(() => {
         findCurrentUser();
     }, [findCurrentUser]);
+
+    // 팀 1등 계산 함수 (TeamScoreboard와 동일한 로직)
+    const calculateTeam1st = useCallback(() => {
+        console.log('🔍 GameResult - calculateTeam1st 호출됨');
+        console.log('🔍 members:', members);
+        
+        const teams = Array.isArray(members) ? members.reduce((acc, member) => {
+            if (!member) return acc;
+            if (!acc[member.teamNumber]) {
+                acc[member.teamNumber] = [];
+            }
+            acc[member.teamNumber].push(member);
+            return acc;
+        }, {}) : {};
+        
+        console.log('🔍 teams:', teams);
+        
+        const teamScores = Object.keys(teams).map(teamNumber => {
+            const teamMembers = teams[teamNumber];
+            if (!Array.isArray(teamMembers)) return null;
+            const hasZeroScore1 = teamMembers.some(member => member?.game1 === null);
+            const hasZeroScore2 = teamMembers.some(member => member?.game2 === null);
+            const hasZeroScore3 = teamMembers.some(member => member?.game3 === null);
+            const hasZeroScore4 = teamMembers.some(member => member?.game4 === null);
+            const totalScore = teamMembers.reduce((sum, member) => {
+                    const game1Score = hasZeroScore1 ? 0 : (member?.game1 || 0) - (member?.memberAvg || 0);
+                    const game2Score = hasZeroScore2 ? 0 : (member?.game2 || 0) - (member?.memberAvg || 0);
+                    const game3Score = hasZeroScore3 ? 0 : (member?.game3 || 0) - (member?.memberAvg || 0);
+                    const game4Score = hasZeroScore4 ? 0 : (member?.game4 || 0) - (member?.memberAvg || 0);
+                    return sum + game1Score + game2Score + game3Score + game4Score;
+                }, 0);
+            return {
+                teamNumber,
+                members: teamMembers,
+                totalScore
+            };
+        }).filter(Boolean);
+
+        console.log('🔍 teamScores:', teamScores);
+
+        const sortedTeams = teamScores
+            .filter(team => team?.teamNumber !== "0" && team?.teamNumber !== 0)
+            .sort((a, b) => b.totalScore - a.totalScore);
+
+        console.log('🔍 sortedTeams:', sortedTeams);
+        console.log('🔍 팀 1등 멤버 IDs:', sortedTeams.length > 0 ? sortedTeams[0]?.members?.map(member => member?.memberId) : []);
+
+        return sortedTeams.length > 0 ? sortedTeams[0]?.members?.map(member => member?.memberId) : [];
+    }, [members]);
+
+    // 팀 1등 계산 및 스토어에 저장
+    useEffect(() => {
+        if (members && members.length > 0) {
+            console.log('🔍 GameResult - 팀 1등 계산 useEffect 실행');
+            const calculatedTeam1st = calculateTeam1st();
+            if (calculatedTeam1st && calculatedTeam1st.length > 0) {
+                const team1stMembers = members.filter(member => 
+                    calculatedTeam1st.includes(member.memberId)
+                );
+                const teamMember = {
+                    ids: calculatedTeam1st,
+                    members: team1stMembers
+                };
+                console.log('🔍 GameResult - 팀 1등 스토어에 저장:', teamMember);
+                setTeam1stMember(teamMember);
+            }
+        }
+    }, [members, calculateTeam1st, setTeam1stMember]);
 
     const sortedMembers = Array.isArray(members) ? [...members].sort((a, b) => {
         const totalA = (a?.game1 || 0) + (a?.game2 || 0) + (a?.game3 || 0) + (a?.game4 || 0);
@@ -128,47 +196,11 @@ export default function GameResult() {
     const highScoreOfMan = getHighScoreMember(0);
     const highScoreOfGirl = getHighScoreMember(1);
 
-    // 팀 1등 계산 (TeamScoreboard와 동일한 로직)
-    const calculateTeam1st = () => {
-        const teams = Array.isArray(members) ? members.reduce((acc, member) => {
-            if (!member) return acc;
-            if (!acc[member.teamNumber]) {
-                acc[member.teamNumber] = [];
-            }
-            acc[member.teamNumber].push(member);
-            return acc;
-        }, {}) : {};
-        
-        const teamScores = Object.keys(teams).map(teamNumber => {
-            const teamMembers = teams[teamNumber];
-            if (!Array.isArray(teamMembers)) return null;
-            const hasZeroScore1 = teamMembers.some(member => member?.game1 === null);
-            const hasZeroScore2 = teamMembers.some(member => member?.game2 === null);
-            const hasZeroScore3 = teamMembers.some(member => member?.game3 === null);
-            const hasZeroScore4 = teamMembers.some(member => member?.game4 === null);
-            const totalScore = teamMembers.reduce((sum, member) => {
-                    const game1Score = hasZeroScore1 ? 0 : (member?.game1 || 0) - (member?.memberAvg || 0);
-                    const game2Score = hasZeroScore2 ? 0 : (member?.game2 || 0) - (member?.memberAvg || 0);
-                    const game3Score = hasZeroScore3 ? 0 : (member?.game3 || 0) - (member?.memberAvg || 0);
-                    const game4Score = hasZeroScore4 ? 0 : (member?.game4 || 0) - (member?.memberAvg || 0);
-                    return sum + game1Score + game2Score + game3Score + game4Score;
-                }, 0);
-            return {
-                teamNumber,
-                members: teamMembers,
-                totalScore
-            };
-        }).filter(Boolean);
-
-        const sortedTeams = teamScores
-            .filter(team => team?.teamNumber !== "0")
-            .sort((a, b) => b.totalScore - a.totalScore);
-
-        return sortedTeams.length > 0 ? sortedTeams[0]?.members?.map(member => member?.memberId) : [];
-    };
-
     // 팀 1등 멤버들의 ID 추출 (TeamScoreboard에서 계산된 값이 있으면 사용, 없으면 직접 계산)
     const team1stMemberIds = team1stMember?.members?.map(member => member.memberId) || calculateTeam1st();
+    
+    console.log('🔍 GameResult - team1stMember:', team1stMember);
+    console.log('🔍 GameResult - team1stMemberIds:', team1stMemberIds);
     
     const resultSetOfLong = {
         gameId: gameId,

@@ -45,7 +45,7 @@ public class ScoreboardCustomRepositoryImpl implements ScoreboardCustomRepositor
                         game.id, game.name, game.scoreCounting,
                         s.score1, s.score2, s.score3, s.score4,
                         s.grade, s.confirmed, s.sideAvg, s.side, s.teamNumber,
-                        userClub.role, userClub.avg
+                        userClub.role, s.avg, user.gender
                 ))
                 .from(s)
                 .join(s.user, user)

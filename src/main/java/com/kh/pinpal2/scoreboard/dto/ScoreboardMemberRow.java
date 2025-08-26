@@ -10,16 +10,17 @@ public record ScoreboardMemberRow(
         Long gameId,
         String gameName,
         boolean scoreCounting,
-        int game1,
-        int game2,
-        int game3,
-        int game4,
-        int grade,
+        Integer game1,
+        Integer game2,
+        Integer game3,
+        Integer game4,
+        Integer grade,
         boolean confirmedJoin,
         boolean sideAvg,
         boolean side,
-        int teamNumber,
+        Integer teamNumber,
         ClubRole memberRole,
-        Integer memberAvg
+        Integer memberAvg,
+        Integer gender
 ) {
 }

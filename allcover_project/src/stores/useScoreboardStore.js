@@ -20,6 +20,9 @@ const useScoreboardStore = create(
       // 팀 관련 상태
       team1stMember: {},
       
+      // 핸디캡 관련 상태
+      femaleHandicap: 0,
+      
       // 멤버 관리
       setMembers: (members) => {
         console.log('🔄 setMembers 호출:', members);
@@ -57,6 +60,9 @@ const useScoreboardStore = create(
       // 팀 관리
       setTeam1stMember: (data) => set({ team1stMember: data }),
       
+      // 핸디캡 관리
+      setFemaleHandicap: (handicap) => set({ femaleHandicap: handicap }),
+      
       // 스코어보드 초기화
       resetScoreboard: () => set({
         members: [],
@@ -67,7 +73,8 @@ const useScoreboardStore = create(
         sideRankingModal: false,
         scoreInputModal: false,
         page: 0,
-        team1stMember: {}
+        team1stMember: {},
+        femaleHandicap: 0
       }),
       
       // 전체 초기화
@@ -81,7 +88,8 @@ const useScoreboardStore = create(
         scoreInputModal: false,
         page: 0,
         navTitle: ['대기실', '점수표', '팀전', '시상'],
-        team1stMember: {}
+        team1stMember: {},
+        femaleHandicap: 0
       }),
     })
   );

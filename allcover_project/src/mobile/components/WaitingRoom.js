@@ -8,13 +8,16 @@ import { useWebSocketContext } from "../../contexts/WebSocketContext";
 function WaitingRoom() {
     const { 
         members = [], 
-        toggleGradeModal, toggleTeamModal, toggleConfirmModal, toggleSideJoinUserModal
+        toggleGradeModal, toggleTeamModal, toggleConfirmModal, toggleSideJoinUserModal,
+        femaleHandicap, setFemaleHandicap
     } = useScoreboard();
     const { signInUser } = useSignInStore();
     const [searchParams] = useSearchParams();
     const [sideGrade1, setSideGrade1] = useState(false);
     const [sideAvg, setSideAvg] = useState(false);
     const [currentUserRole, setCurrentUserRole] = useState(null);
+    const [showHandicapInput, setShowHandicapInput] = useState(false);
+    const [handicapInput, setHandicapInput] = useState(femaleHandicap.toString());
     const memberId = signInUser?.id || null;
     const gameId = searchParams.get("gameId");
     
@@ -89,6 +92,40 @@ function WaitingRoom() {
         }
     }
 
+    const handleHandicapSetting = () => {
+        setShowHandicapInput(true);
+    };
+
+    const handleHandicapConfirm = () => {
+        const handicap = parseInt(handicapInput);
+        if (isNaN(handicap) || handicap < 0) {
+            alert('올바른 핸디캡 점수를 입력해주세요.');
+            return;
+        }
+        
+        setFemaleHandicap(handicap);
+        setShowHandicapInput(false);
+        
+        // WebSocket으로 핸디캡 설정 전송
+        const updateHandicap = {
+            action: "updateFemaleHandicap",
+            gameId: parseInt(gameId),
+            handicap: handicap
+        };
+        
+        const success = sendMessage(updateHandicap);
+        if (success) {
+            console.log('여자핸디캡 설정 메시지 전송 성공');
+        } else {
+            alert("서버와 연결되지 않았습니다. 잠시 후 다시 시도해주세요.");
+        }
+    };
+
+    const handleHandicapCancel = () => {
+        setHandicapInput(femaleHandicap.toString());
+        setShowHandicapInput(false);
+    };
+
     return (
         <div className={styles.mainBox}>
             <div className={styles.contentsBox}>
@@ -97,27 +134,33 @@ function WaitingRoom() {
                         <h4>확정 볼러</h4>
                     </div>
                     <div className={styles.confirmedMemberBox}>
-                        {members
-                            .filter(member => member?.confirmedJoin === true)
-                            .map((member, i) => (
-                                <div key={i} className={styles.userBox}>
-                                    <div className={styles.noBox}>
-                                        <p>{i + 1}</p>
+                        {members.filter(member => member?.confirmedJoin === true).length > 0 ? (
+                            members
+                                .filter(member => member?.confirmedJoin === true)
+                                .map((member, i) => (
+                                    <div key={i} className={styles.userBox}>
+                                        <div className={styles.noBox}>
+                                            <p>{i + 1}</p>
+                                        </div>
+                                        <div className={styles.nameCardBox}>
+                                            <div className={styles.checkIcon}>
+                                                <i className="fa-regular fa-circle-check fa-xl" style={{color:"#63E6BE"}}></i>
+                                                <h3 style={{ marginLeft: "2px" }}>{member?.grade == 0 ? null : member?.grade + "군"}</h3>
+                                            </div>
+                                            <div className={styles.description}>
+                                                <h2>{member?.memberName}</h2>
+                                            </div>
+                                            <div className={styles.description}>
+                                                <p>{member?.memberAvg}</p>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className={styles.nameCardBox}>
-                                        <div className={styles.checkIcon}>
-                                            <i className="fa-regular fa-circle-check fa-xl" style={{color:"#63E6BE"}}></i>
-                                            <h3 style={{ marginLeft: "2px" }}>{member?.grade == 0 ? null : member?.grade + "군"}</h3>
-                                        </div>
-                                        <div className={styles.description}>
-                                            <h2>{member?.memberName}</h2>
-                                        </div>
-                                        <div className={styles.description}>
-                                            <p>{member?.memberAvg}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
+                                ))
+                        ) : (
+                            <div style={{ textAlign: 'center', color: '#6c757d', fontStyle: 'italic', padding: '20px' }}>
+                                확정된 볼러가 없습니다
+                            </div>
+                        )}
                     </div>
                 </div>
                 <div className={styles.rightSide}>
@@ -171,6 +214,38 @@ function WaitingRoom() {
                                     <div className={styles.settingBox}>
                                         <button className={styles.settingBtn2} onClick={scoreCountingStop}><div><h4>{members[0]?.scoreCounting === false ? "점수집계 재개" : "점수집계 종료"}</h4></div></button>
                                     </div>
+                                    <div className={styles.settingBox}>
+                                        {showHandicapInput ? (
+                                            <div className={styles.handicapInputBox}>
+                                                <input
+                                                    type="number"
+                                                    value={handicapInput}
+                                                    onChange={(e) => setHandicapInput(e.target.value)}
+                                                    placeholder="핸디캡 점수"
+                                                    className={styles.handicapInput}
+                                                    min="0"
+                                                />
+                                                <div className={styles.handicapButtons}>
+                                                    <button 
+                                                        className={styles.handicapConfirmBtn} 
+                                                        onClick={handleHandicapConfirm}
+                                                    >
+                                                        확인
+                                                    </button>
+                                                    <button 
+                                                        className={styles.handicapCancelBtn} 
+                                                        onClick={handleHandicapCancel}
+                                                    >
+                                                        취소
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <button className={styles.settingBtn2} onClick={handleHandicapSetting}>
+                                                <div><h4>여자핸디캡: {femaleHandicap}점</h4></div>
+                                            </button>
+                                        )}
+                                    </div>
                                 </>
                             )}
                         </div>
@@ -178,7 +253,7 @@ function WaitingRoom() {
                     <div className={styles.settingBoxTitle}>
                         <h4>대기 볼러</h4>
                     </div>
-                    <div className={styles.userSettingBox}>
+                    <div className={styles.waitingMemberBox}>
                         {members
                             .filter(member => member?.confirmedJoin === false)
                             .map((member, i) => (

@@ -1,7 +1,7 @@
 # 기본 설정 (공통)
 spring:
   profiles:
-    active: prod  # 기본값은 dev 프로필
+    active: dev  # 기본값은 dev 프로필
 
 # 공통 설정들
 jwt:
