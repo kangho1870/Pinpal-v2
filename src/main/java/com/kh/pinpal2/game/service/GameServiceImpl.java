@@ -167,7 +167,8 @@ public class GameServiceImpl implements GameService {
             throw new UserAlreadyJoinedGameException();
         }
 
-        Scoreboard scoreboard = new Scoreboard(game, user);
+        UserClub userClub = userClubRepository.findByClubIdAndUserId(game.getClub().getId(), user.getId()).orElseThrow(UserNotFoundException::new);
+        Scoreboard scoreboard = new Scoreboard(game, user, userClub.getAvg());
         scoreboardRepository.save(scoreboard);
 
         long userCount = scoreboardRepository.countByGameId(gameId);
@@ -241,9 +242,7 @@ public class GameServiceImpl implements GameService {
                             scoreboard.getScore3(),
                             scoreboard.getScore4(),
                             scoreboard.getGrade(),
-                            userClubRepository.findByClubIdAndUserId(clubId, scoreboard.getUser().getId()).orElseThrow(
-                                    UserNotFoundException::new
-                            ).getAvg(),
+                            scoreboard.getAvg(),
                             scoreboard.getTeamNumber()
                     )).toList()
             ));

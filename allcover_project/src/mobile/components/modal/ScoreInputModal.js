@@ -25,8 +25,14 @@ export default function ScoreInputModal() {
     // 점수 집계 종료 상태 확인 (게임 종료와 동일)
     const isScoreCountingStopped = members.length > 0 && members[0]?.scoreCounting === false;
     
-    // 점수 입력이 차단되어야 하는 상태 (점수 집계 종료)
-    const isScoreInputBlocked = isScoreCountingStopped;
+    // 게임이 종료되었는지 확인
+    const isGameFinished = members.length > 0 && members[0]?.gameStatus === "FINISHED";
+    
+    // 현재 사용자가 게임에 참여했는지 확인
+    const isUserParticipating = members.some(member => member?.memberId === memberId);
+    
+    // 점수 입력이 차단되어야 하는 상태 (점수 집계 종료, 게임 종료, 또는 게임 미참여)
+    const isScoreInputBlocked = isScoreCountingStopped || isGameFinished || !isUserParticipating;
 
     const [game1Score, setGame1Score] = useState(member?.game1 || "");
     const [game2Score, setGame2Score] = useState(member?.game2 || "");
@@ -49,13 +55,19 @@ export default function ScoreInputModal() {
         }
     }, [member]);
 
-    // 점수 집계가 종료된 경우 모달 닫기
+    // 점수 입력이 차단된 경우 모달 닫기
     useEffect(() => {
         if (isScoreInputBlocked) {
-            alert("점수 집계가 종료되어 점수 입력이 불가능합니다.");
+            if (isScoreCountingStopped) {
+                alert("점수 집계가 종료되어 점수 입력이 불가능합니다.");
+            } else if (isGameFinished) {
+                alert("게임이 종료되어 점수 입력이 불가능합니다.");
+            } else if (!isUserParticipating) {
+                alert("게임에 참여하지 않아 점수 입력이 불가능합니다.");
+            }
             toggleScoreInputModal();
         }
-    }, [isScoreInputBlocked, toggleScoreInputModal]);
+    }, [isScoreInputBlocked, isScoreCountingStopped, isGameFinished, isUserParticipating, toggleScoreInputModal]);
 
     const scoreChangeHandler = (e, gameNumber) => {
         // 게임이 종료되거나 점수 집계가 종료된 경우 입력 차단
@@ -87,9 +99,15 @@ export default function ScoreInputModal() {
     };
 
     const scoreInputSocket = () => {
-        // 점수 집계가 종료된 경우 전송 차단
+        // 점수 입력이 차단된 경우 전송 차단
         if (isScoreInputBlocked) {
-            alert("점수 집계가 종료되어 점수 입력이 불가능합니다.");
+            if (isScoreCountingStopped) {
+                alert("점수 집계가 종료되어 점수 입력이 불가능합니다.");
+            } else if (isGameFinished) {
+                alert("게임이 종료되어 점수 입력이 불가능합니다.");
+            } else if (!isUserParticipating) {
+                alert("게임에 참여하지 않아 점수 입력이 불가능합니다.");
+            }
             return;
         }
         
@@ -115,7 +133,9 @@ export default function ScoreInputModal() {
             onClick: toggleScoreInputModal
         },
         {
-            text: isScoreCountingStopped ? "점수 집계 종료" : "확인",
+            text: isScoreCountingStopped ? "점수 집계 종료" : 
+                  isGameFinished ? "게임 종료" :
+                  !isUserParticipating ? "게임 미참여" : "확인",
             className: isScoreInputBlocked ? styles.disabledBtn : styles.confirmBtn,
             onClick: isScoreInputBlocked ? null : scoreInputSocket,
             disabled: isScoreInputBlocked

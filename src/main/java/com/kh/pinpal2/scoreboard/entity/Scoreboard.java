@@ -31,6 +31,9 @@ public class Scoreboard extends BaseUpdatableEntity {
     private int grade;
 
     @Column
+    private int avg;
+
+    @Column
     private boolean confirmed;
 
     @Column
@@ -53,7 +56,7 @@ public class Scoreboard extends BaseUpdatableEntity {
     @JoinColumn(name = "game_id")
     private Game game;
 
-    public Scoreboard(Game game, User user) {
+    public Scoreboard(Game game, User user, int avg) {
         this.game = game;
         this.user = user;
         this.score1 = 0;
@@ -61,6 +64,7 @@ public class Scoreboard extends BaseUpdatableEntity {
         this.score3 = 0;
         this.score4 = 0;
         this.grade = 0;
+        this.avg = avg;
         this.teamNumber = 0;
         this.side = false;
         this.sideAvg = false;
