@@ -56,7 +56,7 @@ spring:
               url: ${DB_URL}
               user: ${DB_USERNAME}
               password: ${DB_PASSWORD}
-        physical_naming_strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+        physical_naming_strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
 
 jwt:
   secret: ${JWT_SECRET}

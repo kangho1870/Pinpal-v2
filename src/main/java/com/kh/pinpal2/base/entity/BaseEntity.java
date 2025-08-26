@@ -22,6 +22,6 @@ public abstract class BaseEntity {
     private Long id;
 
     @CreatedDate
-    @Column(name = "created_at", columnDefinition = "timestamp with time zone", updatable = false, nullable = false)
+    @Column(columnDefinition = "timestamp with time zone", updatable = false, nullable = false)
     private Instant createdAt;
 }
