@@ -126,9 +126,9 @@ jobs:
             docker run -d \
               --name pinpal-backend \
               --restart unless-stopped \
-              -p 8000:8000 \
+              --network host \
               -e SPRING_PROFILES_ACTIVE=prod \
-              -e DB_URL="jdbc:postgresql://host.docker.internal:5432/pinpal" \
+              -e DB_URL="jdbc:postgresql://localhost:5432/pinpal" \
               -e DB_USERNAME="${{ secrets.DB_USERNAME }}" \
               -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
               -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
