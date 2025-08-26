@@ -128,13 +128,14 @@ jobs:
               --restart unless-stopped \
               -p 8000:8000 \
               -e SPRING_PROFILES_ACTIVE=prod \
-              -e DB_URL="${{ secrets.DB_URL }}" \
+              -e DB_URL="jdbc:postgresql://host.docker.internal:5432/pinpal" \
               -e DB_USERNAME="${{ secrets.DB_USERNAME }}" \
               -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
               -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
               -e KAKAO_CLIENT_ID="${{ secrets.KAKAO_CLIENT_ID }}" \
               -e KAKAO_CLIENT_SECRET="${{ secrets.KAKAO_CLIENT_SECRET }}" \
               -e KAKAO_REDIRECT_URI="http://211.37.173.106:3000/auth/kakao/callback" \
+              -e JAVA_OPTS="-Dhibernate.dialect=org.hibernate.dialect.PostgreSQLDialect -Djakarta.persistence.jdbc.url=${{ secrets.DB_URL }}" \
               kangho1870/pinpal:latest
             
             # 컨테이너 상태 확인
