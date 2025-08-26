@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import 'animate.css';
 import styles from "../css/components/RankingBoard.module.css";
 import useScoreboard from "../../stores/useScoreboardStore";
@@ -40,22 +40,42 @@ function RankingBoard({ sideRankingModalToggle, scoreInputModalToggle }) {
     };
 
     function getAvgScore(...scores) {
-        const validScores = scores.filter(score => score !== null && score !== undefined);
+        const validScores = scores.filter(score => score !== null && score !== undefined && score > 0);
         const totalScore = validScores.reduce((acc, score) => acc + score, 0);
         if (validScores.length === 0) return 0;
         const avg = totalScore / validScores.length;
         return Number.isInteger(avg) ? avg : avg.toFixed(0);
     }
 
-    const sortedMembers = Array.isArray(members) ? [...members].sort((a, b) => {
-        const totalA = (a?.game1 || 0) + (a?.game2 || 0) + (a?.game3 || 0) + (a?.game4 || 0);
-        const totalB = (b?.game1 || 0) + (b?.game2 || 0) + (b?.game3 || 0) + (b?.game4 || 0);
-        return totalB - totalA;
-    }) : [];
+    const sortedMembers = useMemo(() => {
+        return Array.isArray(members) ? [...members].sort((a, b) => {
+            const totalA = (a?.game1 || 0) + (a?.game2 || 0) + (a?.game3 || 0) + (a?.game4 || 0);
+            const totalB = (b?.game1 || 0) + (b?.game2 || 0) + (b?.game3 || 0) + (b?.game4 || 0);
+            return totalB - totalA;
+        }) : [];
+    }, [members]);
 
     const topTotalScore = sortedMembers.length > 0 
         ? (sortedMembers[0]?.game1 || 0) + (sortedMembers[0]?.game2 || 0) + (sortedMembers[0]?.game3 || 0) + (sortedMembers[0]?.game4 || 0) 
         : 0;
+
+    // 사이드 순위 계산 함수들
+    const getSideGrade1Members = () => {
+        return members.filter(member => member?.sideGrade1 === true);
+    };
+
+    const getSideAvgMembers = () => {
+        return members.filter(member => member?.sideAvg === true);
+    };
+
+    const isAllSideMembersScored = (sideMembers) => {
+        if (sideMembers.length === 0) return false;
+        return sideMembers.every(member => 
+            member?.game1 !== null && member?.game1 !== undefined && member?.game1 > 0
+        );
+    };
+
+
 
     // 내 점수 인덱스 찾기
     const myScoreIndex = sortedMembers.findIndex(member => member?.memberId === memberId);
@@ -164,7 +184,7 @@ function RankingBoard({ sideRankingModalToggle, scoreInputModalToggle }) {
                                             {member?.grade === 0 ? "신입" : `${member?.grade}군`}
                                         </span>
                                         <span className={styles.avgInfo}>
-                                            에버: {member?.memberAvg == 0 ? "신입" : member?.memberAvg}
+                                            에버: {member?.memberAvg === 0 ? "신입" : member?.memberAvg}
                                         </span>
                                     </div>
                                 </div>

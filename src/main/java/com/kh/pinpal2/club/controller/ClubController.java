@@ -64,4 +64,12 @@ public class ClubController {
         clubService.delete(clubId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
+//
+//    @PatchMapping("/{clubId}")
+//    public ResponseEntity<List<UserClubRespDto>> updateAvgByMembers(
+//            @PathVariable Long clubId,
+//            @RequestBody
+//            ) {
+//
+//    }
 }

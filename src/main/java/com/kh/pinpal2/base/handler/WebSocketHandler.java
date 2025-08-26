@@ -128,7 +128,14 @@ public class WebSocketHandler extends TextWebSocketHandler {
                 Scoreboard user = scoreboardRepository.findByGameIdAndUserId(gameId, userId).orElseThrow(
                         ScoreboardNotFoundException::new
                 );
-                user.updateScore(score.game1Score(), score.game2Score(), score.game3Score(), score.game4Score());
+                
+                // null 값 처리: null이면 0으로 설정
+                int game1Score = score.game1Score() != null ? score.game1Score() : 0;
+                int game2Score = score.game2Score() != null ? score.game2Score() : 0;
+                int game3Score = score.game3Score() != null ? score.game3Score() : 0;
+                int game4Score = score.game4Score() != null ? score.game4Score() : 0;
+                
+                user.updateScore(game1Score, game2Score, game3Score, game4Score);
                 scoreboardRepository.save(user);
             } else if (action.equals("updateGrade")) {
                 GradeUpdateRequestDto requestDTO = mapper.readValue(payload, GradeUpdateRequestDto.class);
@@ -322,6 +329,8 @@ public class WebSocketHandler extends TextWebSocketHandler {
                 return "[]";
             }
             
+
+            
             for (ScoreboardMemberRow scoreboard : scoreboards) {
                 Map<String, Object> memberData = new HashMap<>();
                 memberData.put("game1", scoreboard.game1());
@@ -340,6 +349,9 @@ public class WebSocketHandler extends TextWebSocketHandler {
                 memberData.put("scoreCounting", scoreboard.scoreCounting());
                 memberData.put("memberRole", scoreboard.memberRole());
                 memberData.put("memberAvg", scoreboard.memberAvg());
+                
+
+                
                 data.add(memberData);
             }
 
@@ -353,4 +365,6 @@ public class WebSocketHandler extends TextWebSocketHandler {
             return "[]";
         }
     }
+    
+
 }

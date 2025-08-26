@@ -12,8 +12,17 @@ export default function SideRankingModal() {
         setPage(i);
     }
     
-    // 총핀과 핀 차이를 계산
+    // 사이드 멤버들이 모두 점수를 입력했는지 확인
+    const sideGrade1Members = members.filter(member => member.sideGrade1 === true);
+    const allSideGrade1Scored = sideGrade1Members.length > 0 && 
+        sideGrade1Members.every(member => 
+            member?.game1 !== null && member?.game1 !== undefined && member?.game1 > 0
+        );
+
+    // 총핀과 핀 차이를 계산 (모든 멤버가 점수를 입력했을 때만)
     const sortedMembers = useMemo(() => {
+        if (!allSideGrade1Scored) return [];
+        
         const membersWithTotalPins = members
             .filter(member => member.sideGrade1 === true)
             .map(member => ({
@@ -29,12 +38,14 @@ export default function SideRankingModal() {
             ...member,
             pinDifference: topTotalPins - member.totalPins, // 1등과의 핀 차이
         }));
-    }, [members]);
+    }, [members, allSideGrade1Scored]);
 
-    // 게임별로 등수 계산 (최대 7등까지)
+    // 게임별로 등수 계산 (최대 7등까지) - 해당 게임에 점수가 있는 멤버만
     const getGameRankings = (gameKey) => {
+        if (!allSideGrade1Scored) return [];
+        
         return members
-            .filter(member => member[gameKey] !== null && member.sideGrade1 === true) // null이 아닌 점수들만 필터링
+            .filter(member => member[gameKey] !== null && member[gameKey] > 0 && member.sideGrade1 === true) // 0보다 큰 점수들만 필터링
             .sort((a, b) => b[gameKey] - a[gameKey]) // 점수 기준으로 내림차순 정렬
             .slice(0, 7); // 7등까지 추출
     };
@@ -70,9 +81,20 @@ export default function SideRankingModal() {
                     <div style={{display: "flex", flexDirection: "column", gap: "16px"}}>
                         {/* 사이드 순위 카드 */}
                         <div style={{maxHeight: "400px", overflowY: "auto"}}>
-                            {sortedMembers
-                                .filter(member => member.sideGrade1 === true)
-                                .map((member, i) => (
+                            {!allSideGrade1Scored ? (
+                                <div style={{
+                                    textAlign: "center",
+                                    padding: "40px 20px",
+                                    color: "#6c757d",
+                                    fontSize: "16px"
+                                }}>
+                                    모든 사이드 멤버가 점수를 입력하면<br />
+                                    순위가 표시됩니다.
+                                </div>
+                            ) : (
+                                sortedMembers
+                                    .filter(member => member.sideGrade1 === true)
+                                    .map((member, i) => (
                                     <div key={i} className={styles.card}>
                                         <div style={{display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px"}}>
                                             <div style={{
@@ -138,7 +160,7 @@ export default function SideRankingModal() {
                                         </div>
                                     </div>
                                 ))
-                            }
+                            )}
                         </div>
                         
                         {/* 게임별 순위 테이블 */}
@@ -147,6 +169,17 @@ export default function SideRankingModal() {
                                 <div style={{fontWeight: "600", fontSize: "16px", marginBottom: "12px", textAlign: "center"}}>
                                     게임별 순위
                                 </div>
+                                {!allSideGrade1Scored && (
+                                    <div style={{
+                                        textAlign: "center",
+                                        padding: "20px",
+                                        color: "#6c757d",
+                                        fontSize: "14px"
+                                    }}>
+                                        모든 사이드 멤버가 점수를 입력하면<br />
+                                        게임별 순위가 표시됩니다.
+                                    </div>
+                                )}
                                 <div style={{overflowX: "auto"}}>
                                     <table style={{width: "100%", borderCollapse: "collapse", fontSize: "12px"}}>
                                         <thead>
@@ -159,7 +192,7 @@ export default function SideRankingModal() {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {Array.from({ length: 7 }, (_, i) => (
+                                            {Array.from({ length: Math.max(game1Rankings.length, game2Rankings.length, game3Rankings.length, game4Rankings.length, 1) }, (_, i) => (
                                                 <tr key={i}>
                                                     <td style={{padding: "6px", border: "1px solid #dee2e6", textAlign: "center", fontWeight: "600"}}>
                                                         {i + 1}위
@@ -199,14 +232,22 @@ function AvgSideRankingModal({ members }) {
         return members.filter(member => member.sideAvg === true);
     }, [members]);
 
-    // 게임별로 memberAvg를 뺀 점수 계산
+    // 에버 사이드 멤버들이 모두 점수를 입력했는지 확인
+    const allSideAvgScored = filteredMembers.length > 0 && 
+        filteredMembers.every(member => 
+            member?.game1 !== null && member?.game1 !== undefined && member?.game1 > 0
+        );
+
+    // 게임별로 memberAvg를 뺀 점수 계산 (해당 게임에 점수가 있는 멤버만)
     const getAvgGameRankings = (gameKey) => {
+        if (!allSideAvgScored) return [];
+        
         return filteredMembers
             .map(member => ({
                 ...member,
                 adjustedScore: member[gameKey] - (member.memberAvg || 0) // 각 게임 점수에서 memberAvg를 뺌
             }))
-            .filter(member => member[gameKey] !== null) // null이 아닌 점수들만 필터링
+            .filter(member => member[gameKey] !== null && member[gameKey] > 0) // 0보다 큰 점수들만 필터링
             .sort((a, b) => b.adjustedScore - a.adjustedScore) // 점수 기준으로 내림차순 정렬
             .slice(0, 10); // 10등까지 추출
     };
@@ -222,6 +263,17 @@ function AvgSideRankingModal({ members }) {
                 <div style={{fontWeight: "600", fontSize: "16px", marginBottom: "12px", textAlign: "center"}}>
                     에버 사이드 순위
                 </div>
+                {!allSideAvgScored && (
+                    <div style={{
+                        textAlign: "center",
+                        padding: "40px 20px",
+                        color: "#6c757d",
+                        fontSize: "16px"
+                    }}>
+                        모든 에버 사이드 멤버가 점수를 입력하면<br />
+                        순위가 표시됩니다.
+                    </div>
+                )}
                 <div style={{overflowX: "auto"}}>
                     <table style={{width: "100%", borderCollapse: "collapse", fontSize: "11px"}}>
                         <thead>
@@ -234,7 +286,7 @@ function AvgSideRankingModal({ members }) {
                             </tr>
                         </thead>
                         <tbody>
-                            {Array.from({ length: 10 }, (_, i) => (
+                            {Array.from({ length: Math.max(game1Rankings.length, game2Rankings.length, game3Rankings.length, game4Rankings.length, 1) }, (_, i) => (
                                 <tr key={i}>
                                     <td style={{padding: "4px", border: "1px solid #dee2e6", textAlign: "center", fontWeight: "600"}}>
                                         {i + 1}위
