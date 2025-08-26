@@ -34,7 +34,7 @@ public class Scoreboard extends BaseUpdatableEntity {
     private boolean confirmed;
 
     @Column
-    Instant confirmDate;
+    private Instant confirmDate;
 
     @Column
     private int teamNumber;

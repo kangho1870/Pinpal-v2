@@ -5,8 +5,11 @@ import com.kh.pinpal2.club.dto.ClubCreateDto;
 import com.kh.pinpal2.club.dto.ClubRespDto;
 import com.kh.pinpal2.club.dto.ClubUpdateDto;
 import com.kh.pinpal2.club.service.ClubService;
+import com.kh.pinpal2.user_club.dto.UserClubAvgUpdateReqDto;
 import com.kh.pinpal2.user_club.dto.UserClubRespDto;
+import com.kh.pinpal2.user_club.dto.UserClubRoleUpdateReqDto;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +20,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/clubs")
+@Slf4j
 public class ClubController {
 
     private final ClubService clubService;
@@ -64,12 +68,24 @@ public class ClubController {
         clubService.delete(clubId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
-//
-//    @PatchMapping("/{clubId}")
-//    public ResponseEntity<List<UserClubRespDto>> updateAvgByMembers(
-//            @PathVariable Long clubId,
-//            @RequestBody
-//            ) {
-//
-//    }
+
+    @PatchMapping("/{clubId}/grades")
+    public ResponseEntity<List<UserClubRespDto>> updateAvgByMembers(
+            @PathVariable Long clubId,
+            @RequestBody UserClubAvgUpdateReqDto userClubAvgUpdateReqDto
+    ) {
+        List<UserClubRespDto> response = clubService.updateAvgAndGradeByMembers(clubId, userClubAvgUpdateReqDto);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @PatchMapping("/{clubId}/roles")
+    public ResponseEntity<List<UserClubRespDto>> updateRoles(
+            @PathVariable Long clubId,
+            @RequestBody UserClubRoleUpdateReqDto userClubRoleUpdateReqDto
+    ) {
+        clubService.updateRoleByMember(clubId, userClubRoleUpdateReqDto);
+
+        List<UserClubRespDto> response = clubService.getClubMembers(clubId);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
 }

@@ -4,7 +4,9 @@ import com.kh.pinpal2.base.dto.PageResponse;
 import com.kh.pinpal2.club.dto.ClubCreateDto;
 import com.kh.pinpal2.club.dto.ClubRespDto;
 import com.kh.pinpal2.club.dto.ClubUpdateDto;
+import com.kh.pinpal2.user_club.dto.UserClubAvgUpdateReqDto;
 import com.kh.pinpal2.user_club.dto.UserClubRespDto;
+import com.kh.pinpal2.user_club.dto.UserClubRoleUpdateReqDto;
 
 import java.time.Instant;
 import java.util.List;
@@ -23,4 +25,8 @@ public interface ClubService {
     List<UserClubRespDto> getClubMembers(Long clubId);
 
     void delete(Long clubId);
+
+    List<UserClubRespDto> updateAvgAndGradeByMembers(Long clubId, UserClubAvgUpdateReqDto userClubAvgUpdateReqDto);
+
+    void updateRoleByMember(Long clubId, UserClubRoleUpdateReqDto userClubRoleUpdateReqDto);
 }

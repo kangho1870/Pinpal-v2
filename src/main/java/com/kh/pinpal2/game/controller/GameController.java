@@ -46,7 +46,7 @@ public class GameController {
     }
 
     @GetMapping("/{clubId}/scoreboards")
-    public ResponseEntity<?> getScoreboardByGameId(@PathVariable Long clubId, LocalDate startDate, LocalDate endDate, String type) {
+    public ResponseEntity<List<GameScoreboardsRespDto>> getScoreboardByGameId(@PathVariable Long clubId, LocalDate startDate, LocalDate endDate, String type) {
         List<GameScoreboardsRespDto> response = gameService.getScoreboardByClubId(clubId, startDate, endDate, type);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }

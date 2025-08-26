@@ -243,7 +243,8 @@ public class GameServiceImpl implements GameService {
                             scoreboard.getGrade(),
                             userClubRepository.findByClubIdAndUserId(clubId, scoreboard.getUser().getId()).orElseThrow(
                                     UserNotFoundException::new
-                            ).getAvg()
+                            ).getAvg(),
+                            scoreboard.getTeamNumber()
                     )).toList()
             ));
         });

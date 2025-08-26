@@ -49,4 +49,16 @@ public class UserClub extends BaseUpdatableEntity {
         this.grade = 0;
         this.role = role;
     }
+
+    public void updateAvg(Integer avg) {
+        this.avg = avg;
+    }
+
+    public void updateGrade(Integer grade) {
+        this.grade = grade;
+    }
+
+    public void updateRole(ClubRole role) {
+        this.role = role;
+    }
 }

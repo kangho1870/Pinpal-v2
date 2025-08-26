@@ -7,6 +7,7 @@ public record ScoreboardRespDto(
         int score3,
         int score4,
         int grade,
-        int avg
+        int avg,
+        int teamNumber
 ) {
 }

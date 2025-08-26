@@ -428,17 +428,17 @@ export const addClubRequest = async (data, accessToken) => {
     return createClubRequest(data, accessToken);
 };
 
-export const clubMemberAvgUpdateRequest = async (data, accessToken) => {
+export const clubMemberAvgUpdateRequest = async (data, clubId, accessToken) => {
     // 새로운 API 구조에서는 별도 엔드포인트로 분리될 예정
-    const responseBody = await axios.post(`${CLUB_API_URL}/update-avg`, data, bearerAuthorization(accessToken))
+    const responseBody = await axios.patch(`${CLUB_API_URL}/${clubId}/grades`, data, bearerAuthorization(accessToken))
         .then(responseDataHandler)
         .catch(responseErrorHandler)
     return responseBody;
 }
 
-export const clubMemberRoleUpdateRequest = async (data, accessToken) => {
+export const clubMemberRoleUpdateRequest = async (data, clubId, accessToken) => {
     // 새로운 API 구조에서는 별도 엔드포인트로 분리될 예정
-    const responseBody = await axios.post(`${CLUB_API_URL}/update-role`, data, bearerAuthorization(accessToken))
+    const responseBody = await axios.patch(`${CLUB_API_URL}/${clubId}/roles`, data, bearerAuthorization(accessToken))
         .then(responseDataHandler)
         .catch(responseErrorHandler)
     return responseBody;

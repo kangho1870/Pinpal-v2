@@ -653,13 +653,18 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                             {gamesByType["정기모임"].length > 0 && (
                                 <div className={styles.gameTypeSection}>
                                     <h4 className={styles.gameTypeTitle}>정기모임</h4>
-                                        {gamesByType["정기모임"].map((game, index) => (
-                                            <div key={`정기모임-${index}`}>
-                                                <div className={styles.scheduleBox}>
+                                                                                                                {gamesByType["정기모임"].map((game, index) => (
+                                        <div key={`정기모임-${index}`}>
+                                            <div className={`${styles.scheduleBox} ${game.status === "FINISHED" ? styles.gameFinished : ""}`}>
+                                                <div className={styles.scheduleTitle}>
+                                                    <p>
+                                                        {game.gameName}
+                                                        {game.status === "FINISHED" && (
+                                                            <span className={styles.gameFinishedBadge}>종료</span>
+                                                        )}
+                                                    </p>
                                                     <div className={styles.scheduleTitle}>
-                                                        <p>{game.gameName}</p>
-                                                        <div className={styles.scheduleTitle}>
-                                                            <h5>{formatShortDate(game.gameDate)}</h5>
+                                                        <h5>{formatShortDate(game.gameDate)}</h5>
                                                             {!dateTimeCheck(game) && (
                                                                 (() => {
                                                                     // 로컬 상태와 백엔드 멤버 목록을 모두 확인
@@ -744,9 +749,14 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                     <h4 className={styles.gameTypeTitle}>정기번개</h4>
                                         {gamesByType["정기번개"].map((game, index) => (
                                             <div key={`정기번개-${index}`}>
-                                                <div className={styles.scheduleBox}>
+                                                <div className={`${styles.scheduleBox} ${game.status === "FINISHED" ? styles.gameFinished : ""}`}>
                                                     <div className={styles.scheduleTitle}>
-                                                        <p>{game.gameName}</p>
+                                                        <p>
+                                                            {game.gameName}
+                                                            {game.status === "FINISHED" && (
+                                                                <span className={styles.gameFinishedBadge}>종료</span>
+                                                            )}
+                                                        </p>
                                                         <div className={styles.scheduleTitle}>
                                                             <h5>{formatShortDate(game.gameDate)}</h5>
                                                             {!dateTimeCheck(game) && (
@@ -769,7 +779,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                             )}
                                                         {dateTimeCheck(game) && (
                                                             <button 
-                                                                className={styles.scheduleCancleBtn}
+                                                                className={`${game.status === "FINISHED" ? styles.gameFinishedBtn : styles.scheduleCancleBtn}`}
                                                                 onClick={() => {
                                                                     const gameDateTime = new Date(`${game.gameDate}T${game.gameTime}+09:00`);
                                                                     const now = new Date();
@@ -783,7 +793,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                                     }
                                                                 }}
                                                             >
-                                                                참석불가
+                                                                {game.status === "FINISHED" ? "게임종료" : "참석불가"}
                                                             </button>
                                                         )}
                                                     </div>
@@ -833,9 +843,14 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                     <h4 className={styles.gameTypeTitle}>기타</h4>
                                         {gamesByType["기타"].map((game, index) => (
                                             <div key={`기타-${index}`}>
-                                                <div className={styles.scheduleBox}>
+                                                <div className={`${styles.scheduleBox} ${game.status === "FINISHED" ? styles.gameFinished : ""}`}>
                                                     <div className={styles.scheduleTitle}>
-                                                        <p>{game.gameName}</p>
+                                                        <p>
+                                                            {game.gameName}
+                                                            {game.status === "FINISHED" && (
+                                                                <span className={styles.gameFinishedBadge}>종료</span>
+                                                            )}
+                                                        </p>
                                                         <div className={styles.scheduleTitle}>
                                                             <h5>{formatShortDate(game.gameDate)}</h5>
                                                         {!dateTimeCheck(game) && (
@@ -870,7 +885,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                         )}
                                                         {dateTimeCheck(game) && (
                                                             <button 
-                                                                className={styles.scheduleCancleBtn}
+                                                                className={`${game.status === "FINISHED" ? styles.gameFinishedBtn : styles.scheduleCancleBtn}`}
                                                                 onClick={() => {
                                                                     const gameDateTime = new Date(`${game.gameDate}T${game.gameTime}+09:00`);
                                                                     const now = new Date();
@@ -884,7 +899,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                                     }
                                                                 }}
                                                             >
-                                                                참석불가
+                                                                {game.status === "FINISHED" ? "게임종료" : "참석불가"}
                                                             </button>
                                                         )}
                                                     </div>
@@ -1015,15 +1030,18 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
 
 function ClubCeremony({ setLoading }) {
 
-    const { members, ceremonys } = useClubStore();
+    const { members, ceremonys, games } = useClubStore();
     const navigator = useNavigate();
     const { signInUser, setSignInUser } = useSignInStore();
     const [cookies] = useCookies();
     const token = cookies[ACCESS_TOKEN];
     const [expandedIndices, setExpandedIndices] = useState([]);
     const [pageStates, setPageStates] = useState([]);
+    const [attendanceFilter, setAttendanceFilter] = useState('all'); // 'all' or 'participated'
+    const [gameTypeFilter, setGameTypeFilter] = useState('all'); // 'all', '정기모임', '정기번개', '기타'
+    const [scoreboardData, setScoreboardData] = useState({});
 
-    const toggleCeremonyInfo = (index) => {
+    const toggleCeremonyInfo = async (index) => {
         setExpandedIndices((prevIndices) => {
             if(prevIndices.includes(index)) {
                 // 클릭한 인덱스가 이미 열려있으면 닫기
@@ -1034,22 +1052,35 @@ function ClubCeremony({ setLoading }) {
                     newPageStates[index] = 0; // 개인점수로 초기화
                     return newPageStates;
                 });
+                
                 // 클릭한 인덱스가 닫혀있으면 열기
-                return [...prevIndices, index];
+                const newIndices = [...prevIndices, index];
+                
+                // scoreboard 데이터 가져오기
+                const ceremonyData = ceremonys[index];
+                if (ceremonyData && ceremonyData.gameId) {
+                    fetchScoreboardData(ceremonyData.gameId);
+                }
+                
+                return newIndices;
             }
         });
     };
 
     const handlePageChange = (index, newPage) => {
+        console.log('🔍 페이지 변경:', index, newPage, '현재 pageStates:', pageStates);
         setPageStates((prevPageStates) => {
             const newPageStates = [...prevPageStates];
             newPageStates[index] = newPage; // 해당 세리머니의 페이지 상태 업데이트
+            console.log('🔍 새로운 pageStates:', newPageStates);
             return newPageStates;
         });
     };
 
-    const clubId = signInUser?.clubId || 0;
+    const { clubId } = useParams(); // URL 파라미터에서 clubId 가져오기
     const memberId = signInUser?.id || null;
+    
+    console.log('🔍 ClubCeremony - clubId:', clubId, 'memberId:', memberId);
 
     function getAvgScore(...scores) {
         const validScores = scores.filter(score => score !== null && score !== undefined);
@@ -1065,8 +1096,58 @@ function ClubCeremony({ setLoading }) {
         return Math.max(...integerScores);
     }
 
-    useState(() => {
+    // 게임 정보를 찾는 함수
+    const findGameInfo = (gameId) => {
+        return games.find(game => game.id === gameId);
+    };
+
+    // scoreboard 데이터를 가져오는 함수
+    const fetchScoreboardData = async (gameId) => {
+        if (scoreboardData[gameId]) {
+            return scoreboardData[gameId]; // 이미 가져온 데이터가 있으면 반환
+        }
+
+        // clubId가 유효한지 확인
+        if (!clubId || clubId === '0') {
+            console.error('유효하지 않은 clubId:', clubId);
+            return [];
+        }
+
+        try {
+            const response = await getClubScoreboardsRequest(clubId, null, null, null, token);
+            console.log('🔍 Scoreboard API 응답:', response);
+            if (response && Array.isArray(response)) {
+                const gameScoreboard = response.find(item => item.game?.id === gameId);
+                if (gameScoreboard && gameScoreboard.scoreboards) {
+                    // scoreboard 데이터를 ceremony 데이터 구조와 맞게 변환
+                    const transformedScoreboards = gameScoreboard.scoreboards.map(scoreboard => ({
+                        memberId: scoreboard.memberId,
+                        memberName: members.find(m => m.memberId === scoreboard.memberId)?.memberName || 'Unknown',
+                        memberAvg: scoreboard.avg,
+                        game1: scoreboard.score1,
+                        game2: scoreboard.score2,
+                        game3: scoreboard.score3,
+                        game4: scoreboard.score4,
+                        teamNumber: scoreboard.teamNumber // 백엔드에서 추가된 teamNumber 필드 사용
+                    }));
+
+                    setScoreboardData(prev => ({
+                        ...prev,
+                        [gameId]: transformedScoreboards
+                    }));
+
+                    return transformedScoreboards;
+                }
+            }
+        } catch (error) {
+            console.error('Scoreboard 데이터 가져오기 실패:', error);
+        }
+        return [];
+    };
+
+    useEffect(() => {
         setPageStates(new Array(ceremonys.length).fill(0));
+        console.log('🔍 ceremonys 데이터:', ceremonys);
     }, [ceremonys, clubId])
     
     return (
@@ -1078,84 +1159,177 @@ function ClubCeremony({ setLoading }) {
                             <div className={styles.filterNav}>
                                 <p className={styles.filterTitle}>참석여부</p>
                                 <div className={styles.filterBtns}>
-                                    <button className={styles.filterBtn}>전체</button>
-                                    <button className={styles.filterBtn}>참여한 게임만 보기</button>
+                                    <button 
+                                        className={`${styles.filterBtn} ${attendanceFilter === 'all' ? styles.filterBtnSelected : ''}`}
+                                        onClick={() => setAttendanceFilter('all')}
+                                    >
+                                        전체
+                                    </button>
+                                    <button 
+                                        className={`${styles.filterBtn} ${attendanceFilter === 'participated' ? styles.filterBtnSelected : ''}`}
+                                        onClick={() => setAttendanceFilter('participated')}
+                                    >
+                                        참여한 게임만 보기
+                                    </button>
                                 </div>
                             </div>
                             <div className={styles.filterNav}>
                                 <p className={styles.filterTitle}>게임종류</p>
                                 <div className={styles.filterBtns}>
-                                    <button className={`${styles.filterBtn}`}>전체</button>
-                                    <button className={`${styles.filterBtn}`}>정기모임</button>
-                                    <button className={`${styles.filterBtn} ${styles.gameType2}`}>정기번개</button>
-                                    <button className={`${styles.filterBtn}`}>기타</button>
+                                    <button 
+                                        className={`${styles.filterBtn} ${gameTypeFilter === 'all' ? styles.filterBtnSelected : ''}`}
+                                        onClick={() => setGameTypeFilter('all')}
+                                    >
+                                        전체
+                                    </button>
+                                    <button 
+                                        className={`${styles.filterBtn} ${gameTypeFilter === '정기모임' ? styles.filterBtnSelected : ''}`}
+                                        onClick={() => setGameTypeFilter('정기모임')}
+                                    >
+                                        정기모임
+                                    </button>
+                                    <button 
+                                        className={`${styles.filterBtn} ${styles.gameType2} ${gameTypeFilter === '정기번개' ? styles.filterBtnSelected : ''}`}
+                                        onClick={() => setGameTypeFilter('정기번개')}
+                                    >
+                                        정기번개
+                                    </button>
+                                    <button 
+                                        className={`${styles.filterBtn} ${gameTypeFilter === '기타' ? styles.filterBtnSelected : ''}`}
+                                        onClick={() => setGameTypeFilter('기타')}
+                                    >
+                                        기타
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div className={styles.ceremonyContainer}>
-                        {ceremonys.length > 0 ? ceremonys.map((data, i) => (
-                            <>
+                        {ceremonys.length > 0 ? ceremonys
+                            .filter(data => {
+                                // 게임 정보 찾기
+                                const gameInfo = findGameInfo(data.gameId);
+                                
+                                // 게임 타입 필터링
+                                if (gameTypeFilter !== 'all' && gameInfo?.gameType !== gameTypeFilter) {
+                                    return false;
+                                }
+                                
+                                // 참석 여부 필터링 (참여한 게임만 보기)
+                                if (attendanceFilter === 'participated') {
+                                    // 현재 사용자가 해당 게임에 참여했는지 확인
+                                    const participated = scoreboardData[data.gameId]?.some(member => 
+                                        String(member.memberId) === String(memberId)
+                                    );
+                                    if (!participated) {
+                                        return false;
+                                    }
+                                }
+                                
+                                return true;
+                            })
+                            .map((data, i) => {
+                                console.log('🔍 ceremony data:', data);
+                                return (
+                                    <>
                                 <div className={`${styles.ceremonyBox} ${data.gameType == "정기번개" ? styles.redLine : data.gameType == "기타" ? styles.blackLine : ""}`} key={data.gameId}>
                                     <div className={styles.ceremonyArea}>
                                         <div className={styles.simpleInformation}>
                                             <div className={styles.simpleGameInfo}>
                                                 <div className={styles.simpleGameInfoTitle}>
-                                                    <h3>{data.gameName}</h3>
+                                                    <h3>{(() => {
+                                                        const gameInfo = findGameInfo(data.gameId);
+                                                        return gameInfo?.gameName || gameInfo?.name || `게임 ${data.gameId}`;
+                                                    })()}</h3>
                                                 </div>
                                                 <div className={styles.simpleGameInfoTitle}>
-                                                    <p>{data.gameDate}</p>
+                                                    <p>{(() => {
+                                                        const gameInfo = findGameInfo(data.gameId);
+                                                        console.log('🔍 게임 정보:', gameInfo, 'gameId:', data.gameId);
+                                                        return gameInfo?.gameDate || gameInfo?.date || "-";
+                                                    })()}</p>
                                                 </div>
                                             </div>
                                             <div className={styles.simpleInformationBox}>
                                                 <div className={styles.simpleCeremony}>
                                                     <span className={styles.simpleCeremonyTitle}>1등</span>
-                                                    <p>{data.total1stId}</p>
+                                                    <p>{(() => {
+                                                        const pin1st = data.ceremonies?.find(c => c.type === 'pin1st');
+                                                        return pin1st?.winners?.[0] || "-";
+                                                    })()}</p>
                                                 </div>
                                                 <div className={styles.simpleCeremony}>
                                                     <span className={styles.simpleCeremonyTitle}>에버 1등</span>
-                                                    <p>{data.avg1stId}</p>
+                                                    <p>{(() => {
+                                                        const avg1st = data.ceremonies?.find(c => c.type === 'avg1st');
+                                                        return avg1st?.winners?.[0] || "-";
+                                                    })()}</p>
                                                 </div>
                                             </div>
                                             <div className={styles.simpleInformationBox}>
                                                 <div className={styles.simpleCeremony}>
                                                     <span className={styles.simpleCeremonyTitle}>1군 1등</span>
-                                                    <p>{data.grade1_1stId == "" ? "-" : data.grade1_1stId}</p>
+                                                    <p>{(() => {
+                                                        const grade1 = data.ceremonies?.find(c => c.type === 'grade1');
+                                                        return grade1?.winners?.[0] || "-";
+                                                    })()}</p>
                                                 </div>
                                                 <div className={styles.simpleCeremony}>
                                                     <span className={styles.simpleCeremonyTitle}>2군 1등</span>
-                                                    <p>{data.grade2_1stId == "" ? "-" : data.grade2_1stId}</p>
+                                                    <p>{(() => {
+                                                        const grade2 = data.ceremonies?.find(c => c.type === 'grade2');
+                                                        return grade2?.winners?.[0] || "-";
+                                                    })()}</p>
                                                 </div>
                                             </div>
                                             <div className={styles.simpleInformationBox}>
                                                 <div className={styles.simpleCeremony}>
                                                     <span className={styles.simpleCeremonyTitle}>3군 1등</span>
-                                                    <p>{data.grade3_1stId == "" ? "-" : data.grade3_1stId}</p>
+                                                    <p>{(() => {
+                                                        const grade3 = data.ceremonies?.find(c => c.type === 'grade3');
+                                                        return grade3?.winners?.[0] || "-";
+                                                    })()}</p>
                                                 </div>
                                                 <div className={styles.simpleCeremony}>
                                                     <span className={styles.simpleCeremonyTitle}>4군 1등</span>
-                                                    <p>{data.grade4_1stId == "" ? "-" : data.grade4_1stId}</p>
+                                                    <p>{(() => {
+                                                        const grade4 = data.ceremonies?.find(c => c.type === 'grade4');
+                                                        return grade4?.winners?.[0] || "-";
+                                                    })()}</p>
                                                 </div>
                                             </div>
                                             <div className={styles.simpleInformationBox}>
                                                 <div className={styles.simpleCeremony}>
                                                     <span className={styles.simpleCeremonyTitle}>남자 하이스코어</span>
-                                                    <p>{data.highScoreOfMan == "" ? "-" : data.highScoreOfMan}</p>
+                                                    <p>{(() => {
+                                                        const highScoreOfMan = data.ceremonies?.find(c => c.type === 'highScoreOfMan');
+                                                        return highScoreOfMan?.winners?.[0] || "-";
+                                                    })()}</p>
                                                 </div>
                                                 <div className={styles.simpleCeremony}>
                                                     <span className={styles.simpleCeremonyTitle}>여자 하이스코어</span>
-                                                    <p>{data.highScoreOfGirl == "" ? "-" : data.highScoreOfGirl}</p>
+                                                    <p>{(() => {
+                                                        const highScoreOfGirl = data.ceremonies?.find(c => c.type === 'highScoreOfGirl');
+                                                        return highScoreOfGirl?.winners?.[0] || "-";
+                                                    })()}</p>
                                                 </div>
                                             </div>
                                             <div className={styles.simpleInformationBox}>
                                                 <div className={styles.simpleCeremony}>
                                                     <span className={styles.simpleCeremonyTitle}>팀 1등</span>
                                                     <div className={styles.simpleCeremonyInfoBox}>
-                                                        <p className={styles.simpleCeremonyInfo}>{data.team1stIds}</p>
+                                                        <p className={styles.simpleCeremonyInfo}>
+                                                            {(() => {
+                                                                const team1st = data.ceremonies?.find(c => c.type === 'team1st');
+                                                                return team1st?.winners?.join(', ') || "-";
+                                                            })()}
+                                                        </p>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
+                                    </div>
+                                    <div className={styles.moreInfoContainer}>
                                         <div className={styles.moreInfo} onClick={() => toggleCeremonyInfo(i)}>
                                             {!expandedIndices.includes(i) ? (
                                                 <i class="fa-solid fa-chevron-down"></i>
@@ -1184,13 +1358,11 @@ function ClubCeremony({ setLoading }) {
                                                                 <th>4G</th>
                                                                 <th>합계</th>
                                                                 <th>평균</th>
-                                                                <th>에버편차</th>
-                                                                <th>HIGH</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
-                                                            {data.scoreboards.map((member, i) => (
-                                                                <tr>
+                                                            {(scoreboardData[data.gameId] || []).map((member, i) => (
+                                                                <tr key={i}>
                                                                     <td>{(i + 1)}</td>
                                                                     <td>{member.memberName}</td>
                                                                     <td>{member.memberAvg}</td>
@@ -1200,8 +1372,6 @@ function ClubCeremony({ setLoading }) {
                                                                     <td>{member.game4}</td>
                                                                     <td>{member.game1 + member.game2 + member.game3 + member.game4}</td>
                                                                     <td>{getAvgScore(member.game1 + member.game2 + member.game3 + member.game4)}</td>
-                                                                    <td>{((member.game1 + member.game2 + member.game3 + member.game4) / 4) - member.memberAvg}</td>
-                                                                    <td>{getHighScore(member.game1 + member.game2 + member.game3 + member.game4)}</td>
                                                                 </tr>
                                                             ))}
                                                         </tbody>
@@ -1209,7 +1379,7 @@ function ClubCeremony({ setLoading }) {
                                                 }
                                                 {pageStates[i] == 1 &&
                                                     Object.entries(
-                                                        data.scoreboards.reduce((teams, member) => {
+                                                        (scoreboardData[data.gameId] || []).reduce((teams, member) => {
                                                             const teamNumber = member.teamNumber;
                                                             const scoreDifference = ((member.game1 + member.game2 + member.game3 + member.game4)) - (member.memberAvg * 4 );
 
@@ -1235,20 +1405,20 @@ function ClubCeremony({ setLoading }) {
                                                         }, {})
                                                     )
                                                     // 팀별로 높은 총 차이 점수 순으로 정렬
+                                                    .filter(([teamNumber]) => teamNumber !== "0") // 0팀 제외
                                                     .sort(([, teamA], [, teamB]) => teamB.totalDifference - teamA.totalDifference)
                                                     .map(([teamNumber, team], i) => (
                                                         <table className={styles.teamScoreTable} key={teamNumber}>
                                                             <thead>
                                                                 <tr className={styles.teamScoreHeaderTr}>
                                                                     <th className={styles.teamScoreTh}>{i + 1 + "위"}</th>
-                                                                    <th className={styles.teamScoreTh} colSpan={2}></th>
+                                                                    <th className={styles.teamScoreTh} colSpan={1}></th>
                                                                     <th className={styles.teamScoreTh}>Avg</th>
                                                                     <th className={styles.teamScoreTh}>1G</th>
                                                                     <th className={styles.teamScoreTh}>2G</th>
                                                                     <th className={styles.teamScoreTh}>3G</th>
                                                                     <th className={styles.teamScoreTh}>4G</th>
                                                                     <th className={styles.teamScoreTh}>총점</th>
-                                                                    <th className={styles.teamScoreTh}>평균</th>
                                                                     <th className={styles.teamScoreTh}>합계</th>
                                                                 </tr>
                                                             </thead>
@@ -1256,9 +1426,9 @@ function ClubCeremony({ setLoading }) {
                                                                 {team.members.map((member, index) => (
                                                                     <tr className={styles.teamScoreBodyTr} key={index}>
                                                                         {index === 0 && (
-                                                                            <td className={styles.teamScoreTd} rowSpan={team.members.length}>Team {teamNumber}</td>
+                                                                            <td className={styles.teamScoreTd} rowSpan={team.members.length}>{teamNumber}팀</td>
                                                                         )}
-                                                                        <td className={styles.teamScoreTd}>{index + 1}</td>
+
                                                                         <td className={styles.teamScoreTd}>{member.memberName}</td>
                                                                         <td className={styles.teamScoreTd}>{member.memberAvg}</td>
                                                                         <td className={`${styles.teamScoreTd} ${styles.gameScoreBackground}`}>{member.game1}</td>
@@ -1268,24 +1438,22 @@ function ClubCeremony({ setLoading }) {
                                                                         <td className={styles.teamScoreTd}>
                                                                             {member.game1 + member.game2 + member.game3 + member.game4}
                                                                         </td>
+
                                                                         <td className={styles.teamScoreTd}>
-                                                                            {((member.game1 + member.game2 + member.game3 + member.game4) / 4).toFixed(1)}
-                                                                        </td>
-                                                                        <td className={styles.teamScoreTd}>
-                                                                            {(((member.game1 + member.game2 + member.game3 + member.game4) / 4) - member.memberAvg)}
+                                                                            {((member.game1 - member.memberAvg) + (member.game2 - member.memberAvg) + (member.game3 - member.memberAvg) + (member.game4 - member.memberAvg))}
                                                                         </td>
                                                                     </tr>
                                                                 ))}
                                                             </tbody>
                                                             <tfoot>
-                                                                <tr className={styles.teamScoreHeaderTr}>
-                                                                    <td className={styles.teamScoreTh} colSpan={4}>합계</td>
-                                                                    <td className={styles.teamScoreTh}>{team.game1Total}</td>
-                                                                    <td className={styles.teamScoreTh}>{team.game2Total}</td>
-                                                                    <td className={styles.teamScoreTh}>{team.game3Total}</td>
-                                                                    <td className={styles.teamScoreTh}>{team.game4Total}</td>
-                                                                    <td className={styles.teamScoreTh} colSpan={2}>팀 종합</td>
-                                                                    <td className={styles.teamScoreTh}>{team.totalDifference}</td>
+                                                                <tr className={styles.teamScoreFooterTr}>
+                                                                    <td className={styles.teamScoreTd} colSpan={4}>합계</td>
+                                                                    <td className={styles.teamScoreTd}>{team.game1Total}</td>
+                                                                    <td className={styles.teamScoreTd}>{team.game2Total}</td>
+                                                                    <td className={styles.teamScoreTd}>{team.game3Total}</td>
+                                                                    <td className={styles.teamScoreTd}>{team.game4Total}</td>
+                                                                    <td className={`${styles.teamScoreTd} ${styles.teamTotalCell}`} colSpan={2}>팀 종합</td>
+                                                                    <td className={styles.teamScoreTd}>{team.totalDifference}</td>
                                                                 </tr>
                                                             </tfoot>
                                                         </table>
@@ -1294,8 +1462,9 @@ function ClubCeremony({ setLoading }) {
                                         </div>
                                     }
                                 </div>
-                            </>
-                        )) : (
+                                    </>
+                                );
+                            }) : (
                                 <div className={styles.nodataContainer}>
                                     <Nodata text={"기록이 없습니다."}></Nodata>
                                 </div>
@@ -1369,7 +1538,7 @@ function ClubSetting({ pageLoad, clubId }) {
             role: selectedRole
         }
 
-        clubMemberRoleUpdateRequest(dto, token).then(clubMemberRoleUpdateResponse);
+        clubMemberRoleUpdateRequest(dto, clubId,token).then(clubMemberRoleUpdateResponse);
     };
 
     const groupedMembers = updatedMembers.reduce((acc, member) => {
@@ -1419,10 +1588,10 @@ function ClubSetting({ pageLoad, clubId }) {
         if((getCurrentUserRole() === "STAFF" || getCurrentUserRole() === "MASTER")) {
             const dto = {
                 ids: updatedMembers.map(member => member.memberId),
-                avg: updatedMembers.map(member => member.avg), // memberAvg 대신 avg 사용
+                averages: updatedMembers.map(member => member.avg), // memberAvg 대신 avg 사용
                 grades: updatedMembers.map(member => member.grade), // memberGrade 대신 grade 사용
             }
-            clubMemberAvgUpdateRequest(dto, token).then(memberAvgUpdateResponse);
+            clubMemberAvgUpdateRequest(dto, clubId, token).then(memberAvgUpdateResponse);
         } else {
             alert("접근 권한이 없습니다.")
             return;

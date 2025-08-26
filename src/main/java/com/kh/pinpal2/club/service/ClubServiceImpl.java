@@ -4,6 +4,7 @@ import com.kh.pinpal2.base.dto.PageResponse;
 import com.kh.pinpal2.base.exception.PermissionDeniedException;
 import com.kh.pinpal2.base.exception.club.ClubNotFoundException;
 import com.kh.pinpal2.base.exception.club.UserAlreadyJoinedClubException;
+import com.kh.pinpal2.base.exception.user.UserNotFoundException;
 import com.kh.pinpal2.base.mapper.PageResponseMapper;
 import com.kh.pinpal2.base.util.SecurityUtil;
 import com.kh.pinpal2.ceremony.repository.CeremonyRepository;
@@ -18,6 +19,8 @@ import com.kh.pinpal2.game.repository.GameRepository;
 import com.kh.pinpal2.scoreboard.repository.ScoreboardRepository;
 import com.kh.pinpal2.user.entity.User;
 import com.kh.pinpal2.user.repository.UserRepository;
+import com.kh.pinpal2.user_club.dto.UserClubAvgUpdateReqDto;
+import com.kh.pinpal2.user_club.dto.UserClubRoleUpdateReqDto;
 import com.kh.pinpal2.user_club.entity.ClubRole;
 import com.kh.pinpal2.user_club.mapper.UserClubMapper;
 import com.kh.pinpal2.user_club.dto.UserClubRespDto;
@@ -192,5 +195,48 @@ public class ClubServiceImpl implements ClubService {
 
         // 7. Club 삭제
         clubRepository.deleteById(clubId);
+    }
+
+    @Override
+    public List<UserClubRespDto> updateAvgAndGradeByMembers(Long clubId, UserClubAvgUpdateReqDto userClubAvgUpdateReqDto) {
+        Club club = clubRepository.findById(clubId).orElseThrow(ClubNotFoundException::new);
+
+        List<UserClub> users = userClubRepository.findAllByClubIdAndUserIdIn(clubId, userClubAvgUpdateReqDto.ids());
+
+        Map<Long, Integer> userAvgMap = new HashMap<>();
+        Map<Long, Integer> userGradeMap = new HashMap<>();
+
+        for (int i = 0; i < userClubAvgUpdateReqDto.ids().size(); i++) {
+            userAvgMap.put(userClubAvgUpdateReqDto.ids().get(i), userClubAvgUpdateReqDto.averages().get(i));
+            userGradeMap.put(userClubAvgUpdateReqDto.ids().get(i), userClubAvgUpdateReqDto.grades().get(i));
+        }
+
+        users.forEach(user -> {
+            Long userId = user.getUser().getId();
+
+            if (userAvgMap.containsKey(userId)) {
+                user.updateAvg(userAvgMap.get(userId));
+            }
+
+            if (userGradeMap.containsKey(userId)) {
+                user.updateGrade(userGradeMap.get(userId));
+            }
+        });
+
+        List<UserClub> saved = userClubRepository.saveAll(users);
+
+        return saved.stream()
+                .map(userClubMapper::toDto)
+                .toList();
+    }
+
+    @Override
+    public void updateRoleByMember(Long clubId, UserClubRoleUpdateReqDto userClubRoleUpdateReqDto) {
+        Club club = clubRepository.findById(clubId).orElseThrow(ClubNotFoundException::new);
+
+        UserClub user = userClubRepository.findByClubIdAndUserId(clubId, userClubRoleUpdateReqDto.memberId()).orElseThrow(UserNotFoundException::new);
+
+        user.updateRole(userClubRoleUpdateReqDto.role());
+        userClubRepository.save(user);
     }
 }

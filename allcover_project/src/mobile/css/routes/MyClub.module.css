@@ -5,7 +5,7 @@
     overflow-x: hidden;
     display: flex;
     flex-direction: column;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
     position: relative;
 }
 
@@ -185,7 +185,6 @@
     padding: 20px;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(15px);
-    border-radius: 0 0 16px 16px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-top: none;
@@ -269,6 +268,45 @@
 .scheduleBox:hover {
     transform: translateY(-4px);
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+}
+
+.scheduleBox.gameFinished {
+    background: rgba(255, 255, 255, 0.8);
+    opacity: 0.7;
+    border: 1px solid rgba(149, 165, 166, 0.3);
+}
+
+.scheduleBox.gameFinished::before {
+    background: linear-gradient(180deg, #95a5a6, #7f8c8d);
+}
+
+.gameFinishedBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 12px;
+    margin-left: 8px;
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+    }
+    50% {
+        box-shadow: 0 2px 12px rgba(231, 76, 60, 0.5);
+    }
+    100% {
+        box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+    }
 }
 
 .memberProfileContainer {
@@ -398,6 +436,24 @@
 .scheduleCancleBtn:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(240, 147, 251, 0.4);
+}
+
+.gameFinishedBtn {
+    background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(149, 165, 166, 0.3);
+}
+
+.gameFinishedBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(149, 165, 166, 0.4);
 }
 
 .scheduleContnet {
@@ -866,18 +922,19 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 12px 20px;
-    height: 36px;
-    border-radius: 18px;
+    padding: 10px 16px;
+    height: 32px;
+    border-radius: 16px;
     border: 2px solid #667eea;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.95);
     color: #667eea;
     margin-right: 8px;
     white-space: nowrap;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 13px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
 }
 
 .filterBtn:hover {
@@ -885,6 +942,14 @@
     color: white;
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+.filterBtnSelected {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    border-color: #667eea !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4) !important;
 }
 
 .gameType2 {
@@ -927,8 +992,10 @@
 .ceremonyArea {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    padding: 5px;
+    align-items: flex-start;
+    padding: 16px;
+    gap: 12px;
+    width: 100%;
 }
 
 .redLine {
@@ -939,52 +1006,199 @@
 .simpleInformation {
     display: flex;
     flex-direction: column;
-    overflow-x: scroll;
-    border: 1px solid black;
-    border-radius: 5px;
-    padding: 5px;
+    overflow-x: auto;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid rgba(102, 126, 234, 0.2);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    margin: 8px;
+    min-width: 280px;
+    flex: 1;
+    max-width: 100%;
 }
 
 .simpleGameInfo {
     display: flex;
     width: 100%;
     align-items: center;
-    margin-bottom: 5px;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+    gap: 8px;
+    min-width: 0;
 }
 
 .simpleGameInfoTitle {
     display: flex;
     margin-right: 10px;
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+}
+
+.simpleGameInfoTitle:first-child {
+    flex: 2; /* 제목이 더 많은 공간 차지 */
+}
+
+.simpleGameInfoTitle:last-child {
+    flex-shrink: 0; /* 날짜는 줄어들지 않도록 */
+    flex-grow: 0;
+    min-width: fit-content; /* 날짜가 완전히 표시되도록 */
+}
+
+.simpleGameInfoTitle p {
+    font-size: 14px;
+    color: #7f8c8d;
+    margin: 0;
+    font-weight: 500;
+    white-space: nowrap; /* 날짜 줄바꿈 방지 */
+}
+
+.simpleGameInfoTitle h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    flex: 1;
+    min-width: 0;
+    max-width: 100%;
+    word-break: keep-all;
+    word-wrap: normal;
+}
+
+@media (max-width: 480px) {
+    .simpleGameInfoTitle h3 {
+        font-size: 16px !important;
+    }
+    
+    .simpleGameInfoTitle:first-child {
+        flex: 3; /* 더 작은 화면에서 제목이 더 많은 공간 차지 */
+    }
+}
+
+@media (max-width: 375px) {
+    .simpleGameInfoTitle h3 {
+        font-size: 14px !important;
+    }
+    
+    .simpleGameInfoTitle:first-child {
+        flex: 4; /* 매우 작은 화면에서 제목이 더 많은 공간 차지 */
+    }
+}
+
+.simpleGameInfoTitle p {
+    font-size: 14px;
+    color: #7f8c8d;
+    margin: 0;
+    font-weight: 500;
 }
 
 .simpleInformationBox {
     display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(102, 126, 234, 0.05);
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.simpleInformationBox:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
 }
 
 .simpleCeremony {
     display: flex;
     align-items: center;
     margin-right: 5px;
+    flex: 1;
+    min-width: 0;
+    gap: 8px;
+}
+
+.simpleCeremony p {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #2c3e50;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .simpleCeremonyTitle {
-    font-size: 13px;
-    margin-right: 5px;
+    font-size: 12px;
+    margin-right: 8px;
+    font-weight: 600;
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+    padding: 4px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
 }
 
 .simpleCeremonyInfoBox {
     display: flex;
     white-space: nowrap;
-    background-color: #ebebeb;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 8px;
+    padding: 2px;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
 }
 
 .simpleCeremonyInfo {
     display: flex;
+    color: white;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    backdrop-filter: blur(10px);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+}
+
+.moreInfoContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 12px 0;
+    border-top: 1px solid rgba(102, 126, 234, 0.1);
+    margin-top: 8px;
 }
 
 .moreInfo {
     display: flex;
-    font-size: 30px;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+}
+
+.moreInfo:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
 }
 
 .ceremonyInfo {
@@ -1033,6 +1247,29 @@
     font-size: 13px;
     text-align: center;
     border: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+@media (max-width: 480px) {
+    .ceremonyContext th {
+        font-size: 11px;
+        padding: 10px 4px;
+    }
+}
+
+@media (max-width: 375px) {
+    .ceremonyContext th {
+        font-size: 10px;
+        padding: 8px 2px;
+    }
+    
+    .ceremonyContext td {
+        font-size: 10px;
+        padding: 8px 2px;
+    }
 }
 
 .ceremonyContext td {
@@ -1042,6 +1279,10 @@
     font-weight: 600;
     border-bottom: 1px solid rgba(102, 126, 234, 0.1);
     background: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
 }
 
 .ceremonyContext tr:nth-child(even) td {
@@ -1081,14 +1322,37 @@
 }
 
 .teamScoreTable {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     color: #2c3e50;
     font-weight: 600;
     background: rgba(255, 255, 255, 0.95);
-    border-radius: 12px;
+    border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
+    max-width: 100%;
+    table-layout: fixed;
+}
+
+@media (max-width: 480px) {
+    .teamScoreTable {
+        margin-bottom: 8px;
+        border-radius: 6px;
+    }
+}
+
+@media (max-width: 375px) {
+    .teamScoreTable {
+        margin-bottom: 4px;
+        border-radius: 4px;
+    }
+}
+
+@media (max-width: 320px) {
+    .teamScoreTable {
+        margin-bottom: 2px;
+        border-radius: 3px;
+    }
 }
 
 .teamScoreHeaderTr {
@@ -1103,12 +1367,43 @@
 
 .teamScoreTh, .teamScoreTd {
     height: 50px;
-    width: 50px;
+    width: 45px;
     border: none;
-    padding: 8px;
+    padding: 6px 4px;
     text-align: center;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+@media (max-width: 480px) {
+    .teamScoreTh, .teamScoreTd {
+        height: 42px;
+        width: 42px;
+        padding: 6px 4px;
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 375px) {
+    .teamScoreTh, .teamScoreTd {
+        height: 38px;
+        width: 38px;
+        padding: 5px 3px;
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 320px) {
+    .teamScoreTh, .teamScoreTd {
+        height: 35px;
+        width: 35px;
+        padding: 4px 2px;
+        font-size: 9px;
+    }
 }
 
 .teamScoreTh {
@@ -1130,6 +1425,53 @@
 
 .teamScoreBodyTr:nth-last-child(1) {
     border: none;
+}
+
+.teamScoreFooterTr {
+    border: none;
+    color: white;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.teamScoreFooterTr .teamScoreTd {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.teamScoreFooterTr .teamScoreTd.teamTotalCell {
+    min-width: 180px;
+    width: 180px;
+    padding: 8px 16px;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+    flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+    .teamScoreFooterTr .teamScoreTd.teamTotalCell {
+        min-width: 160px;
+        width: 160px;
+        padding: 6px 12px;
+    }
+}
+
+@media (max-width: 375px) {
+    .teamScoreFooterTr .teamScoreTd.teamTotalCell {
+        min-width: 150px;
+        width: 150px;
+        padding: 5px 10px;
+    }
+}
+
+@media (max-width: 320px) {
+    .teamScoreFooterTr .teamScoreTd.teamTotalCell {
+        min-width: 140px;
+        width: 140px;
+        padding: 4px 8px;
+    }
 }
 
 .gameScoreBackground {
@@ -1181,7 +1523,6 @@
     width: 100%;
     align-items: center;
     padding: 3px;
-    border: 1px solid black;
     margin-top: 5px;
     margin-left: 2px;
     margin-right: 2px;
@@ -1430,6 +1771,8 @@
     padding: 16px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .searchBox p {
@@ -1445,7 +1788,8 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    width: 100%;
+    width: calc(50% - 20px);
+    min-width: 120px;
     height: 40px;
     border-radius: 20px;
     border: 2px solid #667eea;
@@ -1455,12 +1799,111 @@
     font-weight: 600;
     font-size: 14px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    padding-right: 30px;
+}
+
+.dateInput::-webkit-calendar-picker-indicator {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    opacity: 0.8;
+    filter: invert(40%) sepia(80%) saturate(1000%) hue-rotate(200deg) brightness(0.8) contrast(1);
+}
+
+.dateInput::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
 }
 
 .dateInput:focus {
     outline: none;
     border-color: #764ba2;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+@media (max-width: 480px) {
+    .dateInput {
+        width: calc(50% - 16px);
+        min-width: 100px;
+        font-size: 12px;
+        height: 36px;
+        padding-right: 28px;
+    }
+    
+    .dateInput::-webkit-calendar-picker-indicator {
+        width: 14px;
+        height: 14px;
+        right: 6px;
+    }
+    
+    .searchBox {
+        padding: 12px;
+        gap: 6px;
+    }
+    
+    .searchBox p {
+        font-size: 16px;
+        margin-left: 4px;
+        margin-right: 4px;
+    }
+}
+
+@media (max-width: 375px) {
+    .dateInput {
+        width: calc(50% - 12px);
+        min-width: 90px;
+        font-size: 11px;
+        height: 32px;
+        padding-right: 26px;
+    }
+    
+    .dateInput::-webkit-calendar-picker-indicator {
+        width: 12px;
+        height: 12px;
+        right: 5px;
+    }
+    
+    .searchBox {
+        padding: 10px;
+        gap: 4px;
+    }
+    
+    .searchBox p {
+        font-size: 14px;
+        margin-left: 2px;
+        margin-right: 2px;
+    }
+}
+
+@media (max-width: 320px) {
+    .dateInput {
+        width: calc(50% - 8px);
+        min-width: 80px;
+        font-size: 10px;
+        height: 30px;
+        padding-right: 24px;
+    }
+    
+    .dateInput::-webkit-calendar-picker-indicator {
+        width: 10px;
+        height: 10px;
+        right: 4px;
+    }
+    
+    .searchBox {
+        padding: 8px;
+        gap: 3px;
+    }
+    
+    .searchBox p {
+        font-size: 12px;
+        margin-left: 1px;
+        margin-right: 1px;
+    }
 }
 
 .rankMemberContainer {
