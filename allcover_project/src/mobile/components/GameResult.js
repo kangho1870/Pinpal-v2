@@ -128,8 +128,47 @@ export default function GameResult() {
     const highScoreOfMan = getHighScoreMember(0);
     const highScoreOfGirl = getHighScoreMember(1);
 
-    // 팀 1등 멤버들의 ID만 추출
-    const team1stMemberIds = team1stMember?.members?.map(member => member.memberId) || [];
+    // 팀 1등 계산 (TeamScoreboard와 동일한 로직)
+    const calculateTeam1st = () => {
+        const teams = Array.isArray(members) ? members.reduce((acc, member) => {
+            if (!member) return acc;
+            if (!acc[member.teamNumber]) {
+                acc[member.teamNumber] = [];
+            }
+            acc[member.teamNumber].push(member);
+            return acc;
+        }, {}) : {};
+        
+        const teamScores = Object.keys(teams).map(teamNumber => {
+            const teamMembers = teams[teamNumber];
+            if (!Array.isArray(teamMembers)) return null;
+            const hasZeroScore1 = teamMembers.some(member => member?.game1 === null);
+            const hasZeroScore2 = teamMembers.some(member => member?.game2 === null);
+            const hasZeroScore3 = teamMembers.some(member => member?.game3 === null);
+            const hasZeroScore4 = teamMembers.some(member => member?.game4 === null);
+            const totalScore = teamMembers.reduce((sum, member) => {
+                    const game1Score = hasZeroScore1 ? 0 : (member?.game1 || 0) - (member?.memberAvg || 0);
+                    const game2Score = hasZeroScore2 ? 0 : (member?.game2 || 0) - (member?.memberAvg || 0);
+                    const game3Score = hasZeroScore3 ? 0 : (member?.game3 || 0) - (member?.memberAvg || 0);
+                    const game4Score = hasZeroScore4 ? 0 : (member?.game4 || 0) - (member?.memberAvg || 0);
+                    return sum + game1Score + game2Score + game3Score + game4Score;
+                }, 0);
+            return {
+                teamNumber,
+                members: teamMembers,
+                totalScore
+            };
+        }).filter(Boolean);
+
+        const sortedTeams = teamScores
+            .filter(team => team?.teamNumber !== "0")
+            .sort((a, b) => b.totalScore - a.totalScore);
+
+        return sortedTeams.length > 0 ? sortedTeams[0]?.members?.map(member => member?.memberId) : [];
+    };
+
+    // 팀 1등 멤버들의 ID 추출 (TeamScoreboard에서 계산된 값이 있으면 사용, 없으면 직접 계산)
+    const team1stMemberIds = team1stMember?.members?.map(member => member.memberId) || calculateTeam1st();
     
     const resultSetOfLong = {
         gameId: gameId,

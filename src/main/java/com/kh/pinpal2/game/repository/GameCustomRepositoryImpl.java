@@ -73,6 +73,7 @@ public class GameCustomRepositoryImpl implements GameCustomRepository {
 
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(game.club.id.eq(clubId));
+        builder.and(game.status.eq("FINISHED"));
 
         // 날짜 범위 필터링
         if (startDate != null) {

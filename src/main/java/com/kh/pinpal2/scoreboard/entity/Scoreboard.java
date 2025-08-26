@@ -8,6 +8,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
+
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -30,6 +32,9 @@ public class Scoreboard extends BaseUpdatableEntity {
 
     @Column
     private boolean confirmed;
+
+    @Column
+    Instant confirmDate;
 
     @Column
     private int teamNumber;
@@ -60,6 +65,7 @@ public class Scoreboard extends BaseUpdatableEntity {
         this.side = false;
         this.sideAvg = false;
         this.confirmed = false;
+        this.confirmDate = null;
     }
 
     public void updateScore(int score1, int score2, int score3, int score4) {
@@ -87,5 +93,6 @@ public class Scoreboard extends BaseUpdatableEntity {
 
     public void updateConfirmed(boolean confirmed) {
         this.confirmed = confirmed;
+        this.confirmDate = Instant.now();
     }
 }

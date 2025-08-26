@@ -714,7 +714,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                         </div>
                                                         <div className={styles.scheduleDescriptionBox}>
                                                             <span className={styles.descriptionSubTitle}>참석:</span>
-                                                            <h5 className={styles.descriptionSubContent}>{game.joinUserCount + "명"}</h5>
+                                                            <h5 className={styles.descriptionSubContent}>{(game.joinUserCount || 0) + "명"}</h5>
                                                         </div>
                                                         <button className={styles.scoreboard} onClick={() => scheduleOnClickHandler(game.id)}>점수판</button>
                                                     </div>
@@ -803,7 +803,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                         </div>
                                                         <div className={styles.scheduleDescriptionBox}>
                                                             <span className={styles.descriptionSubTitle}>참석:</span>
-                                                            <h5 className={styles.descriptionSubContent}>{game.joinUserCount + "명"}</h5>
+                                                            <h5 className={styles.descriptionSubContent}>{(game.joinUserCount || 0) + "명"}</h5>
                                                         </div>
                                                         <button className={styles.scoreboard} onClick={() => scheduleOnClickHandler(game.id)}>점수판</button>
                                                     </div>
@@ -904,7 +904,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                         </div>
                                                         <div className={styles.scheduleDescriptionBox}>
                                                             <span className={styles.descriptionSubTitle}>참석:</span>
-                                                            <h5 className={styles.descriptionSubContent}>{game.joinUserCount + "명"}</h5>
+                                                            <h5 className={styles.descriptionSubContent}>{(game.joinUserCount || 0) + "명"}</h5>
                                                         </div>
                                                         <button className={styles.scoreboard} onClick={() => scheduleOnClickHandler(game.id)}>점수판</button>
                                                     </div>
