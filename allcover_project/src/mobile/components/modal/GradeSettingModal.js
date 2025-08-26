@@ -134,7 +134,7 @@ function GradeSettingModal() {
             
             <div className={styles.mb3}>
                 <h4 style={{marginBottom: "16px", color: "#004EA2"}}>
-                    멤버 목록 (평균 순)
+                    멤버 목록 (에버 순)
                 </h4>
                 <div style={{maxHeight: "300px", overflowY: "auto"}}>
                     {updatedMembers.map((member, i) => (

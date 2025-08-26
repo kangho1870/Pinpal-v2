@@ -117,7 +117,11 @@ function RankingBoard({ sideRankingModalToggle, scoreInputModalToggle }) {
                     return (
                         <div 
                             key={index} 
-                            className={`${styles.scoreCard} ${getCardClass(member?.grade)} ${isMyScore ? styles.myScoreCard : ""}`}
+                            className={`${styles.scoreCard} ${getCardClass(member?.grade)} ${isMyScore ? styles.myScoreCard : ""} ${
+                                index === 0 ? styles.firstPlace : 
+                                index === 1 ? styles.secondPlace : 
+                                index === 2 ? styles.thirdPlace : ""
+                            }`}
                             ref={isMyScore ? myScoreRef : null}
                         >
                             {/* 순위 배지 */}
@@ -130,6 +134,11 @@ function RankingBoard({ sideRankingModalToggle, scoreInputModalToggle }) {
                                     </div>
                                 )}
                             </div>
+                            
+                            {/* 메달 아이콘 (1, 2, 3등만) */}
+                            {index === 0 && <span className={styles.firstPlaceMedal}>🥇</span>}
+                            {index === 1 && <span className={styles.secondPlaceMedal}>🥈</span>}
+                            {index === 2 && <span className={styles.thirdPlaceMedal}>🥉</span>}
 
                             {/* 프로필 섹션 */}
                             <div className={styles.profileSection}>
