@@ -24,6 +24,7 @@ export const WebSocketProvider = ({ children, gameId }) => {
     
     // 서버 환경에 따른 WebSocket URL 설정
     const ROOT_API_DOMAIN = process.env.REACT_APP_API_URL || 'https://pinpal.co.kr';
+    // nginx WebSocket 프록시를 통한 연결
     const wsUrl = gameId ? `${ROOT_API_DOMAIN.replace('https', 'wss')}/scoreboard/${gameId}` : null;
 
     // 서버 상태 확인 함수 (메모이제이션)
