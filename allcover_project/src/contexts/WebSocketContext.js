@@ -70,24 +70,28 @@ export const WebSocketProvider = ({ children, gameId }) => {
         if (gameId && token && connectionAttempts < maxConnectionAttempts) {
             console.log(`WebSocket 연결 시도 ${connectionAttempts + 1}/${maxConnectionAttempts}`);
             
-            const isServerReady = await checkServerStatus();
+            // 서버 상태 확인을 우회하고 바로 WebSocket 연결 시도
+            console.log('🚀 서버 상태 확인 우회하고 WebSocket 연결을 시작합니다.');
+            setShouldConnect(true);
             
-            if (isServerReady) {
-                console.log('✅ 서버가 준비되었습니다. WebSocket 연결을 시작합니다.');
-                setShouldConnect(true);
-            } else {
-                console.log('⏳ 서버가 아직 준비되지 않았습니다. 3초 후 다시 시도합니다.');
-                setTimeout(() => {
-                    setConnectionAttempts(prev => prev + 1);
-                }, 3000);
-            }
+            // 기존 서버 상태 확인 로직 (참고용)
+            // const isServerReady = await checkServerStatus();
+            // if (isServerReady) {
+            //     console.log('✅ 서버가 준비되었습니다. WebSocket 연결을 시작합니다.');
+            //     setShouldConnect(true);
+            // } else {
+            //     console.log('⏳ 서버가 아직 준비되지 않았습니다. 3초 후 다시 시도합니다.');
+            //     setTimeout(() => {
+            //         setConnectionAttempts(prev => prev + 1);
+            //     }, 3000);
+            // }
         }
-    }, [gameId, token, connectionAttempts, maxConnectionAttempts, checkServerStatus]);
+    }, [gameId, token, connectionAttempts, maxConnectionAttempts]);
 
     // WebSocket 연결 시도 (한 번만 실행)
     useEffect(() => {
         if (gameId && token && !shouldConnect) {
-            const timer = setTimeout(attemptConnection, 2000);
+            const timer = setTimeout(attemptConnection, 500); // 2초 → 0.5초로 단축
             return () => clearTimeout(timer);
         }
     }, [gameId, token, shouldConnect, attemptConnection]);
