@@ -71,7 +71,7 @@ jobs:
           cd allcover_project
           CI=false npm run build
         env:
-          REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }}
+          REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }} # git secret 수정
 
       - name: Upload frontend build
         uses: actions/upload-artifact@v4
