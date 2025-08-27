@@ -109,11 +109,11 @@ jobs:
             # 최신 이미지 pull
             docker pull kangho1870/pinpal:latest
 
-            # 새 컨테이너 실행 (host network ❌ → 8000포트 매핑)
+            # 새 컨테이너 실행 (host network 사용 → DB 연결 문제 해결)
             docker run -d \
               --name pinpal-backend \
               --restart unless-stopped \
-              -p 8000:8000 \
+              --network host \
               -e SPRING_PROFILES_ACTIVE=prod \
               -e DB_URL="jdbc:postgresql://localhost:5432/pinpal" \
               -e DB_USERNAME="${{ secrets.DB_USERNAME }}" \
