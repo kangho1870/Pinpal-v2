@@ -131,13 +131,13 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             if (clientHost.contains(":8000")) {
                 return clientHost.replace(":8000", ":3000");
             }
-            // 서버 배포 환경 (포트 80 -> 3000)
+            // 서버 배포 환경 (포트 80 제거)
             if (clientHost.contains(":80")) {
-                return clientHost.replace(":80", ":3000");
+                return clientHost.replace(":80", "");
             }
-            // 포트가 없는 경우 프론트엔드 포트 추가
+            // 포트가 없는 경우 그대로 반환 (프로덕션 환경)
             if (!clientHost.contains(":")) {
-                return clientHost + ":3000";
+                return clientHost;
             }
             return clientHost;
         }
@@ -148,6 +148,10 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             try {
                 java.net.URL url = new java.net.URL(referer);
                 String host = url.getHost();
+                // 프로덕션 환경에서는 포트 제거
+                if (host.equals("pinpal.co.kr")) {
+                    return host;
+                }
                 int port = url.getPort();
                 return port != -1 ? host + ":" + port : host;
             } catch (Exception e) {
@@ -155,12 +159,12 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             }
         }
 
-        // 기본값 설정 (로컬 개발 우선)
+        // 기본값 설정
         log.warn("클라이언트 호스트를 찾을 수 없어 기본값 사용");
         if (clientHost != null && clientHost.contains("localhost")) {
             return "localhost:3000";
         }
-        return "211.37.173.106:3000";
+        return "pinpal.co.kr";
     }
 
     private String getProtocol(HttpServletRequest request) {

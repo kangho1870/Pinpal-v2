@@ -49,6 +49,7 @@ function Index() {
       <Route path="/club/:clubId" element={<MyClub />} />
       <Route path="/scoreboard" element={<Scoreboard />} />
       <Route path="/sns-success" element={<SnsSuccess />} />
+      <Route path="/oauth2/callback/:provider" element={<SnsSuccess />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/add-club" element={<AddClub />} />
     </Routes>
