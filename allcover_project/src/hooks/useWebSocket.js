@@ -43,8 +43,6 @@ const useWebSocket = (url, options = {}) => {
             // JWT 토큰을 쿼리 파라미터로 전달
             const currentToken = token || cookies.accessToken;
             const wsUrl = currentToken ? `${url}?token=${currentToken}` : url;
-            console.log('🔗 WebSocket 연결 시도:', wsUrl);
-            console.log('🔗 WebSocket 옵션:', { reconnectInterval, maxReconnectAttempts, shouldReconnect });
             
             const socket = new WebSocket(wsUrl);
             socketRef.current = socket;
@@ -102,30 +100,22 @@ const useWebSocket = (url, options = {}) => {
             socket.onmessage = (event) => {
                 try {
                     const data = JSON.parse(event.data);
-                    console.log('📨 WebSocket 메시지 수신:', data);
-                    console.log('📨 원본 데이터:', event.data);
                     
                     // 새로운 백엔드 메시지 구조에 맞춰 처리
                     if (data.type) {
                         // 메시지 타입별 처리
                         switch (data.type) {
                             case 'SCOREBOARD_UPDATE':
-                                console.log('📊 스코어보드 업데이트:', data.payload);
                                 break;
                             case 'MEMBER_JOIN':
-                                console.log('👤 멤버 가입:', data.payload);
                                 break;
                             case 'GAME_START':
-                                console.log('🎮 게임 시작:', data.payload);
                                 break;
                             case 'GAME_END':
-                                console.log('🏁 게임 종료:', data.payload);
                                 break;
                             case 'ERROR':
-                                console.error('❌ WebSocket 서버 에러:', data.payload);
                                 break;
                             default:
-                                console.log('📨 알 수 없는 메시지 타입:', data.type);
                         }
                     } else {
                         // 백엔드에서 직접 배열을 보내는 경우
@@ -134,8 +124,6 @@ const useWebSocket = (url, options = {}) => {
                     
                     onMessage?.(data, event);
                 } catch (error) {
-                    console.error('메시지 파싱 에러:', error);
-                    console.error('원본 데이터:', event.data);
                     onMessage?.(event.data, event);
                 }
             };
@@ -149,7 +137,6 @@ const useWebSocket = (url, options = {}) => {
     }, [url, token, cookies.accessToken, onMessage, onOpen, onClose, onError, reconnectInterval, maxReconnectAttempts, shouldReconnect]);
 
     const disconnect = useCallback(() => {
-        console.log('🔌 WebSocket 수동 연결 해제 요청');
         shouldConnectRef.current = false;
         
         if (reconnectTimeoutRef.current) {
@@ -172,7 +159,6 @@ const useWebSocket = (url, options = {}) => {
         if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
             const messageString = typeof message === 'string' ? message : JSON.stringify(message);
             socketRef.current.send(messageString);
-            console.log('📤 WebSocket 메시지 전송:', messageString);
             return true;
         } else {
             console.warn('⚠️ WebSocket이 연결되지 않았습니다. 메시지를 보낼 수 없습니다.');

@@ -2,7 +2,7 @@ import axios from "axios";
 import { HOME_PATH } from "../constants";
 
 // 서버 환경에 따른 API 도메인 설정
-const ROOT_API_DOMAIN = process.env.REACT_APP_API_URL || 'http://211.37.173.106:8000';
+const ROOT_API_DOMAIN = process.env.REACT_APP_API_URL || 'http://pinpal.co.kr:8000';
 
 // 현재 백엔드 API 구조에 맞춘 URL 정의
 const AUTH_API_URL = `${ROOT_API_DOMAIN}/api/auth`;
@@ -63,8 +63,6 @@ const bearerAuthorization = (accessToken) => ({
 // 응답 데이터 처리
 const responseDataHandler = (response) => {
     const { data } = response;
-    console.log('responseDataHandler - response.data:', data);
-    console.log('responseDataHandler - typeof data:', typeof data);
     return data;
 };
 
@@ -126,10 +124,6 @@ export const signInRequest = async (requestBody) => {
 // OAuth2 로그인 함수
 export const oauth2SignIn = (sns, redirectUri) => {
     const url = OAUTH2_SNS_SIGN_IN_URL(sns, redirectUri);
-    console.log('🔗 OAuth2 URL 생성:', url);
-    console.log('📍 리다이렉트 URI:', redirectUri);
-    console.log('🎯 SNS 타입:', sns);
-    console.log('🚀 페이지 리다이렉트 시작...');
     window.location.href = url;
 };
 
@@ -274,14 +268,10 @@ export const getClubScoreboardsRequest = async (clubId, startDate, endDate, game
 };
 
 export const gameJoinRequest = async (gameId, accessToken) => {
-    console.log('🔍 게임 참여 요청:', { gameId, accessToken: accessToken ? '있음' : '없음' });
-    console.log('🔍 요청 URL:', GAME_JOIN_API_URL(gameId));
-    
     const responseBody = await axios.post(GAME_JOIN_API_URL(gameId), {}, bearerAuthorization(accessToken))
         .then(responseDataHandler)
         .catch(responseErrorHandler);
-    
-    console.log('🔍 게임 참여 응답:', responseBody);
+
     return responseBody;
 }
 

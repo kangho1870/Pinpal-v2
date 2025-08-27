@@ -82,7 +82,7 @@ jobs:
   deploy:
     name: Deploy to Cafe24 Server
     runs-on: ubuntu-latest
-    needs: [build-backend, build-frontend]
+    needs: [ build-backend, build-frontend ]
     if: github.ref == 'refs/heads/main'
 
     steps:
@@ -92,14 +92,6 @@ jobs:
           name: frontend-build
           path: frontend-build/
 
-      - name: Test SSH connection
-        run: |
-          echo "SSH 연결 테스트 시작..."
-          echo "포트 22로 시도..."
-          sshpass -p '${{ secrets.CAFE24_PASSWORD }}' ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 ${{ secrets.CAFE24_USERNAME }}@${{ secrets.CAFE24_HOST }} -p 22 "echo 'SSH 연결 테스트 성공!'; whoami; pwd; date" || echo "포트 22 실패"
-        env:
-          SSHPASS: ${{ secrets.CAFE24_PASSWORD }}
-
       - name: Deploy to Cafe24
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -108,28 +100,20 @@ jobs:
           password: ${{ secrets.CAFE24_PASSWORD }}
           port: 22
           script: |
-            # GitHub Actions에서 사용하는 실제 IP 확인
-            echo "=== GitHub Actions IP 확인 ==="
-            echo "현재 연결된 IP: $(curl -s ifconfig.me)"
-            echo "현재 연결된 IP (다른 방법): $(curl -s ipinfo.io/ip)"
-            echo "현재 연결된 IP (또 다른 방법): $(curl -s icanhazip.com)"
-            echo ""
-            
-            # 기존 배포 스크립트
-            echo "배포 시작..."
-            
+            echo "=== Backend 배포 시작 ==="
+
             # 기존 컨테이너 중지 및 제거
             docker stop pinpal-backend || true
             docker rm pinpal-backend || true
-            
+
             # 최신 이미지 pull
             docker pull kangho1870/pinpal:latest
-            
-            # 새 이미지로 컨테이너 실행
+
+            # 새 컨테이너 실행 (host network ❌ → 8000포트 매핑)
             docker run -d \
               --name pinpal-backend \
               --restart unless-stopped \
-              --network host \
+              -p 8000:8000 \
               -e SPRING_PROFILES_ACTIVE=prod \
               -e DB_URL="jdbc:postgresql://localhost:5432/pinpal" \
               -e DB_USERNAME="${{ secrets.DB_USERNAME }}" \
@@ -137,142 +121,63 @@ jobs:
               -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
               -e KAKAO_CLIENT_ID="${{ secrets.KAKAO_CLIENT_ID }}" \
               -e KAKAO_CLIENT_SECRET="${{ secrets.KAKAO_CLIENT_SECRET }}" \
-              -e KAKAO_REDIRECT_URI="http://211.37.173.106:3000/auth/kakao/callback" \
-              -e JAVA_OPTS="-Dhibernate.dialect=org.hibernate.dialect.PostgreSQLDialect -Djakarta.persistence.jdbc.url=${{ secrets.DB_URL }}" \
+              -e KAKAO_REDIRECT_URI="https://pinpal.co.kr/auth/kakao/callback" \
               kangho1870/pinpal:latest
-            
-            # 컨테이너 상태 확인
-            echo "컨테이너 상태 확인 중..."
-            docker ps
-            
-            # 컨테이너가 실행되지 않은 경우 로그 확인
-            if ! docker ps | grep -q pinpal-backend; then
-              echo "❌ 컨테이너가 실행되지 않았습니다. 로그를 확인합니다..."
-              docker logs pinpal-backend --tail 50 2>/dev/null || echo "로그를 읽을 수 없음"
-              
-              # 컨테이너 재시작 시도
-              echo "🔄 컨테이너 재시작을 시도합니다..."
-              docker start pinpal-backend || echo "재시작 실패"
-              sleep 10
-              docker logs pinpal-backend --tail 30 2>/dev/null || echo "재시작 후 로그를 읽을 수 없음"
-            else
-              echo "✅ 컨테이너가 정상적으로 실행 중입니다."
-              # 컨테이너 로그 확인
-              echo "컨테이너 로그 확인 중..."
-              docker logs pinpal-backend --tail 20
-            fi
-            
-            # 상세한 문제 진단
-            echo "=== 상세 진단 시작 ==="
-            echo "1. Docker 컨테이너 상태:"
-            docker ps -a
-            
-            echo "2. Docker 네트워크 확인:"
-            docker network ls
-            
-            echo "3. 시스템 리소스 확인:"
-            free -h
-            df -h
-            
-            echo "4. 포트 사용 현황:"
-            netstat -tlnp | grep :8000 || echo "포트 8000이 사용되지 않음"
-            
-            echo "5. 컨테이너 상세 정보:"
-            docker inspect pinpal-backend 2>/dev/null || echo "컨테이너가 존재하지 않음"
-            
-            echo "6. 최근 Docker 로그:"
-            docker logs pinpal-backend --tail 50 2>/dev/null || echo "로그를 읽을 수 없음"
-            
-            echo "7. 데이터베이스 연결 테스트:"
-            PGPASSWORD="${{ secrets.DB_PASSWORD }}" psql -U "${{ secrets.DB_USERNAME }}" -h localhost -p 5432 -d pinpal -c "SELECT version();" 2>/dev/null || echo "데이터베이스 연결 실패"
-            
-            echo "8. 애플리케이션 헬스 체크:"
-            curl -f http://localhost:8000/actuator/health 2>/dev/null || echo "애플리케이션 헬스 체크 실패"
 
-      - name: Get Public IP
-        id: ip
-        uses: haythem/public-ip@v1.3
+            echo "✅ Backend 컨테이너 실행 완료"
 
-      - name: Print Public IP
-        run: |
-          echo "GitHub Actions에서 사용하는 공인 IP: ${{ steps.ip.outputs.ipv4 }}"
-          echo "이 IP를 Cafe24 방화벽에 추가해야 합니다!"
-          echo "방화벽에서 '허용 IP 추가' 버튼을 클릭하고 다음을 입력하세요:"
-          echo "프로토콜: tcp"
-          echo "포트: 22"
-          echo "접근허용 IP: ${{ steps.ip.outputs.ipv4 }}"
-
-      - name: Deploy frontend to Cafe24
+            echo "=== Frontend 배포 시작 ==="
+            FRONTEND_DIR=/home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend
+            rm -rf $FRONTEND_DIR
+            mkdir -p $FRONTEND_DIR
+      - name: Upload frontend build
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.CAFE24_HOST }}
           username: ${{ secrets.CAFE24_USERNAME }}
           password: ${{ secrets.CAFE24_PASSWORD }}
           port: ${{ secrets.CAFE24_PORT }}
-          timeout: 60s
           source: "frontend-build/*"
           target: "/home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend"
 
-      - name: Setup frontend service
+      - name: Setup Nginx reverse proxy
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.CAFE24_HOST }}
           username: ${{ secrets.CAFE24_USERNAME }}
           password: ${{ secrets.CAFE24_PASSWORD }}
           port: ${{ secrets.CAFE24_PORT }}
-          timeout: 120s
-          command_timeout: 120s
           script: |
-            # 프론트엔드 디렉토리 확인
-            echo "프론트엔드 디렉토리 확인 중..."
-            ls -la /home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend/
-            
-            # serve 패키지 설치
-            echo "serve 패키지 설치 중..."
-            sudo npm install -g serve
-            
-            # systemd 서비스 파일 생성 (serve 사용)
-            echo "systemd 서비스 파일 생성 중..."
-            sudo tee /etc/systemd/system/pinpal-frontend.service > /dev/null <<EOF
-            [Unit]
-            Description=Pinpal Frontend Server (serve)
-            After=network.target
-            
-            [Service]
-            Type=simple
-            User=${{ secrets.CAFE24_USERNAME }}
-            WorkingDirectory=/home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend/frontend-build
-            ExecStart=/usr/bin/npx serve -s . -l 3000 --single
-            Restart=always
-            RestartSec=10
-            StandardOutput=journal
-            StandardError=journal
-            TimeoutStartSec=60
-            TimeoutStopSec=30
-            Environment=NODE_ENV=production
-            
-            [Install]
-            WantedBy=multi-user.target
+            echo "=== Nginx 설정 적용 ==="
+
+            sudo tee /etc/nginx/sites-available/pinpal.conf > /dev/null <<EOF
+            server {
+                listen 80;
+                server_name pinpal.co.kr;
+
+                root /home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend;
+                index index.html;
+
+                location / {
+                    try_files \$uri /index.html;
+                }
+
+                location /api {
+                    proxy_pass http://localhost:8000;
+                    proxy_set_header Host \$host;
+                    proxy_set_header X-Real-IP \$remote_addr;
+                    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto \$scheme;
+                }
+            }
             EOF
-            
-            # 기존 서비스 중지 및 재시작
-            echo "프론트엔드 서비스 재시작 중..."
-            sudo systemctl daemon-reload
-            sudo systemctl stop pinpal-frontend || true
-            sudo systemctl start pinpal-frontend
-            sudo systemctl enable pinpal-frontend
-            
-            # 서비스 상태 확인
-            sleep 5
-            echo "프론트엔드 서비스 상태 확인 중..."
-            sudo systemctl status pinpal-frontend --no-pager
-            
-            # 포트 확인
-            echo "포트 3000 확인 중..."
-            netstat -tlnp | grep :3000 || echo "포트 3000이 열리지 않았습니다."
-            
-            # 로그 확인
-            echo "프론트엔드 로그 확인 중..."
-            sudo journalctl -u pinpal-frontend --no-pager -n 10
-            
-            echo "Frontend service setup completed!"
+
+            sudo ln -sf /etc/nginx/sites-available/pinpal.conf /etc/nginx/sites-enabled/pinpal.conf
+            sudo systemctl restart nginx
+            echo "✅ Nginx 재시작 완료"
+
+            # SSL (최초 1회만)
+            if ! sudo test -f /etc/letsencrypt/live/pinpal.co.kr/fullchain.pem; then
+              sudo apt-get update && sudo apt-get install -y certbot python3-certbot-nginx
+              sudo certbot --nginx -d pinpal.co.kr --non-interactive --agree-tos -m admin@pinpal.co.kr
+            fi
