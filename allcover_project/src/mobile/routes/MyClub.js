@@ -5,10 +5,11 @@ import { useCookies } from "react-cookie";
 import { ACCESS_TOKEN, CLUB_DETAIL_PATH, ROOT_PATH, SCOREBOARD_PATH } from "../../constants";
 import { useNavigate, useParams } from "react-router-dom";
 import { onClickBackBtn } from "../../hooks";
-import { addGameRequest, clubJoinRequest, clubMemberAvgUpdateRequest, clubMemberRoleUpdateRequest, getCeremoniesRequest, getClubInfoRequest, getClubMembersRequest, getGameListRequest, getMemberListRequest, gameJoinRequest, gameJoinCancelRequest, getGameParticipantsRequest, getScoreboardMembers, getClubScoreboardsRequest } from "../../apis";
+import { addGameRequest, clubJoinRequest, clubMemberAvgUpdateRequest, clubMemberRoleUpdateRequest, getCeremoniesRequest, getClubInfoRequest, getClubMembersRequest, getGameListRequest, getMemberListRequest, gameJoinRequest, gameJoinCancelRequest, getGameParticipantsRequest, getScoreboardMembers, getClubScoreboardsRequest, exportScoreboardExcelRequest } from "../../apis";
 import Loading from "../components/loading/Loading";
 import useClubStore from "../../stores/useClubStore";
 import { tr } from "framer-motion/client";
+import { useDuplicateRequestHandler } from "../../hooks/useDuplicateRequestHandler";
 
 function MyClub() {
     const { members, setMembers, setCeremonys, setGames } = useClubStore();
@@ -1040,6 +1041,9 @@ function ClubCeremony({ setLoading }) {
     const [attendanceFilter, setAttendanceFilter] = useState('all'); // 'all' or 'participated'
     const [gameTypeFilter, setGameTypeFilter] = useState('all'); // 'all', '정기모임', '정기번개', '기타'
     const [scoreboardData, setScoreboardData] = useState({});
+    
+    // 중복 요청 처리 훅 사용
+    const { loadingStates, handleApiRequest } = useDuplicateRequestHandler();
 
     const toggleCeremonyInfo = async (index) => {
         setExpandedIndices((prevIndices) => {
@@ -1145,6 +1149,31 @@ function ClubCeremony({ setLoading }) {
         return [];
     };
 
+    // 엑셀 다운로드 함수
+    const handleExcelDownload = async (gameId) => {
+        const requestKey = `excel_download_${gameId}`;
+        
+        await handleApiRequest(
+            requestKey,
+            () => exportScoreboardExcelRequest(gameId, token),
+            {
+                showDuplicateAlert: true,
+                duplicateMessage: '엑셀 다운로드가 이미 진행 중입니다.',
+                onSuccess: (result) => {
+                    if (result.success) {
+                        alert('엑셀 파일이 다운로드되었습니다.');
+                    } else {
+                        alert('엑셀 다운로드에 실패했습니다.');
+                    }
+                },
+                onError: (error) => {
+                    console.error('엑셀 다운로드 오류:', error);
+                    alert('엑셀 다운로드 중 오류가 발생했습니다.');
+                }
+            }
+        );
+    };
+
     useEffect(() => {
         setPageStates(new Array(ceremonys.length).fill(0));
         console.log('🔍 ceremonys 데이터:', ceremonys);
@@ -1241,13 +1270,34 @@ function ClubCeremony({ setLoading }) {
                                                         const gameInfo = findGameInfo(data.gameId);
                                                         return gameInfo?.gameName || gameInfo?.name || `게임 ${data.gameId}`;
                                                     })()}</h3>
-                                                </div>
-                                                <div className={styles.simpleGameInfoTitle}>
                                                     <p>{(() => {
                                                         const gameInfo = findGameInfo(data.gameId);
                                                         console.log('🔍 게임 정보:', gameInfo, 'gameId:', data.gameId);
                                                         return gameInfo?.gameDate || gameInfo?.date || "-";
                                                     })()}</p>
+                                                </div>
+                                                <div className={styles.excelDownloadBtn}>
+                                                    <button 
+                                                        className={`${styles.excelBtn} ${loadingStates[`excel_download_${data.gameId}`] ? styles.excelBtnLoading : ''}`}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleExcelDownload(data.gameId);
+                                                        }}
+                                                        disabled={loadingStates[`excel_download_${data.gameId}`]}
+                                                        title={loadingStates[`excel_download_${data.gameId}`] ? "다운로드 중..." : "엑셀 다운로드"}
+                                                    >
+                                                        {loadingStates[`excel_download_${data.gameId}`] ? (
+                                                            <>
+                                                                <i className="fa-solid fa-spinner fa-spin"></i>
+                                                                다운로드 중...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <i className="fa-solid fa-file-excel"></i>
+                                                                Excel
+                                                            </>
+                                                        )}
+                                                    </button>
                                                 </div>
                                             </div>
                                             <div className={styles.simpleInformationBox}>
@@ -1361,7 +1411,13 @@ function ClubCeremony({ setLoading }) {
                                                             </tr>
                                                         </thead>
                                                         <tbody>
-                                                            {(scoreboardData[data.gameId] || []).map((member, i) => (
+                                                            {(scoreboardData[data.gameId] || [])
+                                                                .sort((a, b) => {
+                                                                    const totalA = (a.game1 || 0) + (a.game2 || 0) + (a.game3 || 0) + (a.game4 || 0);
+                                                                    const totalB = (b.game1 || 0) + (b.game2 || 0) + (b.game3 || 0) + (b.game4 || 0);
+                                                                    return totalB - totalA; // 높은 점수 순으로 정렬
+                                                                })
+                                                                .map((member, i) => (
                                                                 <tr key={i}>
                                                                     <td>{(i + 1)}</td>
                                                                     <td>{member.memberName}</td>
@@ -1625,38 +1681,29 @@ function ClubSetting({ pageLoad, clubId }) {
             <div className={styles.contextArea}>
                 {page === 0 && (
                     <>
-                        {/* 표시된 군을 추적하는 Set 초기화 */}
-                        {["0-2", "3-4", "5-6", "new"].map((range, rangeIndex) => {
-                            // 각 범위에 대해 Set 생성
-                            const displayedGrades = new Set();
-
+                        {/* 1군부터 차례대로 나열하고 신입은 제일 밑으로 */}
+                        {(() => {
+                            // 1군부터 6군까지 순서대로 정렬
+                            const sortedGrades = Object.keys(groupedMembers)
+                                .filter(grade => grade !== "0") // 신입 제외
+                                .sort((a, b) => parseInt(a) - parseInt(b)); // 숫자 순으로 정렬
+                            
                             return (
-                                <div key={rangeIndex} className={styles.gradesAvg}>
+                                <div className={styles.gradesAvg}>
                                     {Object.keys(groupedMembers).length === 0 ? (
                                         <div className={styles.nodataContainer}>
                                             <p>멤버 데이터가 없습니다.</p>
                                         </div>
                                     ) : (
-                                        Object.keys(groupedMembers).map((grade) => {
-
-                                        // 해당 범위에 해당하는 grade만 출력
-                                        const gradeNum = parseInt(grade);
-                                        if (
-                                            (range === "0-2" && gradeNum != 0 && gradeNum < 3) ||
-                                            (range === "3-4" && gradeNum > 2 && gradeNum < 5) ||
-                                            (range === "5-6" && gradeNum > 4 && gradeNum < 7) ||
-                                            (range === "new" && gradeNum == 0)
-                                        ) {
-                                            return (
+                                        <>
+                                            {/* 1군부터 6군까지 순서대로 표시 */}
+                                            {sortedGrades.map((grade) => (
                                                 <div key={grade} className={styles.gradeGroup}>
-                                                    {/* 해당 군이 아직 표시되지 않은 경우에만 제목을 출력 */}
-                                                    {!displayedGrades.has(grade) && (
-                                                        <div className={styles.gradeTitleBox}>
-                                                            <p className={styles.gradeTitle}>
-                                                                {grade === "0" ? "신입" : `${grade} 군 (${groupedMembers[grade].length})`}
-                                                            </p>
-                                                        </div>
-                                                    )}
+                                                    <div className={styles.gradeTitleBox}>
+                                                        <p className={styles.gradeTitle}>
+                                                            {`${grade} 군 (${groupedMembers[grade].length})`}
+                                                        </p>
+                                                    </div>
                                                     {groupedMembers[grade].map((member) => (
                                                         <div key={member.memberId} className={styles.gradeBox}>
                                                             <div className={styles.memberAvgBox}>
@@ -1677,7 +1724,7 @@ function ClubSetting({ pageLoad, clubId }) {
                                                             </div>
                                                             <div className={styles.memberAvgBox}>
                                                                 <select 
-                                                                    value={grade === 0 ? "신입" : member.grade}
+                                                                    value={member.grade}
                                                                     className={styles.avgSelect}
                                                                     onChange={(e) => memberGradeUpdate(member.memberId, e.target.value)}
                                                                 >
@@ -1693,14 +1740,58 @@ function ClubSetting({ pageLoad, clubId }) {
                                                         </div>
                                                     ))}
                                                 </div>
-                                            );
-                                        }
-                                        return null;
-                                    })
+                                            ))}
+                                            
+                                            {/* 신입은 제일 밑에 표시 */}
+                                            {groupedMembers["0"] && (
+                                                <div key="0" className={styles.gradeGroup}>
+                                                    <div className={styles.gradeTitleBox}>
+                                                        <p className={styles.gradeTitle}>
+                                                            신입 ({groupedMembers["0"].length})
+                                                        </p>
+                                                    </div>
+                                                    {groupedMembers["0"].map((member) => (
+                                                        <div key={member.memberId} className={styles.gradeBox}>
+                                                            <div className={styles.memberAvgBox}>
+                                                                <p>{member.memberName}</p>
+                                                            </div>
+                                                            <div className={styles.memberAvgBox}>
+                                                                <p>{members.find((findMember) => findMember.memberId === member.memberId).avg}</p>
+                                                            </div>
+                                                            <div className={styles.memberAvgBox}>
+                                                                <input
+                                                                    type="number"
+                                                                    placeholder="에버"
+                                                                    className={styles.avgInput}
+                                                                    onChange={(e) =>
+                                                                        memberAvgUpdate(member.memberId, e.target.value)
+                                                                    }
+                                                                />
+                                                            </div>
+                                                            <div className={styles.memberAvgBox}>
+                                                                <select 
+                                                                    value={member.grade}
+                                                                    className={styles.avgSelect}
+                                                                    onChange={(e) => memberGradeUpdate(member.memberId, e.target.value)}
+                                                                >
+                                                                    <option value={0}>신입</option>
+                                                                    <option value={1}>1군</option>
+                                                                    <option value={2}>2군</option>
+                                                                    <option value={3}>3군</option>
+                                                                    <option value={4}>4군</option>
+                                                                    <option value={5}>5군</option>
+                                                                    <option value={6}>6군</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                             );
-                        })}
+                        })()}
                         <div className={styles.avgSaveBtnBox}>
                             <button className={styles.avgSaveBtn} onClick={memberAvgUpdateRequest}>저장하기</button>
                         </div>

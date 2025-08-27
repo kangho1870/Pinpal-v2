@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from "./requestInterceptor";
 import { HOME_PATH } from "../constants";
 
 // 서버 환경에 따른 API 도메인 설정
@@ -27,6 +27,7 @@ const GET_CLUB_INFO_API_URL = (clubId) => `${CLUB_API_URL}/${clubId}`;
 const GET_CLUB_MEMBERS_API_URL = (clubId) => `${CLUB_API_URL}/${clubId}/members`;
 const GET_CEREMONIES_API_URL = (clubId) => `${ROOT_API_DOMAIN}/api/ceremonies/club/${clubId}`;
 const GET_MY_CLUBS_API_URL = `${USER_API_URL}/my-clubs`;
+const EXPORT_SCOREBOARD_EXCEL_API_URL = (gameId) => `${ROOT_API_DOMAIN}/api/games/${gameId}/export/scoreboards`;
 const CREATE_CLUB_API_URL = `${CLUB_API_URL}`;
 const UPDATE_CLUB_API_URL = (clubId) => `${CLUB_API_URL}/${clubId}`;
 const DELETE_CLUB_API_URL = (clubId) => `${CLUB_API_URL}/${clubId}`;
@@ -438,4 +439,32 @@ export const clubMemberRoleUpdateRequest = async (data, clubId, accessToken) => 
 export const clubJoinRequest = async (clubId, memberId, accessToken) => {
     console.warn('clubJoinRequest는 deprecated되었습니다. joinClubRequest를 사용하세요.');
     return joinClubRequest(clubId, accessToken);
+};
+
+// ===== 엑셀 다운로드 관련 함수 =====
+export const exportScoreboardExcelRequest = async (gameId, accessToken) => {
+    try {
+        const response = await axios.get(`${EXPORT_SCOREBOARD_EXCEL_API_URL(gameId)}`, {
+            ...bearerAuthorization(accessToken),
+            responseType: 'blob' // 파일 다운로드를 위해 blob으로 설정
+        });
+        
+        // 파일 다운로드 처리
+        const blob = new Blob([response.data], { 
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+        });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `scoreboard_${gameId}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        return { success: true };
+    } catch (error) {
+        console.error('엑셀 다운로드 실패:', error);
+        return { success: false, error: error.message };
+    }
 };

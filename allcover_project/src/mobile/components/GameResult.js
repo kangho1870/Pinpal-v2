@@ -119,41 +119,16 @@ export default function GameResult() {
     // 총핀 1등 (합계 점수가 가장 높은 사람)
     const total1stMember = sortedMembers[0];
 
-    // 에버 1위 (총핀 1등을 제외하고 4게임 평균 점수가 자신의 평균 점수보다 가장 높은 사람)
-    const getAvgTopScoreMember = () => {
-        const excludedMemberId = total1stMember?.memberId;
-        const eligibleMembers = members.filter(member => member?.memberId !== excludedMemberId);
+    // 시상 우선순위: 군 1위 > 하이스코어 (에버 1위는 중복 가능)
+    const getAwardWinners = () => {
+        const excludedMemberIds = new Set();
         
-        return eligibleMembers.reduce((best, current) => {
-            const currentAvg = ((current?.game1 || 0) + (current?.game2 || 0) + (current?.game3 || 0) + (current?.game4 || 0)) / 4;
-            const currentDiff = currentAvg - (current?.memberAvg || 0);
-            
-            const bestAvg = ((best?.game1 || 0) + (best?.game2 || 0) + (best?.game3 || 0) + (best?.game4 || 0)) / 4;
-            const bestDiff = bestAvg - (best?.memberAvg || 0);
-            
-            return currentDiff > bestDiff ? current : best;
-        }, eligibleMembers[0]);
-    };
-
-    const avgTopScoreMember = getAvgTopScoreMember();
-
-    // 각 군 1등 (총핀 1등을 제외하고 4게임 평균 점수가 자신의 평균 점수보다 가장 높은 사람)
-    const getTopMembersByGrade = () => {
-        const excludedMemberId = total1stMember?.memberId;
-        const grades = [1, 2, 3, 4, 5, 6];
-        const gradeWinners = [];
+        // 1. 총핀 1위 (항상 포함)
+        excludedMemberIds.add(total1stMember?.memberId);
         
-        grades.forEach(grade => {
-            const gradeMembers = members.filter(member => 
-                member?.grade === grade && member?.memberId !== excludedMemberId
-            );
-            
-            if (gradeMembers.length === 0) {
-                gradeWinners.push(null);
-                return;
-            }
-            
-            const gradeWinner = gradeMembers.reduce((best, current) => {
+        // 2. 에버 1위 (중복 시상 가능 - 총핀 1위와 중복 가능)
+        const getAvgTopScoreMember = () => {
+            return members.reduce((best, current) => {
                 const currentAvg = ((current?.game1 || 0) + (current?.game2 || 0) + (current?.game3 || 0) + (current?.game4 || 0)) / 4;
                 const currentDiff = currentAvg - (current?.memberAvg || 0);
                 
@@ -162,39 +137,96 @@ export default function GameResult() {
                 
                 return currentDiff > bestDiff ? current : best;
             });
-            
-            gradeWinners.push(gradeWinner);
-        });
+        };
         
-        return gradeWinners;
+        const avgTopScoreMember = getAvgTopScoreMember();
+        
+        // 3. 각 군 1등 (총핀 1위 제외)
+        const getTopMembersByGrade = () => {
+            const grades = [1, 2, 3, 4, 5, 6];
+            const gradeWinners = [];
+            
+            grades.forEach(grade => {
+                const gradeMembers = members.filter(member => 
+                    member?.grade === grade && !excludedMemberIds.has(member?.memberId)
+                );
+                
+                if (gradeMembers.length === 0) {
+                    gradeWinners.push(null);
+                    return;
+                }
+                
+                const gradeWinner = gradeMembers.reduce((best, current) => {
+                    const currentAvg = ((current?.game1 || 0) + (current?.game2 || 0) + (current?.game3 || 0) + (current?.game4 || 0)) / 4;
+                    const currentDiff = currentAvg - (current?.memberAvg || 0);
+                    
+                    const bestAvg = ((best?.game1 || 0) + (best?.game2 || 0) + (best?.game3 || 0) + (best?.game4 || 0)) / 4;
+                    const bestDiff = bestAvg - (best?.memberAvg || 0);
+                    
+                    return currentDiff > bestDiff ? current : best;
+                });
+                
+                if (gradeWinner) {
+                    excludedMemberIds.add(gradeWinner.memberId);
+                }
+                gradeWinners.push(gradeWinner);
+            });
+            
+            return gradeWinners;
+        };
+        
+        const topMembers = getTopMembersByGrade();
+        
+        // 4. 하이스코어 (총핀 1위, 군 1위 제외, 점수 기준 적용)
+        const getHighScoreMember = (gender) => {
+            const scoreThreshold = gender === 1 ? 200 : 230; // 여성: 200점, 남성: 230점
+            const eligibleMembers = members.filter(member => 
+                !excludedMemberIds.has(member?.memberId) && member?.gender === gender
+            );
+            
+            if (eligibleMembers.length === 0) return null;
+            
+            // 각 게임에서 기준 점수를 넘는 최고 점수 찾기
+            let bestMember = null;
+            let bestScore = 0;
+            
+            eligibleMembers.forEach(member => {
+                const gameScores = [member?.game1 || 0, member?.game2 || 0, member?.game3 || 0, member?.game4 || 0];
+                
+                gameScores.forEach(score => {
+                    if (score >= scoreThreshold && score > bestScore) {
+                        bestScore = score;
+                        bestMember = member;
+                    }
+                });
+            });
+            
+            return bestMember;
+        };
+        
+        const highScoreOfMan = getHighScoreMember(0);
+        const highScoreOfGirl = getHighScoreMember(1);
+        
+        return {
+            avgTopScoreMember,
+            topMembers,
+            highScoreOfMan,
+            highScoreOfGirl
+        };
     };
-
-    const topMembers = getTopMembersByGrade();
+    
+    const awardWinners = getAwardWinners();
+    const avgTopScoreMember = awardWinners.avgTopScoreMember;
+    const topMembers = awardWinners.topMembers;
+    const highScoreOfMan = awardWinners.highScoreOfMan;
+    const highScoreOfGirl = awardWinners.highScoreOfGirl;
+    
     const grade1stId = topMembers[0]?.memberId || null;
     const grade2stId = topMembers[1]?.memberId || null;
     const grade3stId = topMembers[2]?.memberId || null;
     const grade4stId = topMembers[3]?.memberId || null;
     const grade5stId = topMembers[4]?.memberId || null;
     const grade6stId = topMembers[5]?.memberId || null;
-
-    // 하이스코어 (총핀 1등 제외)
-    const getHighScoreMember = (gender) => {
-        const excludedMemberId = total1stMember?.memberId;
-        const eligibleMembers = members.filter(member => 
-            member?.memberId !== excludedMemberId && member?.gender === gender
-        );
-        
-        if (eligibleMembers.length === 0) return null;
-        
-        return eligibleMembers.reduce((best, current) => {
-            const currentHighest = Math.max(current?.game1 || 0, current?.game2 || 0, current?.game3 || 0, current?.game4 || 0);
-            const bestHighest = Math.max(best?.game1 || 0, best?.game2 || 0, best?.game3 || 0, best?.game4 || 0);
-            return currentHighest > bestHighest ? current : best;
-        });
-    };
-
-    const highScoreOfMan = getHighScoreMember(0);
-    const highScoreOfGirl = getHighScoreMember(1);
 
     // 팀 1등 멤버들의 ID 추출 (TeamScoreboard에서 계산된 값이 있으면 사용, 없으면 직접 계산)
     const team1stMemberIds = team1stMember?.members?.map(member => member.memberId) || calculateTeam1st();
@@ -281,7 +313,7 @@ export default function GameResult() {
                                         <h3 className={styles.memberName}>{avgTopScoreMember?.memberName || '-'}</h3>
                                         <p className={styles.avgScore}>
                                             {avgTopScoreMember ? 
-                                                `${((avgTopScoreMember?.game1 || 0) + (avgTopScoreMember?.game2 || 0) + (avgTopScoreMember?.game3 || 0) + (avgTopScoreMember?.game4 || 0)) / 4}점` 
+                                                `${((avgTopScoreMember?.game1 || 0) + (avgTopScoreMember?.game2 || 0) + (avgTopScoreMember?.game3 || 0) + (avgTopScoreMember?.game4 || 0)) - (avgTopScoreMember?.memberAvg * 4)}점` 
                                                 : '-'
                                             }
                                         </p>

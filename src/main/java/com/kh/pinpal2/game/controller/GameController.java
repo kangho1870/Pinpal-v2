@@ -1,10 +1,13 @@
 package com.kh.pinpal2.game.controller;
 
 import com.kh.pinpal2.base.dto.PageResponse;
+import com.kh.pinpal2.base.service.ExcelExportService;
 import com.kh.pinpal2.game.dto.*;
 import com.kh.pinpal2.game.service.GameService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +21,7 @@ import java.util.List;
 public class GameController {
 
     private final GameService gameService;
+    private final ExcelExportService excelExportService;
 
     @GetMapping
     public ResponseEntity<PageResponse<GameRespDto>> findAllByClubId(
@@ -67,5 +71,15 @@ public class GameController {
     public ResponseEntity<List<GameParticipantDto>> getGameParticipants(@PathVariable Long gameId) {
         List<GameParticipantDto> response = gameService.getGameParticipants(gameId);
         return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @GetMapping("/{gameId}/export/scoreboards")
+    public ResponseEntity<byte[]> exportScoreboards(@PathVariable Long gameId) {
+        byte[] response = excelExportService.exportScoreboardToExcel(gameId);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=scoreboard.xlsx")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(response);
     }
 }
