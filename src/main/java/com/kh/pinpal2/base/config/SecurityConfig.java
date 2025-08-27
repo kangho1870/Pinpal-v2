@@ -43,12 +43,12 @@ public class SecurityConfig {
                 // CORS 정책 설정
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()));
 
-        // 프로덕션 환경에서만 HTTPS 강제
-        if ("prod".equals(environment.getActiveProfiles()[0])) {
-            security.requiresChannel(channel -> channel
-                    .anyRequest().requiresSecure()
-            );
-        }
+        // HTTPS 강제 설정 제거 - nginx에서 처리
+        // if ("prod".equals(environment.getActiveProfiles()[0])) {
+        //     security.requiresChannel(channel -> channel
+        //             .anyRequest().requiresSecure()
+        //     );
+        // }
 
         security
                 // URL 패턴 및 HTTP 메서드에 따라 인증 및 인가 여부 지정
