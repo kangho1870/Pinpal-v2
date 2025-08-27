@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
@@ -27,6 +28,7 @@ public class SecurityConfig {
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
     private final OAuth2UserServiceImpl oAuth2UserService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final Environment environment;
 
 
     @Bean
@@ -39,7 +41,16 @@ public class SecurityConfig {
                 // CSRF 취약점 대비 미지정
                 .csrf(CsrfConfigurer::disable)
                 // CORS 정책 설정
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()));
+
+        // 프로덕션 환경에서만 HTTPS 강제
+        if ("prod".equals(environment.getActiveProfiles()[0])) {
+            security.requiresChannel(channel -> channel
+                    .anyRequest().requiresSecure()
+            );
+        }
+
+        security
                 // URL 패턴 및 HTTP 메서드에 따라 인증 및 인가 여부 지정
                 .authorizeHttpRequests((authorizeRequest) ->
                         authorizeRequest
