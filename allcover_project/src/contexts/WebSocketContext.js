@@ -24,18 +24,43 @@ export const WebSocketProvider = ({ children, gameId }) => {
     
     // 서버 환경에 따른 WebSocket URL 설정
     const ROOT_API_DOMAIN = process.env.REACT_APP_API_URL || 'https://pinpal.co.kr';
-    // nginx WebSocket 프록시를 통한 연결
-    const wsUrl = gameId ? `${ROOT_API_DOMAIN.replace('https', 'wss')}/scoreboard/${gameId}` : null;
+    
+    // WebSocket URL 설정 (nginx 프록시 우선, 실패 시 직접 연결)
+    const getWebSocketUrl = () => {
+        if (!gameId) return null;
+        
+        // nginx WebSocket 프록시를 통한 연결 (우선 시도)
+        const nginxWsUrl = `${ROOT_API_DOMAIN.replace('https', 'wss')}/scoreboard/${gameId}`;
+        
+        // 직접 포트 연결 (fallback)
+        const directWsUrl = `ws://pinpal.co.kr:8000/scoreboard/${gameId}`;
+        
+        console.log('🔗 nginx WebSocket URL:', nginxWsUrl);
+        console.log('🔗 직접 연결 URL:', directWsUrl);
+        
+        return nginxWsUrl;
+    };
+    
+    const wsUrl = getWebSocketUrl();
+    
+    // WebSocket URL 디버깅
+    console.log('🔗 WebSocket URL:', wsUrl);
+    console.log('🔗 ROOT_API_DOMAIN:', ROOT_API_DOMAIN);
+    console.log('🔗 gameId:', gameId);
+    console.log('🔗 token:', token ? '있음' : '없음');
 
     // 서버 상태 확인 함수 (메모이제이션)
     const checkServerStatus = useCallback(async () => {
         try {
-            await fetch(`${ROOT_API_DOMAIN}/actuator/health`, {
+            console.log('🏥 서버 상태 확인 중:', `${ROOT_API_DOMAIN}/actuator/health`);
+            const response = await fetch(`${ROOT_API_DOMAIN}/actuator/health`, {
                 method: 'GET',
                 mode: 'no-cors'
             });
+            console.log('🏥 서버 상태 응답:', response.status, response.statusText);
             return true;
         } catch (error) {
+            console.log('🏥 서버 상태 확인 실패:', error);
             return false;
         }
     }, [ROOT_API_DOMAIN]);

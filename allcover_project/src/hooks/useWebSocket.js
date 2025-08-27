@@ -44,6 +44,9 @@ const useWebSocket = (url, options = {}) => {
             const currentToken = token || cookies.accessToken;
             const wsUrl = currentToken ? `${url}?token=${currentToken}` : url;
             
+            console.log('🔗 WebSocket 연결 시도:', wsUrl);
+            console.log('🔗 토큰:', currentToken ? '있음' : '없음');
+            
             const socket = new WebSocket(wsUrl);
             socketRef.current = socket;
 
