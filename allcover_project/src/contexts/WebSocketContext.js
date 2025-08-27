@@ -38,6 +38,7 @@ export const WebSocketProvider = ({ children, gameId }) => {
         console.log('🔗 nginx WebSocket URL:', nginxWsUrl);
         console.log('🔗 직접 연결 URL:', directWsUrl);
         
+        // nginx WebSocket 프록시 사용
         return nginxWsUrl;
     };
     
