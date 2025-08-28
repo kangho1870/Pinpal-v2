@@ -88,10 +88,21 @@ public class OAuth2UserServiceImpl extends DefaultOAuth2UserService {
 
         if(user == null) {
             log.info("신규 사용자 - SNS ID: {}, Provider: {}", snsId, registration);
+            
+            // 카카오에서 이메일 정보 가져오기
+            String accountEmail = null;
+            if(registration.equals("kakao")) {
+                Map<String, Object> kakaoAccount = (Map<String, Object>) oAuth2User.getAttributes().get("kakao_account");
+                if (kakaoAccount != null) {
+                    accountEmail = (String) kakaoAccount.get("email");
+                }
+            }
+            
             Map<String, Object> attributes = new HashMap<>();
             attributes.put("snsId", snsId);
             attributes.put("joinPath", registration);
             attributes.put("profileImageUrl", profileImageUrl);
+            attributes.put("accountEmail", accountEmail);
             attributes.put("role", "USER"); // 신규 사용자는 기본적으로 USER 역할
             customOAuth2User = new CustomOAuth2User(snsId, attributes, false);
         } else {

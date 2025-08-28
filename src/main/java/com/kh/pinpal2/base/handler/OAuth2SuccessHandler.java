@@ -99,19 +99,19 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 log.error("액세스 토큰이 없습니다.");
                 response.sendRedirect(redirectUri + "/error?message=token_missing");
             }
-        }
-        else {
+        } else {
             String snsId = (String) attributes.get("snsId");
             String joinPath = (String) attributes.get("joinPath");
             String profileImageUrl = (String) attributes.get("profileImageUrl");
+            String accountEmail = (String) attributes.get("accountEmail");
             
             // 필수 파라미터 검증
-            if (snsId != null && joinPath != null) {
-                String finalRedirectUri = redirectUri + "/auth?snsId=" + snsId + "&joinPath=" + joinPath + "&profileImageUrl=" + profileImageUrl;
+            if (snsId != null && joinPath != null && accountEmail != null) {
+                String finalRedirectUri = redirectUri + "/auth?snsId=" + snsId + "&joinPath=" + joinPath + "&accountEmail=" + accountEmail + "&profileImageUrl=" + profileImageUrl;
                 log.info("신규 회원 리다이렉트: {}", finalRedirectUri);
                 response.sendRedirect(finalRedirectUri);
             } else {
-                log.error("필수 파라미터가 없습니다. snsId: {}, joinPath: {}", snsId, joinPath);
+                log.error("필수 파라미터가 없습니다. snsId: {}, joinPath: {}, accountEmail: {}", snsId, joinPath, accountEmail);
                 response.sendRedirect(redirectUri + "/error?message=missing_parameters");
             }
         }

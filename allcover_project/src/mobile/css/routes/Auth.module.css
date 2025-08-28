@@ -1,33 +1,68 @@
 .signUpContainer {
     display: flex;
     flex-direction: column;
+    width: 100%;
     height: calc(var(--vh, 1vh) * 100);
     overflow-y: auto;
     overflow-x: hidden;
-    padding: clamp(10px, 2vw, 20px);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 16px;
 }
 
 .topBox {
     display: flex;
     justify-content: center;
-    border-bottom: clamp(1px, 0.3vw, 2px) solid #d1d1d1;
-    padding: clamp(8px, 2vw, 12px);
-    margin-bottom: clamp(15px, 3vh, 25px);
+    padding: 20px 16px;
+    margin-bottom: 24px;
+    position: relative;
+}
+
+.topBox::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    border-radius: 2px;
 }
 
 .title {
-    font-size: clamp(18px, 4.5vw, 23px);
-    font-weight: 400;
+    font-size: 28px;
+    font-weight: 700;
+    color: #2c3e50;
+    text-align: center;
+    margin: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 2px 4px rgba(102, 126, 234, 0.1);
 }
 
 .message {
-    color: red;
-    font-size: clamp(11px, 2.8vw, 13px);
+    color: #e74c3c;
+    font-size: 13px;
+    margin-top: 8px;
+    font-weight: 600;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, rgba(231, 76, 60, 0.1), rgba(231, 76, 60, 0.05));
+    border-radius: 8px;
+    border-left: 4px solid #e74c3c;
 }
 
 .okMessage {
-    color: green;
-    font-size: clamp(11px, 2.8vw, 13px);
+    color: #27ae60;
+    font-size: 13px;
+    margin-top: 8px;
+    font-weight: 600;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, rgba(39, 174, 96, 0.1), rgba(39, 174, 96, 0.05));
+    border-radius: 8px;
+    border-left: 4px solid #27ae60;
 }
 
 .addInformationContainer {
@@ -35,215 +70,407 @@
     flex-direction: column;
     align-items: center;
     flex: 1;
+    padding: 0 16px;
 }
 
 .addInformationBox {
     display: flex;
     flex-direction: column;
     width: 100%;
-    max-width: 400px;
-    margin-bottom: clamp(12px, 2.5vh, 18px);
+    max-width: 450px;
+    margin-bottom: 24px;
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.addInformationBox::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, #667eea, #764ba2);
+}
+
+.addInformationBox:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
 }
 
 .signUpInput {
     display: flex;
     width: 100%;
-    border: none;
-    border-bottom: 1px solid #dbdbdb;
-    height: clamp(35px, 5vh, 45px);
-    font-size: clamp(11px, 2.8vw, 13px);
-    padding: clamp(8px, 2vw, 12px);
-    background-color: transparent;
-    transition: border-color 0.2s ease;
+    border: 2px solid #e1e8ed;
+    border-radius: 12px;
+    height: 50px;
+    font-size: 14px;
+    padding: 0 16px;
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+    color: #2c3e50;
+    font-weight: 500;
 }
 
 .signUpInput:focus {
-    border-bottom-color: #004EA2;
+    border-color: #667eea;
+    background-color: white;
     outline: none;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    transform: translateY(-1px);
+}
+
+.signUpInput:read-only {
+    background-color: #f1f3f4;
+    color: #7f8c8d;
+    cursor: not-allowed;
+    border-color: #e1e8ed;
+}
+
+.signUpInput::placeholder {
+    color: #95a5a6;
+    font-weight: 400;
 }
 
 .informationTitle {
     display: flex;
-    font-size: clamp(13px, 3.2vw, 15px);
-    margin-bottom: clamp(4px, 1vh, 6px);
-    font-weight: 500;
+    font-size: 16px;
+    margin-bottom: 12px;
+    font-weight: 700;
+    color: #2c3e50;
+    position: relative;
+    padding-left: 12px;
+}
+
+.informationTitle::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 16px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 2px;
 }
 
 .emailBox {
     display: flex;
     justify-content: space-between;
-    gap: clamp(8px, 2vw, 12px);
+    gap: 12px;
 }
 
 .emailCheckBtn {
     display: flex;
-    width: clamp(80px, 20vw, 120px);
+    width: 120px;
     align-items: center;
     justify-content: center;
-    border: 1px solid #004EA2;
-    color: #004EA2;
-    background-color: #fafafa;
-    border-radius: clamp(20px, 5vw, 40px);
+    border: 2px solid #667eea;
+    color: #667eea;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    border-radius: 12px;
     font-weight: 600;
-    font-size: clamp(11px, 2.8vw, 13px);
-    height: clamp(35px, 5vh, 45px);
+    font-size: 14px;
+    height: 50px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
     white-space: nowrap;
+    position: relative;
+    overflow: hidden;
+}
+
+.emailCheckBtn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
 }
 
 .emailCheckBtn:hover {
-    background-color: #004EA2;
+    background: linear-gradient(135deg, #667eea, #764ba2);
     color: white;
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+}
+
+.emailCheckBtn:hover::before {
+    left: 100%;
+}
+
+.emailCheckBtn:disabled {
+    background: #f1f3f4;
+    border-color: #e1e8ed;
+    color: #95a5a6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.emailCheckBtn:disabled::before {
+    display: none;
 }
 
 .btnBox {
     display: flex;
     justify-content: space-between;
     width: 100%;
-    margin-top: clamp(12px, 2.5vh, 18px);
-    gap: clamp(8px, 2vw, 12px);
+    margin-top: 16px;
+    gap: 12px;
 }
 
 .btn {
     display: flex;
     width: 100%;
-    height: clamp(45px, 6vh, 55px);
-    border-radius: clamp(8px, 2vw, 10px);
-    border: 1px solid black;
+    height: 50px;
+    border-radius: 12px;
+    border: 2px solid #e1e8ed;
     align-items: center;
     justify-content: center;
-    background-color: #fafafa;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
     font-weight: 600;
-    font-size: clamp(13px, 3.2vw, 15px);
+    font-size: 15px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
+    color: #6c757d;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
 }
 
 .btn:hover {
-    background-color: #f0f0f0;
-    transform: translateY(-1px);
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-color: #667eea;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+}
+
+.btn:hover::before {
+    left: 100%;
 }
 
 .selectedBtn {
-    background-color: #004EA2;
-    border: none;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border: 2px solid #667eea;
     color: white;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
 }
 
 .selectedBtn:hover {
-    background-color: #003d7a;
+    background: linear-gradient(135deg, #5a6fd8, #6a4c93);
+    border-color: #5a6fd8;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+}
+
+.selectedBtn::before {
+    display: none;
 }
 
 .signUpBtnBox {
     display: flex;
     justify-content: center;
-    margin-top: clamp(12px, 2.5vh, 18px);
+    margin-top: 32px;
     width: 100%;
+    padding: 0 16px;
 }
 
 .signUpBtn {
     display: flex;
     width: 100%;
-    max-width: 400px;
-    height: clamp(45px, 6vh, 55px);
-    border-radius: clamp(8px, 2vw, 10px);
+    max-width: 450px;
+    height: 56px;
+    border-radius: 16px;
     border: none;
     align-items: center;
     justify-content: center;
-    background-color: #004EA2;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    font-weight: 600;
-    font-size: clamp(14px, 3.5vw, 16px);
+    font-weight: 700;
+    font-size: 18px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.signUpBtn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.6s;
 }
 
 .signUpBtn:hover {
-    background-color: #003d7a;
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4c93 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(102, 126, 234, 0.4);
+}
+
+.signUpBtn:hover::before {
+    left: 100%;
+}
+
+.signUpBtn:active {
     transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(102, 126, 234, 0.3);
 }
 
 /* 모바일 최적화 */
 @media screen and (max-width: 480px) {
     .signUpContainer {
-        padding: clamp(8px, 1.5vw, 15px);
+        padding: 12px;
+    }
+    
+    .topBox {
+        padding: 16px 12px;
+        margin-bottom: 20px;
     }
     
     .title {
-        font-size: clamp(16px, 4vw, 20px);
+        font-size: 24px;
+    }
+    
+    .addInformationBox {
+        padding: 16px;
+        margin-bottom: 20px;
+        border-radius: 12px;
     }
     
     .informationTitle {
-        font-size: clamp(12px, 3vw, 14px);
+        font-size: 14px;
+        margin-bottom: 10px;
     }
     
     .signUpInput {
-        font-size: clamp(10px, 2.5vw, 12px);
+        height: 45px;
+        font-size: 13px;
+        padding: 0 12px;
+        border-radius: 10px;
     }
     
     .emailCheckBtn {
-        font-size: clamp(10px, 2.5vw, 12px);
-        width: clamp(70px, 18vw, 100px);
+        width: 100px;
+        height: 45px;
+        font-size: 13px;
+        border-radius: 10px;
     }
     
     .btn {
-        font-size: clamp(12px, 3vw, 14px);
+        height: 45px;
+        font-size: 14px;
+        border-radius: 10px;
     }
     
     .signUpBtn {
-        font-size: clamp(13px, 3.2vw, 15px);
+        height: 50px;
+        font-size: 16px;
+        border-radius: 12px;
+    }
+    
+    .message, .okMessage {
+        font-size: 12px;
+        padding: 6px 10px;
+        border-radius: 6px;
     }
 }
 
 /* 태블릿 최적화 */
 @media screen and (min-width: 481px) and (max-width: 768px) {
+    .signUpContainer {
+        padding: 20px;
+    }
+    
+    .title {
+        font-size: 26px;
+    }
+    
     .addInformationBox {
-        max-width: 450px;
+        max-width: 500px;
+        padding: 24px;
     }
     
     .signUpBtn {
-        max-width: 450px;
+        max-width: 500px;
+        height: 60px;
+        font-size: 20px;
     }
 }
 
 /* 가로 모드 최적화 */
 @media screen and (orientation: landscape) and (max-height: 500px) {
     .signUpContainer {
-        padding: clamp(5px, 1vw, 10px);
+        padding: 8px;
     }
     
     .topBox {
-        padding: clamp(4px, 1vw, 8px);
-        margin-bottom: clamp(8px, 1.5vh, 15px);
+        padding: 12px 8px;
+        margin-bottom: 16px;
     }
     
     .title {
-        font-size: clamp(14px, 3.5vw, 18px);
+        font-size: 20px;
+    }
+    
+    .addInformationBox {
+        padding: 12px;
+        margin-bottom: 16px;
     }
     
     .informationTitle {
-        font-size: clamp(11px, 2.8vw, 13px);
+        font-size: 13px;
+        margin-bottom: 8px;
     }
     
     .signUpInput {
-        height: clamp(30px, 4vh, 40px);
-        font-size: clamp(9px, 2.2vw, 11px);
+        height: 40px;
+        font-size: 12px;
+        padding: 0 10px;
     }
     
     .emailCheckBtn {
-        height: clamp(30px, 4vh, 40px);
-        font-size: clamp(9px, 2.2vw, 11px);
+        height: 40px;
+        font-size: 12px;
+        width: 90px;
     }
     
     .btn {
-        height: clamp(35px, 5vh, 45px);
-        font-size: clamp(11px, 2.8vw, 13px);
+        height: 40px;
+        font-size: 13px;
     }
     
     .signUpBtn {
-        height: clamp(35px, 5vh, 45px);
-        font-size: clamp(12px, 3vw, 14px);
+        height: 45px;
+        font-size: 15px;
+    }
+    
+    .message, .okMessage {
+        font-size: 11px;
+        padding: 4px 8px;
     }
 }

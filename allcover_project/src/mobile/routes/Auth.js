@@ -8,10 +8,11 @@ export default function Auth() {
     const [queryParam] = useSearchParams();
     const snsId = queryParam.get("snsId");
     const joinPath = queryParam.get("joinPath");
+    const accountEmail = queryParam.get("accountEmail");
     const [path, setPath] = useState("로그인");
     useEffect(() => {
-        if(snsId && joinPath) setPath("회원가입");
-    }, [snsId, joinPath]);
+        if(snsId && joinPath && accountEmail) setPath("회원가입");
+    }, [snsId, joinPath, accountEmail]);
     return (
         <div>
             {path === "로그인" && <SignIn />}
@@ -25,11 +26,12 @@ function SignUp() {
     const snsId = queryParam.get("snsId");
     const joinPath = queryParam.get("joinPath");
     const profileImageUrl = queryParam.get("profileImageUrl");
+    const accountEmail = queryParam.get("accountEmail");
     const navigator = useNavigate();
     const isSnsSignUp = snsId !== null && joinPath !== null;
     const [name, setName] = useState("");
     const [birth, setBirth] = useState("");
-    const [email, setEmail] = useState("");
+    const [email, setEmail] = useState(accountEmail || "");
     const [gender, setGender] = useState(0);
     const [idMessage, setIdMessage] = useState("");
     const [birthMessage, setBirthMessage] = useState("");
@@ -38,7 +40,19 @@ function SignUp() {
     const [matchedId, setMatchedId] = useState(false);
     const [matchedBirth, setMatchedBirth] = useState(false);
     const [idCheckBtnStatus, setIdCheckBtnStatus] = useState(false);
-    const signUpRequestCheck = name && matchedId && matchedBirth && (gender === 0 || gender === 1) && snsId && joinPath;
+    const signUpRequestCheck = name && (isSnsSignUp ? true : matchedId) && matchedBirth && (gender === 0 || gender === 1) && snsId && joinPath;
+
+    // SNS 로그인인 경우 이메일 유효성 자동 통과
+    useEffect(() => {
+        if (isSnsSignUp && accountEmail) {
+            const pattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            const isMatched = pattern.test(accountEmail);
+            setMatchedId(isMatched);
+            if (isMatched) {
+                setIdMessage('사용 가능한 이메일 입니다.');
+            }
+        }
+    }, [isSnsSignUp, accountEmail]);
 
     const handleIdInputChange = (event) => {
         const { value } = event.target;
@@ -123,11 +137,18 @@ function SignUp() {
                             placeholder="이메일 주소"
                             type="text" 
                             value={email} 
-                            onChange={handleIdInputChange} 
+                            onChange={handleIdInputChange}
+                            readOnly={isSnsSignUp}
                         />
-                        <button className={styles.emailCheckBtn} onClick={idCheck} disabled={!matchedId}>중복확인</button>
+                        <button 
+                            className={styles.emailCheckBtn} 
+                            onClick={idCheck} 
+                            disabled={!matchedId || isSnsSignUp}
+                        >
+                            중복확인
+                        </button>
                     </div>
-                    <span className={`${styles.message} ${idMessage === "사용 가능한 아이디입니다." ? styles.okMessage : ""}`}>{idMessage}</span>
+                    <span className={`${styles.okMessage} ${idMessage === "사용 가능한 아이디입니다." ? styles.okMessage : ""}`}>{idMessage}</span>
                 </div>
                 <div className={styles.addInformationBox}>
                     <span className={styles.informationTitle}>이름</span>

@@ -264,6 +264,7 @@ function MyClub() {
     const memberJoinClubResponse = (responseBody) => {
         if (!responseBody) {
             alert('서버에 문제가 있습니다.');
+            setLoading(false);
             return;
         }
         
@@ -271,13 +272,14 @@ function MyClub() {
         if (responseBody.code === 'ERROR') {
             // 새로운 ErrorResponse 구조
             alert(responseBody.message || '클럽 가입에 실패했습니다.');
+            setLoading(false);
             return;
         }
         
         // 성공 시 (void 응답이므로 responseBody가 없거나 빈 객체)
         alert('클럽에 가입되었습니다.');
-        // 사용자 정보는 이미 store에 있으므로 별도 API 호출 불필요
-        getMembersRequest();
+        
+        // pageLoad()만 호출 (내부에서 getMembersRequest() 포함)
         pageLoad();
         if (isMounted.current) setLoading(false);
     }

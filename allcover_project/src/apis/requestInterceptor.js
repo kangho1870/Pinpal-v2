@@ -3,12 +3,15 @@ import axios from 'axios';
 // 진행 중인 요청을 추적하는 Map (타임스탬프 포함)
 const pendingRequests = new Map();
 
-// 요청 타임아웃 (5초)
-const REQUEST_TIMEOUT = 5000;
+// 요청 타임아웃 (3초로 단축)
+const REQUEST_TIMEOUT = 3000;
 
 // 새로고침 감지 플래그
 let isRefreshing = false;
 let pageLoadTime = Date.now(); // 페이지 로드 시간
+
+// 최소 요청 간격 (밀리초)
+const MIN_REQUEST_INTERVAL = 100;
 
 // 요청을 식별하는 고유 키 생성 함수
 const generateRequestKey = (config) => {
@@ -23,6 +26,7 @@ const generateRequestKey = (config) => {
     // 요청 본문을 문자열로 변환 (객체인 경우)
     const requestData = data ? (typeof data === 'object' ? JSON.stringify(data) : data) : '';
     
+    // HTTP 메서드를 포함하여 더 정확한 키 생성
     return `${method?.toUpperCase() || 'GET'}:${url}${sortedParams ? `?${sortedParams}` : ''}${requestData ? `:${requestData}` : ''}`;
 };
 
@@ -32,9 +36,9 @@ axios.interceptors.request.use(
         const requestKey = generateRequestKey(config);
         const currentTime = Date.now();
         
-        // 페이지 로드 후 3초 이내의 요청은 중복 요청 방지 비활성화
-        if (currentTime - pageLoadTime < 3000) {
-            console.log('🔄 페이지 로드 후 3초 이내 - 중복 요청 방지 비활성화:', requestKey);
+        // 페이지 로드 후 2초 이내의 요청은 중복 요청 방지 비활성화
+        if (currentTime - pageLoadTime < 2000) {
+            console.log('🔄 페이지 로드 후 2초 이내 - 중복 요청 방지 비활성화:', requestKey);
             // 페이지 로드 직후에는 기존 요청을 제거하고 새로운 요청 허용
             pendingRequests.delete(requestKey);
             pendingRequests.set(requestKey, currentTime);
@@ -52,13 +56,30 @@ axios.interceptors.request.use(
                 console.log('⏰ 타임아웃된 요청 제거:', requestKey);
                 pendingRequests.delete(requestKey);
             } else {
-                console.log('🚫 중복 요청 방지:', requestKey);
+                // 특정 API 패턴에 대한 예외 처리
+                const isMembersApi = config.url.includes('/members') && !config.url.includes('/export');
+                const isGetRequest = config.method?.toUpperCase() === 'GET';
                 
-                // 중복 요청인 경우 Promise.reject로 요청 취소
-                const error = new Error('중복 요청이 감지되었습니다.');
-                error.isDuplicateRequest = true;
-                error.requestKey = requestKey;
-                return Promise.reject(error);
+                // 멤버 목록 API의 GET 요청은 더 관대하게 처리
+                if (isMembersApi && isGetRequest) {
+                    console.log('✅ 멤버 목록 GET 요청 - 기존 요청 제거 후 새 요청 허용:', requestKey);
+                    pendingRequests.delete(requestKey);
+                } else {
+                    // 최소 요청 간격 확인 (너무 빠른 연속 요청만 차단)
+                    if (currentTime - requestTime < MIN_REQUEST_INTERVAL) {
+                        console.log('🚫 너무 빠른 연속 요청 방지:', requestKey);
+                        
+                        // 중복 요청인 경우 Promise.reject로 요청 취소
+                        const error = new Error('너무 빠른 연속 요청이 감지되었습니다.');
+                        error.isDuplicateRequest = true;
+                        error.requestKey = requestKey;
+                        return Promise.reject(error);
+                    } else {
+                        // 최소 간격이 지났다면 기존 요청을 제거하고 새로운 요청 허용
+                        console.log('✅ 최소 간격 지남 - 기존 요청 제거 후 새 요청 허용:', requestKey);
+                        pendingRequests.delete(requestKey);
+                    }
+                }
             }
         }
         
@@ -104,7 +125,7 @@ axios.interceptors.response.use(
             return Promise.resolve({ 
                 data: { 
                     code: 'DUPLICATE_REQUEST', 
-                    message: '이미 진행 중인 요청입니다.' 
+                    message: '너무 빠른 연속 요청입니다. 잠시 후 다시 시도해주세요.' 
                 } 
             });
         }
