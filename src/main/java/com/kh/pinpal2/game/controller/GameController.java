@@ -67,12 +67,6 @@ public class GameController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
-    @GetMapping("/{gameId}/participants")
-    public ResponseEntity<List<GameParticipantDto>> getGameParticipants(@PathVariable Long gameId) {
-        List<GameParticipantDto> response = gameService.getGameParticipants(gameId);
-        return ResponseEntity.status(HttpStatus.OK).body(response);
-    }
-
     @GetMapping("/{gameId}/export/scoreboards")
     public ResponseEntity<byte[]> exportScoreboards(@PathVariable Long gameId) {
         byte[] response = excelExportService.exportScoreboardToExcel(gameId);

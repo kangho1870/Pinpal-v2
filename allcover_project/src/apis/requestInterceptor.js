@@ -1,7 +1,14 @@
 import axios from 'axios';
 
-// 진행 중인 요청을 추적하는 Map
+// 진행 중인 요청을 추적하는 Map (타임스탬프 포함)
 const pendingRequests = new Map();
+
+// 요청 타임아웃 (5초)
+const REQUEST_TIMEOUT = 5000;
+
+// 새로고침 감지 플래그
+let isRefreshing = false;
+let pageLoadTime = Date.now(); // 페이지 로드 시간
 
 // 요청을 식별하는 고유 키 생성 함수
 const generateRequestKey = (config) => {
@@ -23,20 +30,40 @@ const generateRequestKey = (config) => {
 axios.interceptors.request.use(
     (config) => {
         const requestKey = generateRequestKey(config);
+        const currentTime = Date.now();
         
-        // 이미 진행 중인 동일한 요청이 있는지 확인
-        if (pendingRequests.has(requestKey)) {
-            console.log('🚫 중복 요청 방지:', requestKey);
-            
-            // 중복 요청인 경우 Promise.reject로 요청 취소
-            const error = new Error('중복 요청이 감지되었습니다.');
-            error.isDuplicateRequest = true;
-            error.requestKey = requestKey;
-            return Promise.reject(error);
+        // 페이지 로드 후 3초 이내의 요청은 중복 요청 방지 비활성화
+        if (currentTime - pageLoadTime < 3000) {
+            console.log('🔄 페이지 로드 후 3초 이내 - 중복 요청 방지 비활성화:', requestKey);
+            // 페이지 로드 직후에는 기존 요청을 제거하고 새로운 요청 허용
+            pendingRequests.delete(requestKey);
+            pendingRequests.set(requestKey, currentTime);
+            console.log('📤 페이지 로드 직후 요청 시작:', requestKey);
+            config.requestKey = requestKey;
+            return config;
         }
         
-        // 새로운 요청을 pendingRequests에 추가
-        pendingRequests.set(requestKey, true);
+        // 정상 상황에서만 중복 요청 방지 적용
+        if (pendingRequests.has(requestKey)) {
+            const requestTime = pendingRequests.get(requestKey);
+            
+            // 타임아웃된 요청인지 확인
+            if (currentTime - requestTime > REQUEST_TIMEOUT) {
+                console.log('⏰ 타임아웃된 요청 제거:', requestKey);
+                pendingRequests.delete(requestKey);
+            } else {
+                console.log('🚫 중복 요청 방지:', requestKey);
+                
+                // 중복 요청인 경우 Promise.reject로 요청 취소
+                const error = new Error('중복 요청이 감지되었습니다.');
+                error.isDuplicateRequest = true;
+                error.requestKey = requestKey;
+                return Promise.reject(error);
+            }
+        }
+        
+        // 새로운 요청을 pendingRequests에 추가 (타임스탬프 포함)
+        pendingRequests.set(requestKey, currentTime);
         console.log('📤 요청 시작:', requestKey);
         
         // config에 requestKey 추가 (응답 인터셉터에서 사용)
@@ -102,6 +129,72 @@ export const cancelAllPendingRequests = () => {
     });
     console.log('🚫 모든 진행 중인 요청 취소됨:', requestKeys.length, '개');
 };
+
+// 새로고침 시 모든 요청을 정리하는 함수
+export const clearAllPendingRequests = () => {
+    const requestKeys = Array.from(pendingRequests.keys());
+    requestKeys.forEach(key => {
+        pendingRequests.delete(key);
+    });
+    console.log('🧹 새로고침으로 인한 모든 요청 정리됨:', requestKeys.length, '개');
+};
+
+// 페이지 언로드 시 모든 요청 정리
+window.addEventListener('beforeunload', () => {
+    clearAllPendingRequests();
+});
+
+// 페이지 숨김 시에도 정리 (모바일에서 앱 전환 시)
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+        clearAllPendingRequests();
+    }
+});
+
+// 새로고침 감지 및 요청 정리
+window.addEventListener('beforeunload', () => {
+    console.log('🔄 페이지 언로드 감지 - 새로고침 상태 설정');
+    isRefreshing = true;
+    clearAllPendingRequests();
+});
+
+// 페이지 로드 시 새로고침 상태 초기화
+window.addEventListener('load', () => {
+    console.log('🔄 페이지 로드 감지 - 새로고침 상태 초기화');
+    pageLoadTime = Date.now(); // 페이지 로드 시간 업데이트
+    clearAllPendingRequests();
+    isRefreshing = false;
+});
+
+// 페이지 숨김 시에도 새로고침 상태 설정 (모바일에서 앱 전환 시)
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+        console.log('🔄 페이지 숨김 감지 - 새로고침 상태 설정');
+        isRefreshing = true;
+        clearAllPendingRequests();
+    }
+});
+
+// 주기적으로 타임아웃된 요청들을 정리 (10초마다)
+setInterval(() => {
+    const currentTime = Date.now();
+    const timeoutKeys = [];
+    
+    pendingRequests.forEach((timestamp, key) => {
+        if (currentTime - timestamp > REQUEST_TIMEOUT) {
+            timeoutKeys.push(key);
+        }
+    });
+    
+    timeoutKeys.forEach(key => {
+        pendingRequests.delete(key);
+        console.log('⏰ 주기적 정리로 타임아웃 요청 제거:', key);
+    });
+    
+    if (timeoutKeys.length > 0) {
+        console.log('🧹 주기적 정리 완료:', timeoutKeys.length, '개 요청 제거');
+    }
+}, 10000);
 
 // 현재 진행 중인 요청 목록을 확인하는 함수 (디버깅용)
 export const getPendingRequests = () => {

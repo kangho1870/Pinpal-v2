@@ -5,7 +5,7 @@ import { useCookies } from "react-cookie";
 import { ACCESS_TOKEN, CLUB_DETAIL_PATH, ROOT_PATH, SCOREBOARD_PATH } from "../../constants";
 import { useNavigate, useParams } from "react-router-dom";
 import { onClickBackBtn } from "../../hooks";
-import { addGameRequest, clubJoinRequest, clubMemberAvgUpdateRequest, clubMemberRoleUpdateRequest, getCeremoniesRequest, getClubInfoRequest, getClubMembersRequest, getGameListRequest, getMemberListRequest, gameJoinRequest, gameJoinCancelRequest, getGameParticipantsRequest, getScoreboardMembers, getClubScoreboardsRequest, exportScoreboardExcelRequest } from "../../apis";
+import { addGameRequest, clubJoinRequest, clubMemberAvgUpdateRequest, clubMemberRoleUpdateRequest, getCeremoniesRequest, getClubInfoRequest, getClubMembersRequest, getGameListRequest, getMemberListRequest, gameJoinRequest, gameJoinCancelRequest, getScoreboardMembers, getClubScoreboardsRequest, exportScoreboardExcelRequest } from "../../apis";
 import Loading from "../components/loading/Loading";
 import useClubStore from "../../stores/useClubStore";
 import { tr } from "framer-motion/client";
@@ -131,45 +131,27 @@ function MyClub() {
         }
     }
     const getCeremonysList = () => {
-        console.log('🔍 시상 목록 요청 시작:', { clubId, token });
-        // 현재는 간단한 시상 목록만 가져오므로 필터링은 프론트엔드에서 처리
         getCeremoniesRequest(clubId, token).then(getCeremonysListResponse);
     }
 
-    // 게임 참여 상태 확인 함수
-    const checkGameParticipation = async (gameId) => {
-        try {
-            const response = await getGameParticipantsRequest(gameId, token);
-
-            if (response && Array.isArray(response)) {
-                // 현재 사용자가 참여자 목록에 있는지 확인
-                const isParticipating = response.some(participant => 
-                    String(participant.userId || participant.id || participant.memberId) === String(memberId)
-                );
-                return isParticipating;
-            }
-            return false;
-        } catch (error) {
-            console.error('게임 참여 상태 확인 실패:', error);
+    // 게임 데이터에서 직접 참여 여부를 확인하는 함수
+    const isUserParticipatingInGame = (game) => {
+        if (!game.participantUserIds || !Array.isArray(game.participantUserIds)) {
             return false;
         }
+        return game.participantUserIds.includes(memberId);
     };
 
-    // 모든 게임의 참여 상태를 확인하는 함수
-    const checkAllGamesParticipation = async (games) => {
+    // 게임 목록에서 참여한 게임들을 추출하는 함수
+    const extractParticipatedGames = (games) => {
         const participatedGameIds = new Set();
         
-        for (const game of games) {
-            try {
-                const isParticipating = await checkGameParticipation(game.id);
-                if (isParticipating) {
-                    participatedGameIds.add(game.id);
-                }
-            } catch (error) {
-                console.error(`게임 ${game.id} 참여 상태 확인 실패:`, error);
+        games.forEach(game => {
+            if (isUserParticipatingInGame(game)) {
+                participatedGameIds.add(game.id);
             }
-        }
-
+        });
+        
         setParticipatedGames(participatedGameIds);
     };
 
@@ -193,6 +175,7 @@ function MyClub() {
                     gameTime: game.time,
                     gameType: game.type,
                     members: game.members || [], // 백엔드에서 반환하는 members 배열
+                    participantUserIds: game.participantUserIds || [], // 참여자 ID 목록
                     joinUserCount: game.joinUserCount || 0, // 참여자 수
                     // 기본값 설정
                     confirmedCode: "",
@@ -204,7 +187,7 @@ function MyClub() {
                 if (isMounted.current) setGames(transformedGames);
                 
                 // 각 게임의 참여 상태 확인
-                checkAllGamesParticipation(transformedGames);
+                extractParticipatedGames(transformedGames);
                 
                 if (isMounted.current) setLoading(false);
 
@@ -215,6 +198,10 @@ function MyClub() {
         // 백엔드에서 GameRespDto 배열을 직접 반환하는 경우
         if (Array.isArray(responseBody)) {
             if (isMounted.current) setGames(responseBody);
+            
+            // 각 게임의 참여 상태 확인
+            extractParticipatedGames(responseBody);
+            
             if (isMounted.current) setLoading(false);
 
             return;
@@ -389,6 +376,9 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
     const token = cookies[ACCESS_TOKEN];
 
     const memberId = signInUser?.id || null;
+    const [showAllGames, setShowAllGames] = useState(false);
+    const [expandedGameIds, setExpandedGameIds] = useState(new Set());
+    
     // 현재 사용자의 클럽 역할은 멤버 목록에서 가져와야 함
     const getCurrentUserClubRoleInHome = () => {
         if (!members || !signInUser) return null;
@@ -541,24 +531,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
         setLoading(false);
     }
 
-    // 게임 참여 상태 확인 함수
-    const checkGameParticipation = async (gameId) => {
-        try {
-            const response = await getGameParticipantsRequest(gameId, token);
-            
-            if (response && Array.isArray(response)) {
-                // 현재 사용자가 참여자 목록에 있는지 확인
-                const isParticipating = response.some(participant => 
-                    String(participant.userId || participant.id || participant.memberId) === String(memberId)
-                );
-                return isParticipating;
-            }
-            return false;
-        } catch (error) {
-            console.error('게임 참여 상태 확인 실패:', error);
-            return false;
-        }
-    };
+
 
     const handleGameJoin = (gameId, isJoining) => {
         if (!members.some((member) => String(member.memberId) === String(memberId))) {
@@ -668,12 +641,8 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                         <h5>{formatShortDate(game.gameDate)}</h5>
                                                             {!dateTimeCheck(game) && (
                                                                 (() => {
-                                                                    // 로컬 상태와 백엔드 멤버 목록을 모두 확인
-                                                                    const backendParticipating = game.members.some((member) => {
-                                                                        const memberIdToCheck = member.memberId || member.id || member.userId;
-                                                                        const result = String(memberIdToCheck) === String(memberId);
-                                                                        return result;
-                                                                    });
+                                                                    // participantUserIds를 사용하여 참여 상태 확인
+                                                                    const backendParticipating = game.participantUserIds && game.participantUserIds.includes(memberId);
                                                                     const localParticipating = participatedGames.has(game.id);
                                                                     const isParticipating = backendParticipating || localParticipating;
 
@@ -762,13 +731,8 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                             <h5>{formatShortDate(game.gameDate)}</h5>
                                                             {!dateTimeCheck(game) && (
                                                                 (() => {
-                                                                    // 로컬 상태와 백엔드 멤버 목록을 모두 확인
-                                                                    const backendParticipating = game.members.some((member) => {
-                                                                        const memberIdToCheck = member.memberId || member.id || member.userId;
-                                                                        const result = String(memberIdToCheck) === String(memberId);
-
-                                                                        return result;
-                                                                    });
+                                                                    // participantUserIds를 사용하여 참여 상태 확인
+                                                                    const backendParticipating = game.participantUserIds && game.participantUserIds.includes(memberId);
                                                                     const localParticipating = participatedGames.has(game.id);
                                                                     const isParticipating = backendParticipating || localParticipating;
                                                                     return isParticipating ? (
@@ -856,18 +820,8 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                             <h5>{formatShortDate(game.gameDate)}</h5>
                                                         {!dateTimeCheck(game) && (
                                                             (() => {
-                                                                // 로컬 상태와 백엔드 멤버 목록을 모두 확인
-                                                                const backendParticipating = game.members.some((member) => {
-                                                                    const memberIdToCheck = member.memberId || member.id || member.userId;
-                                                                    const result = String(memberIdToCheck) === String(memberId);
-                                                                    console.log('🔍 기타 멤버 참여 확인:', {
-                                                                        member,
-                                                                        memberIdToCheck,
-                                                                        currentMemberId: memberId,
-                                                                        result
-                                                                    });
-                                                                    return result;
-                                                                });
+                                                                // participantUserIds를 사용하여 참여 상태 확인
+                                                                const backendParticipating = game.participantUserIds && game.participantUserIds.includes(memberId);
                                                                 const localParticipating = participatedGames.has(game.id);
                                                                 const isParticipating = backendParticipating || localParticipating;
                                                                 console.log('🔍 기타 참여 상태 확인:', {
@@ -953,33 +907,149 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
             </div>
             <div className={`${styles.clubRecentGame} ${styles.commonDiv}`}>
                 {ceremonys.length > 0 ? (
-                    ceremonys.map((gameCeremony, i) => {
-                        // 해당 게임의 정보 찾기
-                        const game = games.find(g => g.id === gameCeremony.gameId);
-                        const gameName = game ? game.gameName : `게임 ${gameCeremony.gameId}`;
-                        
-                        return (
-                            <div key={gameCeremony.gameId} className={styles.recentGameBox}>
-                                <p>{gameName}</p>
-                                {gameCeremony.ceremonies.map((ceremony, j) => (
-                                    <div key={j} className={styles.recentGameCeremony}>
-                                        <div className={styles.recentGameDescriptionBox}>
-                                            <span className={styles.recentGameSubTitle}>
-                                                {ceremony.type === 'pin1st' ? '1등' : 
-                                                 ceremony.type === 'team1st' ? '팀 1등' : 
-                                                 ceremony.type}
-                                            </span>
-                                            <h5 className={styles.recentGameSubContent}>
-                                                {ceremony.winners && ceremony.winners.length > 0 
-                                                    ? ceremony.winners.join(', ') 
-                                                    : '-'}
-                                            </h5>
-                                        </div>
+                    <>
+                        {(showAllGames ? ceremonys : ceremonys.slice(0, 3))
+                            .sort((a, b) => {
+                                // 게임 정보 찾기
+                                const gameA = games.find(g => g.id === a.gameId);
+                                const gameB = games.find(g => g.id === b.gameId);
+                                
+                                // 날짜 비교 (최신이 위로)
+                                const dateA = gameA ? new Date(gameA.gameDate || gameA.date) : new Date(0);
+                                const dateB = gameB ? new Date(gameB.gameDate || gameB.date) : new Date(0);
+                                
+                                return dateB - dateA; // 내림차순 정렬 (최신이 위로)
+                            })
+                            .map((gameCeremony, gameIndex) => {
+                            // 해당 게임의 정보 찾기
+                            const game = games.find(g => g.id === gameCeremony.gameId);
+                            const gameName = game ? game.gameName : `게임 ${gameCeremony.gameId}`;
+                            const gameDate = game ? new Date(game.gameDate || game.date).toLocaleDateString('ko-KR', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit'
+                            }) : '';
+                            
+                            const isExpanded = expandedGameIds.has(gameCeremony.gameId);
+                            
+                            return (
+                                <div key={gameCeremony.gameId} className={styles.recentGameBox}
+                                    style={{ cursor: 'pointer' }}
+                                            onClick={() => {
+                                                setExpandedGameIds(prev => {
+                                                    const newSet = new Set(prev);
+                                                    if (newSet.has(gameCeremony.gameId)) {
+                                                        newSet.delete(gameCeremony.gameId);
+                                                    } else {
+                                                        newSet.add(gameCeremony.gameId);
+                                                    }
+                                                    return newSet;
+                                                });
+                                            }}>
+                                    <div className={styles.recentGameTitle}>
+                                        {gameName}
+                                        {gameDate && <span className={styles.recentGameDate}> • {gameDate}</span>}
+                                        <span style={{ marginLeft: '8px', fontSize: '14px', color: '#667eea' }}>
+                                            {isExpanded ? '▼' : '▲'}
+                                        </span>
                                     </div>
-                                ))}
+                                    <div className={styles.simpleInformation}>
+                                        {/* 기본 표시 (1등, 에버 1등, 팀 1등) */}
+                                        <div className={styles.simpleInformationBox}>
+                                            <div className={styles.simpleCeremony}>
+                                                <span className={styles.simpleCeremonyTitle}>1등</span>
+                                                <p>{gameCeremony.ceremonies?.find(c => c.type === 'pin1st')?.winners?.[0] || "-"}</p>
+                                            </div>
+                                            <div className={styles.simpleCeremony}>
+                                                <span className={styles.simpleCeremonyTitle}>에버 1등</span>
+                                                <p>{gameCeremony.ceremonies?.find(c => c.type === 'avg1st')?.winners?.[0] || "-"}</p>
+                                            </div>
+                                        </div>
+                                        <div className={styles.simpleInformationBox}>
+                                            <div className={styles.simpleCeremony}>
+                                                <span className={styles.simpleCeremonyTitle}>팀 1등</span>
+                                            </div>
+                                        </div>
+                                        <div className={styles.simpleInformationBox}>
+                                            <div className={styles.simpleCeremony} style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                                                {gameCeremony.ceremonies?.find(c => c.type === 'team1st')?.winners?.map((winner, index) => (
+                                                    <div key={index} className={styles.simpleCeremonyInfoBox} style={{ minWidth: 'fit-content' }}>
+                                                        <p className={styles.simpleCeremonyInfo} style={{ fontSize: '11px', lineHeight: '1.2', margin: '0', padding: '4px 8px' }}>
+                                                            {winner}
+                                                        </p>
+                                                    </div>
+                                                )) || (
+                                                    <div className={styles.simpleCeremonyInfoBox}>
+                                                        <p className={styles.simpleCeremonyInfo} style={{ fontSize: '11px', lineHeight: '1.2', margin: '0', padding: '4px 8px' }}>
+                                                            -
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        
+                                        {/* 확장 시 표시 (모든 시상 결과) */}
+                                        {isExpanded && (
+                                            <>
+                                                <div className={styles.simpleInformationBox}>
+                                                    <div className={styles.simpleCeremony}>
+                                                        <span className={styles.simpleCeremonyTitle}>1군 1등</span>
+                                                        <p>{gameCeremony.ceremonies?.find(c => c.type === 'grade1')?.winners?.[0] || "-"}</p>
+                                                    </div>
+                                                    <div className={styles.simpleCeremony}>
+                                                        <span className={styles.simpleCeremonyTitle}>2군 1등</span>
+                                                        <p>{gameCeremony.ceremonies?.find(c => c.type === 'grade2')?.winners?.[0] || "-"}</p>
+                                                    </div>
+                                                </div>
+                                                <div className={styles.simpleInformationBox}>
+                                                    <div className={styles.simpleCeremony}>
+                                                        <span className={styles.simpleCeremonyTitle}>3군 1등</span>
+                                                        <p>{gameCeremony.ceremonies?.find(c => c.type === 'grade3')?.winners?.[0] || "-"}</p>
+                                                    </div>
+                                                    <div className={styles.simpleCeremony}>
+                                                        <span className={styles.simpleCeremonyTitle}>4군 1등</span>
+                                                        <p>{gameCeremony.ceremonies?.find(c => c.type === 'grade4')?.winners?.[0] || "-"}</p>
+                                                    </div>
+                                                </div>
+                                                <div className={styles.simpleInformationBox}>
+                                                    <div className={styles.simpleCeremony}>
+                                                        <span className={styles.simpleCeremonyTitle}>5군 1등</span>
+                                                        <p>{gameCeremony.ceremonies?.find(c => c.type === 'grade5')?.winners?.[0] || "-"}</p>
+                                                    </div>
+                                                    <div className={styles.simpleCeremony}>
+                                                        <span className={styles.simpleCeremonyTitle}>6군 1등</span>
+                                                        <p>{gameCeremony.ceremonies?.find(c => c.type === 'grade6')?.winners?.[0] || "-"}</p>
+                                                    </div>
+                                                </div>
+                                                <div className={styles.simpleInformationBox}>
+                                                    <div className={styles.simpleCeremony}>
+                                                        <span className={styles.simpleCeremonyTitle}>남자 하이</span>
+                                                        <p>{gameCeremony.ceremonies?.find(c => c.type === 'highScoreOfMan')?.winners?.[0] || "-"}</p>
+                                                    </div>
+                                                    <div className={styles.simpleCeremony}>
+                                                        <span className={styles.simpleCeremonyTitle}>여자 하이</span>
+                                                        <p>{gameCeremony.ceremonies?.find(c => c.type === 'highScoreOfGirl')?.winners?.[0] || "-"}</p>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+                                                                         </div>
+                                 </div>
+                             );
+                         })}
+                        
+                        {/* 더보기 버튼 */}
+                        {ceremonys.length > 3 && (
+                            <div className={styles.showMoreButtonContainer}>
+                                <button 
+                                    className={styles.showMoreButton}
+                                    onClick={() => setShowAllGames(!showAllGames)}
+                                >
+                                    {showAllGames ? '접기' : `더보기 (${ceremonys.length - 3}개 더)`}
+                                </button>
                             </div>
-                        );
-                    })
+                        )}
+                    </>
                 ) : (
                     <div className={styles.nodataContainer}>
                         <Nodata text={"최근 게임 데이터가 없습니다."}></Nodata>
@@ -1041,6 +1111,7 @@ function ClubCeremony({ setLoading }) {
     const [attendanceFilter, setAttendanceFilter] = useState('all'); // 'all' or 'participated'
     const [gameTypeFilter, setGameTypeFilter] = useState('all'); // 'all', '정기모임', '정기번개', '기타'
     const [scoreboardData, setScoreboardData] = useState({});
+    const [showAllGames, setShowAllGames] = useState(false);
     
     // 중복 요청 처리 훅 사용
     const { loadingStates, handleApiRequest } = useDuplicateRequestHandler();
@@ -1235,6 +1306,17 @@ function ClubCeremony({ setLoading }) {
                     </div>
                     <div className={styles.ceremonyContainer}>
                         {ceremonys.length > 0 ? ceremonys
+                            .sort((a, b) => {
+                                // 게임 정보 찾기
+                                const gameA = games.find(g => g.id === a.gameId);
+                                const gameB = games.find(g => g.id === b.gameId);
+                                
+                                // 날짜 비교 (최신이 위로)
+                                const dateA = gameA ? new Date(gameA.gameDate || gameA.date) : new Date(0);
+                                const dateB = gameB ? new Date(gameB.gameDate || gameB.date) : new Date(0);
+                                
+                                return dateB - dateA; // 내림차순 정렬 (최신이 위로)
+                            })
                             .filter(data => {
                                 // 게임 정보 찾기
                                 const gameInfo = findGameInfo(data.gameId);
@@ -1350,14 +1432,14 @@ function ClubCeremony({ setLoading }) {
                                             </div>
                                             <div className={styles.simpleInformationBox}>
                                                 <div className={styles.simpleCeremony}>
-                                                    <span className={styles.simpleCeremonyTitle}>남자 하이스코어</span>
+                                                    <span className={styles.simpleCeremonyTitle}>남자 하이</span>
                                                     <p>{(() => {
                                                         const highScoreOfMan = data.ceremonies?.find(c => c.type === 'highScoreOfMan');
                                                         return highScoreOfMan?.winners?.[0] || "-";
                                                     })()}</p>
                                                 </div>
                                                 <div className={styles.simpleCeremony}>
-                                                    <span className={styles.simpleCeremonyTitle}>여자 하이스코어</span>
+                                                    <span className={styles.simpleCeremonyTitle}>여자 하이</span>
                                                     <p>{(() => {
                                                         const highScoreOfGirl = data.ceremonies?.find(c => c.type === 'highScoreOfGirl');
                                                         return highScoreOfGirl?.winners?.[0] || "-";
@@ -1367,14 +1449,23 @@ function ClubCeremony({ setLoading }) {
                                             <div className={styles.simpleInformationBox}>
                                                 <div className={styles.simpleCeremony}>
                                                     <span className={styles.simpleCeremonyTitle}>팀 1등</span>
-                                                    <div className={styles.simpleCeremonyInfoBox}>
-                                                        <p className={styles.simpleCeremonyInfo}>
-                                                            {(() => {
-                                                                const team1st = data.ceremonies?.find(c => c.type === 'team1st');
-                                                                return team1st?.winners?.join(', ') || "-";
-                                                            })()}
-                                                        </p>
-                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className={styles.simpleInformationBox}>
+                                                <div className={styles.simpleCeremony} style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                                                    {data.ceremonies?.find(c => c.type === 'team1st')?.winners?.map((winner, index) => (
+                                                        <div key={index} className={styles.simpleCeremonyInfoBox} style={{ minWidth: 'fit-content' }}>
+                                                            <p className={styles.simpleCeremonyInfo} style={{ fontSize: '11px', lineHeight: '1.2', margin: '0', padding: '4px 8px' }}>
+                                                                {winner}
+                                                            </p>
+                                                        </div>
+                                                    )) || (
+                                                        <div className={styles.simpleCeremonyInfoBox}>
+                                                            <p className={styles.simpleCeremonyInfo} style={{ fontSize: '11px', lineHeight: '1.2', margin: '0', padding: '4px 8px' }}>
+                                                                -
+                                                            </p>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>

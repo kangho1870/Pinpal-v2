@@ -53,31 +53,31 @@ public class GameServiceImpl implements GameService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<GameRespDto> findAllByClubId(Long clubId, Instant cursor) {
-        List<Tuple> gameTuple = gameRepository.findAllByClubId(clubId, cursor, 50);
+        List<Game> games = gameRepository.findAllByClubId(clubId, cursor, 50);
 
-        List<Tuple> contentTuple = gameTuple.size() > 50 ? gameTuple.subList(0, 50) : gameTuple;
+        List<Game> content = games.size() > 50 ? games.subList(0, 50) : games;
 
         // 다음 커서(nextCursor) 계산
-        Instant nextCursor = contentTuple.isEmpty()
+        Instant nextCursor = content.isEmpty()
                 ? null
-                : contentTuple.get(contentTuple.size() - 1).get(0, Game.class).getCreatedAt();
+                : content.get(content.size() - 1).getCreatedAt();
 
         // 전체 개수(totalElements) 조회
         long totalElements = gameRepository.countByClubIdAndCursor(clubId, cursor);
 
         // DTO 변환
-        List<GameRespDto> list = contentTuple.stream()
-                .map(tuple -> {
-                    Game game = tuple.get(0, Game.class);
-                    Long userCount = tuple.get(1, Long.class);
-                    return gameMapper.toDto(game, userCount);
+        List<GameRespDto> list = content.stream()
+                .map(game -> {
+                    List<Long> userIdsByGameId = gameRepository.findUserIdsByGameId(game.getId());
+
+                    return gameMapper.toDto(game, userIdsByGameId.size(), userIdsByGameId);
                 })
                 .toList();
 
         // 페이징 메타데이터 구성
         Map<String, Object> result = new HashMap<>();
         result.put("nextCursor", nextCursor);
-        result.put("hasNext", gameTuple.size() > 50);
+        result.put("hasNext", games.size() > 50);
         result.put("totalElements", totalElements);
 
         return pageResponseMapper.pageResponse(list, result);
@@ -103,7 +103,7 @@ public class GameServiceImpl implements GameService {
         Game game = new Game(gameCreateDto, club);
         Game savedGame = gameRepository.save(game);
 
-        return gameMapper.toDto(savedGame, 0);
+        return gameMapper.toDto(savedGame, 0, List.of());
     }
 
     @Override
@@ -129,9 +129,10 @@ public class GameServiceImpl implements GameService {
 
         game.update(gameUpdateDto);
         Game savedGame = gameRepository.save(game);
-        long userCount = scoreboardRepository.countByGameId(savedGame.getId());
+        List<Long> userIdsByGameId = gameRepository.findUserIdsByGameId(game.getId());
+        long userCount = userIdsByGameId.size();
 
-        return gameMapper.toDto(savedGame, userCount);
+        return gameMapper.toDto(savedGame, userCount,  userIdsByGameId);
     }
 
     @Override
@@ -171,9 +172,10 @@ public class GameServiceImpl implements GameService {
         Scoreboard scoreboard = new Scoreboard(game, user, userClub.getAvg());
         scoreboardRepository.save(scoreboard);
 
-        long userCount = scoreboardRepository.countByGameId(gameId);
+        List<Long> userIdsByGameId = gameRepository.findUserIdsByGameId(gameId);
+        long userCount = userIdsByGameId.size();
 
-        return gameMapper.toDto(game, userCount);
+        return gameMapper.toDto(game, userCount, userIdsByGameId);
     }
 
     @Override
@@ -194,9 +196,10 @@ public class GameServiceImpl implements GameService {
         );
 
         scoreboardRepository.deleteById(scoreboard.getId());
-        long userCount = scoreboardRepository.countByGameId(gameId);
+        List<Long> userIdsByGameId = gameRepository.findUserIdsByGameId(gameId);
+        long userCount = userIdsByGameId.size();
 
-        return gameMapper.toDto(game, userCount);
+        return gameMapper.toDto(game, userCount,  userIdsByGameId);
     }
 
     @Override
@@ -227,7 +230,10 @@ public class GameServiceImpl implements GameService {
         clubRepository.findById(clubId).orElseThrow(ClubNotFoundException::new);
 
         List<GameRespDto> games = gameRepository.findAllByClubIdAndFilter(clubId, startDate, endDate, type).stream()
-                .map(game -> gameMapper.toDto(game, 0))
+                .map(game -> {
+                    List<Long> userIdsByGameId = gameRepository.findUserIdsByGameId(game.getId());
+                    return gameMapper.toDto(game, userIdsByGameId.size(), userIdsByGameId);
+                })
                 .toList();
 
         List<GameScoreboardsRespDto> result = new ArrayList<>();

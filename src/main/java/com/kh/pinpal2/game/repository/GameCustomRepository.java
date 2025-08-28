@@ -9,7 +9,7 @@ import java.util.Date;
 import java.util.List;
 
 public interface GameCustomRepository {
-    List<Tuple> findAllByClubId(Long clubId, Instant cursor, int size);
+    List<Game> findAllByClubId(Long clubId, Instant cursor, int size);
     long countByClubIdAndCursor(Long clubId, Instant cursor);
     List<Game> findAllByClubIdAndFilter(Long clubId, LocalDate startDate, LocalDate endDate, String type);
 }

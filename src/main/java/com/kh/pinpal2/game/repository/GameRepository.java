@@ -24,4 +24,7 @@ public interface GameRepository extends JpaRepository<Game,Long>, GameCustomRepo
     // 최근 게임 조회 (ID 내림차순 정렬)
     @Query("SELECT g FROM Game g WHERE g.club.id = :clubId ORDER BY g.id DESC")
     List<Game> findRecentGamesByClubId(@Param("clubId") Long clubId, Limit limit);
+
+    @Query("SELECT DISTINCT s.user.id FROM Scoreboard s WHERE s.game.id = :gameId")
+    List<Long> findUserIdsByGameId(Long gameId);
 }

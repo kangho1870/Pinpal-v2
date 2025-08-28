@@ -165,11 +165,11 @@ public class ScoreboardServiceImpl implements ScoreboardService {
         
         for (int i = 0; i < gradeWinners.length; i++) {
             if (gradeWinners[i] != null) {
-                Ceremony ceremony = new Ceremony(i + 1, 1, "grade", game);
+                Ceremony ceremony = new Ceremony(i + 1, 1, "grade" + (i + 1), game);
                 ceremonies.add(ceremony);
                 
                 User user = userRepository.findById(gradeWinners[i])
-                        .orElseThrow(() -> new UserNotFoundException());
+                        .orElseThrow(UserNotFoundException::new);
                 ceremonyUsers.add(new CeremonyUser(user, ceremony));
             }
         }
