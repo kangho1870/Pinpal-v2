@@ -47,7 +47,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         }
     }
 
-    // 앱으로 리다이렉트 처리
+    // 앱으로 리다이렉트 처리 (웹과 동일한 경로 구조)
     private void handleAppRedirect(HttpServletResponse response, CustomOAuth2User customOAuth2User, boolean existed, Map<String, Object> attributes) throws IOException {
         if (existed) {
             // 기존 회원 처리
@@ -59,32 +59,39 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
                 if (accessToken != null && !accessToken.isEmpty()) {
                     try {
-                        // 앱 스킴으로 사용자 정보 전달
-                        String appRedirectUri = String.format("pinpal://oauth2/callback?access_token=%s&userId=%s&userName=%s&userEmail=%s&role=%s&profileImageUrl=%s",
-                                accessToken,
+                        // 웹과 동일한 경로 구조로 앱 스킴 사용
+                        String encodedUserName = URLEncoder.encode(user.getName(), StandardCharsets.UTF_8.toString());
+                        String encodedUserEmail = URLEncoder.encode(user.getEmail(), StandardCharsets.UTF_8.toString());
+                        String encodedProfileImageUrl = "";
+                        if (attributes.get("profileImageUrl") != null) {
+                            encodedProfileImageUrl = URLEncoder.encode((String) attributes.get("profileImageUrl"), StandardCharsets.UTF_8.toString());
+                        }
+
+                        String userInfo = String.format("&userId=%s&userName=%s&userEmail=%s&profileImageUrl=%s&role=%s",
                                 user.getId(),
-                                URLEncoder.encode(user.getName(), StandardCharsets.UTF_8.toString()),
-                                URLEncoder.encode(user.getEmail(), StandardCharsets.UTF_8.toString()),
-                                user.getRole().name(),
-                                attributes.get("profileImageUrl") != null ?
-                                        URLEncoder.encode((String) attributes.get("profileImageUrl"), StandardCharsets.UTF_8.toString()) : ""
+                                encodedUserName,
+                                encodedUserEmail,
+                                encodedProfileImageUrl,
+                                user.getRole().name()
                         );
 
-                        log.info("앱 리다이렉트: {}", appRedirectUri);
+                        // 웹과 동일한 경로: /sns-success
+                        String appRedirectUri = "pinpal://sns-success?access_token=" + accessToken + "&expiration=14400" + userInfo;
+                        log.info("기존 회원 앱 리다이렉트: {}", appRedirectUri);
                         response.sendRedirect(appRedirectUri);
                     } catch (Exception e) {
                         log.error("앱 리다이렉트 URL 생성 중 오류: {}", e.getMessage());
                         // 에러 시 기본 앱 스킴으로 리다이렉트
-                        String fallbackUri = "pinpal://oauth2/callback?error=encoding_failed";
+                        String fallbackUri = "pinpal://sns-success?access_token=" + accessToken + "&expiration=14400";
                         response.sendRedirect(fallbackUri);
                     }
                 } else {
                     log.error("액세스 토큰이 없습니다.");
-                    response.sendRedirect("pinpal://oauth2/callback?error=token_missing");
+                    response.sendRedirect("pinpal://error?message=token_missing");
                 }
             } else {
                 log.error("사용자를 찾을 수 없습니다.");
-                response.sendRedirect("pinpal://oauth2/callback?error=user_not_found");
+                response.sendRedirect("pinpal://error?message=user_not_found");
             }
         } else {
             // 신규 회원 처리
@@ -95,7 +102,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
             if (snsId != null && joinPath != null && accountEmail != null) {
                 try {
-                    String appRedirectUri = String.format("pinpal://oauth2/callback?newUser=true&snsId=%s&joinPath=%s&accountEmail=%s&profileImageUrl=%s",
+                    // 웹과 동일한 경로: /auth
+                    String appRedirectUri = String.format("pinpal://auth?snsId=%s&joinPath=%s&accountEmail=%s&profileImageUrl=%s",
                             URLEncoder.encode(snsId, StandardCharsets.UTF_8.toString()),
                             URLEncoder.encode(joinPath, StandardCharsets.UTF_8.toString()),
                             URLEncoder.encode(accountEmail, StandardCharsets.UTF_8.toString()),
@@ -106,11 +114,11 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                     response.sendRedirect(appRedirectUri);
                 } catch (Exception e) {
                     log.error("신규 회원 앱 리다이렉트 URL 생성 중 오류: {}", e.getMessage());
-                    response.sendRedirect("pinpal://oauth2/callback?error=encoding_failed");
+                    response.sendRedirect("pinpal://error?message=encoding_failed");
                 }
             } else {
                 log.error("필수 파라미터가 없습니다. snsId: {}, joinPath: {}, accountEmail: {}", snsId, joinPath, accountEmail);
-                response.sendRedirect("pinpal://oauth2/callback?error=missing_parameters");
+                response.sendRedirect("pinpal://error?message=missing_parameters");
             }
         }
     }
