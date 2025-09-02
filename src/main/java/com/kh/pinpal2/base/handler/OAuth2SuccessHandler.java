@@ -1,6 +1,5 @@
 package com.kh.pinpal2.base.handler;
 
-
 import com.kh.pinpal2.auth.service.CustomOAuth2User;
 import com.kh.pinpal2.user.entity.User;
 import com.kh.pinpal2.user.repository.UserRepository;
@@ -19,7 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 // OAuth2 인증 서비스 로직이 정상적으로 완료되었을 때 실행할 핸들러
-// SimplerUrlAuthenticationSuccessHandler 클래스 확장
+// SimpleUrlAuthenticationSuccessHandler 클래스 확장
 // response 처리 담당
 @Component
 @RequiredArgsConstructor
@@ -37,9 +36,93 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         // 쿼리 파라미터에서 리다이렉트 URI 확인
         String redirectUriParam = request.getParameter("redirect_uri");
+
+        // 앱 스킴인지 확인 (pinpal://로 시작하는 경우)
+        if (redirectUriParam != null && redirectUriParam.startsWith("pinpal://")) {
+            log.info("앱 스킴 리다이렉트 감지: {}", redirectUriParam);
+            handleAppRedirect(response, customOAuth2User, existed, attributes);
+        } else {
+            // 웹 리다이렉트 (기존 로직)
+            handleWebRedirect(request, response, customOAuth2User, existed, attributes);
+        }
+    }
+
+    // 앱으로 리다이렉트 처리
+    private void handleAppRedirect(HttpServletResponse response, CustomOAuth2User customOAuth2User, boolean existed, Map<String, Object> attributes) throws IOException {
+        if (existed) {
+            // 기존 회원 처리
+            User user = userRepository.findByEmail(customOAuth2User.getName()).orElse(null);
+            if (user != null) {
+                user.updateProfile((String) attributes.get("profileImageUrl"));
+                userRepository.save(user);
+                String accessToken = (String) attributes.get("accessToken");
+
+                if (accessToken != null && !accessToken.isEmpty()) {
+                    try {
+                        // 앱 스킴으로 사용자 정보 전달
+                        String appRedirectUri = String.format("pinpal://oauth2/callback?access_token=%s&userId=%s&userName=%s&userEmail=%s&role=%s&profileImageUrl=%s",
+                                accessToken,
+                                user.getId(),
+                                URLEncoder.encode(user.getName(), StandardCharsets.UTF_8.toString()),
+                                URLEncoder.encode(user.getEmail(), StandardCharsets.UTF_8.toString()),
+                                user.getRole().name(),
+                                attributes.get("profileImageUrl") != null ?
+                                        URLEncoder.encode((String) attributes.get("profileImageUrl"), StandardCharsets.UTF_8.toString()) : ""
+                        );
+
+                        log.info("앱 리다이렉트: {}", appRedirectUri);
+                        response.sendRedirect(appRedirectUri);
+                    } catch (Exception e) {
+                        log.error("앱 리다이렉트 URL 생성 중 오류: {}", e.getMessage());
+                        // 에러 시 기본 앱 스킴으로 리다이렉트
+                        String fallbackUri = "pinpal://oauth2/callback?error=encoding_failed";
+                        response.sendRedirect(fallbackUri);
+                    }
+                } else {
+                    log.error("액세스 토큰이 없습니다.");
+                    response.sendRedirect("pinpal://oauth2/callback?error=token_missing");
+                }
+            } else {
+                log.error("사용자를 찾을 수 없습니다.");
+                response.sendRedirect("pinpal://oauth2/callback?error=user_not_found");
+            }
+        } else {
+            // 신규 회원 처리
+            String snsId = (String) attributes.get("snsId");
+            String joinPath = (String) attributes.get("joinPath");
+            String profileImageUrl = (String) attributes.get("profileImageUrl");
+            String accountEmail = (String) attributes.get("accountEmail");
+
+            if (snsId != null && joinPath != null && accountEmail != null) {
+                try {
+                    String appRedirectUri = String.format("pinpal://oauth2/callback?newUser=true&snsId=%s&joinPath=%s&accountEmail=%s&profileImageUrl=%s",
+                            URLEncoder.encode(snsId, StandardCharsets.UTF_8.toString()),
+                            URLEncoder.encode(joinPath, StandardCharsets.UTF_8.toString()),
+                            URLEncoder.encode(accountEmail, StandardCharsets.UTF_8.toString()),
+                            profileImageUrl != null ? URLEncoder.encode(profileImageUrl, StandardCharsets.UTF_8.toString()) : ""
+                    );
+
+                    log.info("신규 회원 앱 리다이렉트: {}", appRedirectUri);
+                    response.sendRedirect(appRedirectUri);
+                } catch (Exception e) {
+                    log.error("신규 회원 앱 리다이렉트 URL 생성 중 오류: {}", e.getMessage());
+                    response.sendRedirect("pinpal://oauth2/callback?error=encoding_failed");
+                }
+            } else {
+                log.error("필수 파라미터가 없습니다. snsId: {}, joinPath: {}, accountEmail: {}", snsId, joinPath, accountEmail);
+                response.sendRedirect("pinpal://oauth2/callback?error=missing_parameters");
+            }
+        }
+    }
+
+    // 웹으로 리다이렉트 처리 (기존 로직)
+    private void handleWebRedirect(HttpServletRequest request, HttpServletResponse response, CustomOAuth2User customOAuth2User, boolean existed, Map<String, Object> attributes) throws IOException {
         String clientHost;
         String protocol;
-        
+
+        // 쿼리 파라미터에서 리다이렉트 URI 확인
+        String redirectUriParam = request.getParameter("redirect_uri");
+
         if (redirectUriParam != null && !redirectUriParam.isEmpty()) {
             try {
                 java.net.URL url = new java.net.URL(redirectUriParam);
@@ -56,17 +139,17 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             clientHost = getClientHost(request);
             protocol = getProtocol(request);
         }
-        
+
         String redirectUri = protocol + "://" + clientHost;
-        log.info("OAuth2 인증 성공 - ClientHost: {}, Protocol: {}, RedirectUri: {}", clientHost, protocol, redirectUri);
+        log.info("웹 리다이렉트 - ClientHost: {}, Protocol: {}, RedirectUri: {}", clientHost, protocol, redirectUri);
 
         // 회원가입이 되어있을경우
-        if(existed) {
+        if (existed) {
             User user = userRepository.findByEmail(customOAuth2User.getName()).orElse(null);
             user.updateProfile((String) attributes.get("profileImageUrl"));
             userRepository.save(user);
             String accessToken = (String) attributes.get("accessToken");
-            
+
             // 토큰이 있는 경우에만 리다이렉트
             if (accessToken != null && !accessToken.isEmpty()) {
                 try {
@@ -77,17 +160,17 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                     if (attributes.get("profileImageUrl") != null) {
                         encodedProfileImageUrl = URLEncoder.encode((String) attributes.get("profileImageUrl"), StandardCharsets.UTF_8.toString());
                     }
-                    
+
                     String userInfo = String.format("&userId=%s&userName=%s&userEmail=%s&profileImageUrl=%s&role=%s",
-                        user.getId(),
-                        encodedUserName,
-                        encodedUserEmail,
-                        encodedProfileImageUrl,
-                        user.getRole().name()
+                            user.getId(),
+                            encodedUserName,
+                            encodedUserEmail,
+                            encodedProfileImageUrl,
+                            user.getRole().name()
                     );
-                    
+
                     String finalRedirectUri = redirectUri + "/sns-success?access_token=" + accessToken + "&expiration=14400" + userInfo;
-                    log.info("기존 회원 리다이렉트: {}", finalRedirectUri);
+                    log.info("기존 회원 웹 리다이렉트: {}", finalRedirectUri);
                     response.sendRedirect(finalRedirectUri);
                 } catch (Exception e) {
                     log.error("URL 인코딩 중 오류: {}", e.getMessage());
@@ -104,11 +187,11 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             String joinPath = (String) attributes.get("joinPath");
             String profileImageUrl = (String) attributes.get("profileImageUrl");
             String accountEmail = (String) attributes.get("accountEmail");
-            
+
             // 필수 파라미터 검증
             if (snsId != null && joinPath != null && accountEmail != null) {
                 String finalRedirectUri = redirectUri + "/auth?snsId=" + snsId + "&joinPath=" + joinPath + "&accountEmail=" + accountEmail + "&profileImageUrl=" + profileImageUrl;
-                log.info("신규 회원 리다이렉트: {}", finalRedirectUri);
+                log.info("신규 회원 웹 리다이렉트: {}", finalRedirectUri);
                 response.sendRedirect(finalRedirectUri);
             } else {
                 log.error("필수 파라미터가 없습니다. snsId: {}, joinPath: {}, accountEmail: {}", snsId, joinPath, accountEmail);
