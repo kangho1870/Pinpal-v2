@@ -79,7 +79,9 @@ export const WebSocketProvider = ({ children, gameId }) => {
                 console.log('🔗 SockJS 연결 URL:', sockJsUrl);
                 
                 const sockJs = new SockJS(sockJsUrl, null, {
-                    transports: ['websocket', 'xhr-streaming', 'xhr-polling']
+                    transports: ['websocket', 'xhr-streaming', 'xhr-polling'],
+                    timeout: 10000, // 10초 타임아웃
+                    sessionId: () => Math.random().toString(36).substring(2, 15) // 세션 ID 생성
                 });
                 
                 // SockJS 이벤트 리스너 추가
@@ -93,6 +95,7 @@ export const WebSocketProvider = ({ children, gameId }) => {
                 
                 sockJs.onerror = (error) => {
                     console.error('❌ SockJS 연결 오류:', error);
+                    console.log('연결이 안 돼');
                 };
                 
                 return sockJs;
@@ -139,9 +142,12 @@ export const WebSocketProvider = ({ children, gameId }) => {
             setConnectionStatus('error');
             
             if (connectionAttempts < maxConnectionAttempts) {
+                console.log(`🔄 ${3000 * (connectionAttempts + 1)}ms 후 재연결 시도...`);
                 setTimeout(() => {
                     setConnectionAttempts(prev => prev + 1);
-                }, 3000);
+                }, 3000 * (connectionAttempts + 1)); // 지수 백오프
+            } else {
+                console.error('❌ 최대 재연결 시도 횟수 초과');
             }
         };
 
