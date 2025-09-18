@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Map;
 
 @Entity
 @Getter
@@ -30,7 +31,10 @@ public class Game extends BaseUpdatableEntity {
     private boolean scoreCounting;
 
     @Column(name = "card_draw")
-    private boolean cardDraw;
+    private Boolean cardDraw;
+
+    @Column(name = "card_draw_data", columnDefinition = "TEXT")
+    private String cardDrawData;
 
     @Column
     private LocalDate date;
@@ -93,6 +97,18 @@ public class Game extends BaseUpdatableEntity {
     }
 
     public void updateCardDraw() {
-        this.cardDraw = !this.cardDraw;
+        this.cardDraw = this.cardDraw == null ? true : !this.cardDraw;
+    }
+
+    public Boolean isCardDraw() {
+        return this.cardDraw != null ? this.cardDraw : false;
+    }
+
+    public void setCardDrawData(String cardDrawData) {
+        this.cardDrawData = cardDrawData;
+    }
+
+    public String getCardDrawData() {
+        return this.cardDrawData;
     }
 }

@@ -25,6 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 @RequiredArgsConstructor
@@ -39,7 +41,35 @@ public class ScoreboardServiceImpl implements ScoreboardService {
     private final ScoreboardRepository scoreboardRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final SimpMessagingTemplate simpMessagingTemplate;
+    private final ObjectMapper objectMapper;
 
+    /**
+     * 카드뽑기 데이터 생성 헬퍼 메서드
+     */
+    private Map<Integer, List<Integer>> generateCardDrawData(Long gameId) {
+        List<Scoreboard> allScoreboards = scoreboardRepository.findAllByGameId(gameId);
+        Map<Integer, List<Scoreboard>> gradeGroups = allScoreboards.stream()
+                .collect(Collectors.groupingBy(scoreboard -> scoreboard.getGrade() != null ? scoreboard.getGrade() : 0));
+        
+        Map<Integer, List<Integer>> cardDrawData = new HashMap<>();
+        
+        for (Map.Entry<Integer, List<Scoreboard>> entry : gradeGroups.entrySet()) {
+            Integer grade = entry.getKey();
+            List<Scoreboard> members = entry.getValue();
+            int memberCount = members.size();
+            
+            // 1부터 memberCount까지의 숫자를 생성하고 섞기
+            List<Integer> teamNumbers = IntStream.rangeClosed(1, memberCount)
+                    .boxed()
+                    .collect(Collectors.toList());
+            Collections.shuffle(teamNumbers);
+            
+            cardDrawData.put(grade, teamNumbers);
+            log.info("군 {}: {}명, 랜덤 팀 번호 배열 생성: {}", grade, memberCount, teamNumbers);
+        }
+        
+        return cardDrawData;
+    }
 
     @Override
     public void stopGame(GameStopRequestDto requestDto) {
@@ -216,29 +246,37 @@ public class ScoreboardServiceImpl implements ScoreboardService {
         
         // 카드뽑기가 시작된 경우에만 카드뽑기 데이터 포함
         if (game.isCardDraw()) {
-            List<Scoreboard> allScoreboards = scoreboardRepository.findAllByGameId(gameId);
-            Map<Integer, List<Scoreboard>> gradeGroups = allScoreboards.stream()
-                    .collect(Collectors.groupingBy(scoreboard -> scoreboard.getGrade() != null ? scoreboard.getGrade() : 0));
+            Map<Integer, List<Integer>> cardDrawData;
             
-            Map<Integer, List<Integer>> cardDrawData = new HashMap<>();
-            
-            for (Map.Entry<Integer, List<Scoreboard>> entry : gradeGroups.entrySet()) {
-                Integer grade = entry.getKey();
-                List<Scoreboard> members = entry.getValue();
-                int memberCount = members.size();
-                
-                // 1부터 memberCount까지의 숫자를 생성하고 섞기
-                List<Integer> teamNumbers = IntStream.rangeClosed(1, memberCount)
-                        .boxed()
-                        .collect(Collectors.toList());
-                Collections.shuffle(teamNumbers);
-                
-                cardDrawData.put(grade, teamNumbers);
+            // 저장된 카드뽑기 데이터가 있으면 그것을 사용, 없으면 새로 생성
+            if (game.getCardDrawData() != null && !game.getCardDrawData().isEmpty()) {
+                try {
+                    cardDrawData = objectMapper.readValue(game.getCardDrawData(), 
+                        objectMapper.getTypeFactory().constructMapType(Map.class, Integer.class, List.class));
+                    log.info("저장된 카드뽑기 데이터 사용 (initialData): gameId={}", gameId);
+                } catch (JsonProcessingException e) {
+                    log.error("저장된 카드뽑기 데이터 파싱 실패 (initialData): gameId={}, error={}", gameId, e.getMessage());
+                    // 파싱 실패 시 새로 생성
+                    cardDrawData = generateCardDrawData(gameId);
+                }
+            } else {
+                // 저장된 데이터가 없으면 새로 생성
+                cardDrawData = generateCardDrawData(gameId);
+                // 새로 생성한 데이터를 저장
+                try {
+                    String cardDrawDataJson = objectMapper.writeValueAsString(cardDrawData);
+                    game.setCardDrawData(cardDrawDataJson);
+                    gameRepository.save(game);
+                    log.info("새로 생성한 카드뽑기 데이터 저장 (initialData): gameId={}", gameId);
+                } catch (JsonProcessingException e) {
+                    log.error("카드뽑기 데이터 JSON 변환 실패 (initialData): gameId={}, error={}", gameId, e.getMessage());
+                }
             }
             
             initialData.put("cardDrawData", cardDrawData);
             
             // 선택된 카드 정보도 포함
+            List<Scoreboard> allScoreboards = scoreboardRepository.findAllByGameId(gameId);
             Map<String, Object> selectedCards = new HashMap<>();
             for (Scoreboard scoreboard : allScoreboards) {
                 if (scoreboard.getTeamNumber() != null && scoreboard.getTeamNumber() > 0) {
@@ -399,36 +437,34 @@ public class ScoreboardServiceImpl implements ScoreboardService {
             Game game = gameRepository.findById(request.gameId())
                     .orElseThrow(() -> new RuntimeException("게임을 찾을 수 없습니다."));
             
-            // 카드뽑기 상태가 아직 활성화되지 않았다면 활성화
-            if (!game.isCardDraw()) {
-                game.updateCardDraw();
-                gameRepository.save(game);
-                log.info("카드뽑기 상태 활성화: gameId={}", request.gameId());
-            }
+            // 카드뽑기 상태가 아직 활성화되지 않았거나 카드뽑기 데이터가 없는 경우에만 새로 생성
+            Map<Integer, List<Integer>> cardDrawData;
             
-            // 게임의 모든 멤버 조회
-            List<Scoreboard> scoreboards = scoreboardRepository.findAllByGameId(request.gameId());
-            
-            // 군별로 멤버 그룹화
-            Map<Integer, List<Scoreboard>> gradeGroups = scoreboards.stream()
-                    .collect(Collectors.groupingBy(scoreboard -> scoreboard.getGrade() != null ? scoreboard.getGrade() : 0));
-            
-            // 각 군별로 랜덤 팀 번호 배열 생성
-            Map<Integer, List<Integer>> cardDrawData = new HashMap<>();
-            
-            for (Map.Entry<Integer, List<Scoreboard>> entry : gradeGroups.entrySet()) {
-                Integer grade = entry.getKey();
-                List<Scoreboard> members = entry.getValue();
-                int memberCount = members.size();
+            if (game.isCardDraw() == null || !game.isCardDraw() || game.getCardDrawData() == null || game.getCardDrawData().isEmpty()) {
+                // 새로운 카드뽑기 데이터 생성
+                cardDrawData = generateCardDrawData(request.gameId());
                 
-                // 1부터 memberCount까지의 숫자를 생성하고 섞기
-                List<Integer> teamNumbers = IntStream.rangeClosed(1, memberCount)
-                        .boxed()
-                        .collect(Collectors.toList());
-                Collections.shuffle(teamNumbers);
-                
-                cardDrawData.put(grade, teamNumbers);
-                log.info("군 {}: {}명, 랜덤 팀 번호 배열: {}", grade, memberCount, teamNumbers);
+                // 카드뽑기 데이터를 JSON 문자열로 변환하여 DB에 저장
+                try {
+                    String cardDrawDataJson = objectMapper.writeValueAsString(cardDrawData);
+                    game.setCardDrawData(cardDrawDataJson);
+                    game.updateCardDraw(); // 카드뽑기 상태 활성화
+                    gameRepository.save(game);
+                    log.info("카드뽑기 데이터 저장 완료: gameId={}", request.gameId());
+                } catch (JsonProcessingException e) {
+                    log.error("카드뽑기 데이터 JSON 변환 실패: gameId={}, error={}", request.gameId(), e.getMessage());
+                    throw new RuntimeException("카드뽑기 데이터 저장 실패", e);
+                }
+            } else {
+                // 이미 저장된 카드뽑기 데이터가 있으면 그것을 사용
+                try {
+                    cardDrawData = objectMapper.readValue(game.getCardDrawData(), 
+                        objectMapper.getTypeFactory().constructMapType(Map.class, Integer.class, List.class));
+                    log.info("저장된 카드뽑기 데이터 사용: gameId={}", request.gameId());
+                } catch (JsonProcessingException e) {
+                    log.error("저장된 카드뽑기 데이터 파싱 실패: gameId={}, error={}", request.gameId(), e.getMessage());
+                    throw new RuntimeException("카드뽑기 데이터 파싱 실패", e);
+                }
             }
             
             // STOMP 메시지로 모든 클라이언트에게 카드뽑기 데이터 전송
@@ -502,14 +538,15 @@ public class ScoreboardServiceImpl implements ScoreboardService {
             }
             scoreboardRepository.saveAll(scoreboards);
             
-            // 2. 게임의 카드뽑기 상태를 false로 설정
+            // 2. 게임의 카드뽑기 상태를 false로 설정하고 카드뽑기 데이터 초기화
             Game game = gameRepository.findById(request.gameId())
                     .orElseThrow(() -> new RuntimeException("게임을 찾을 수 없습니다."));
             
-            if (game.isCardDraw()) {
+            if (game.isCardDraw() != null && game.isCardDraw()) {
                 game.updateCardDraw();
+                game.setCardDrawData(null); // 카드뽑기 데이터 초기화
                 gameRepository.save(game);
-                log.info("카드뽑기 상태 비활성화: gameId={}", request.gameId());
+                log.info("카드뽑기 상태 비활성화 및 데이터 초기화: gameId={}", request.gameId());
             }
             
             // 3. STOMP 메시지로 모든 클라이언트에게 초기화 알림 전송
