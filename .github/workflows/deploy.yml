@@ -179,7 +179,7 @@ jobs:
                 index index.html;
 
                 # WebSocket 엔드포인트 (정확한 매칭) - React 앱 라우팅보다 먼저 정의
-                location = /ws {
+                location /ws {
                     proxy_pass http://localhost:8000/ws;
                     proxy_http_version 1.1;
                     proxy_set_header Upgrade $http_upgrade;
@@ -191,30 +191,6 @@ jobs:
                     proxy_read_timeout 600s;
                     proxy_send_timeout 600s;
                     proxy_connect_timeout 600s;
-                }
-                
-                # SockJS 모든 하위 경로 (정확한 매칭)
-                location ~ ^/ws/ {
-                    proxy_pass http://localhost:8000;
-                    proxy_http_version 1.1;
-                    proxy_set_header Upgrade $http_upgrade;
-                    proxy_set_header Connection "upgrade";
-                    proxy_set_header Host $host;
-                    proxy_set_header X-Real-IP $remote_addr;
-                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                    proxy_set_header X-Forwarded-Proto $scheme;
-                    proxy_read_timeout 600s;
-                    proxy_send_timeout 600s;
-                    proxy_connect_timeout 600s;
-                    
-                    # SockJS 폴백을 위한 추가 설정
-                    proxy_buffering off;
-                    proxy_cache off;
-                    
-                    # CORS 헤더
-                    add_header Access-Control-Allow-Origin *;
-                    add_header Access-Control-Allow-Methods "GET, POST, OPTIONS";
-                    add_header Access-Control-Allow-Headers "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization";
                 }
 
                 location /api {
