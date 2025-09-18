@@ -29,7 +29,7 @@ public class Game extends BaseUpdatableEntity {
     @Column(name = "score_counting")
     private boolean scoreCounting;
 
-    @Column(name = "card_drow")
+    @Column(name = "card_draw")
     private boolean cardDraw;
 
     @Column
