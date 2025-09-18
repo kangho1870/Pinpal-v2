@@ -23,13 +23,13 @@ public class Game extends BaseUpdatableEntity {
     @Column
     private GameType type;
 
-    @Column
+    @Column(name = "confirm_code")
     private String confirmCode;
 
-    @Column
+    @Column(name = "score_counting")
     private boolean scoreCounting;
 
-    @Column
+    @Column(name = "card_drow")
     private boolean cardDrow;
 
     @Column
@@ -38,10 +38,10 @@ public class Game extends BaseUpdatableEntity {
     @Column
     private LocalTime time;
 
-    @Column
+    @Column(name = "status")
     private String status;
 
-    @Column
+    @Column(name = "is_delete")
     private boolean isDelete;
 
     @ManyToOne(fetch = FetchType.LAZY)
