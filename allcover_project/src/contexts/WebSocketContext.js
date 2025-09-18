@@ -79,8 +79,8 @@ export const WebSocketProvider = ({ children, gameId }) => {
                 console.log('🔗 SockJS 연결 URL:', sockJsUrl);
                 
                 const sockJs = new SockJS(sockJsUrl, null, {
-                    // 배포 환경에서 WebSocket 업그레이드만 테스트
-                    transports: ['websocket'], // 임시로 WebSocket만 사용
+                    // Nginx 설정 수정 후 모든 전송 방식 활성화
+                    transports: ['websocket', 'xhr-streaming', 'xhr-polling'],
                     timeout: 10000, // 10초 타임아웃
                     sessionId: () => Math.random().toString(36).substring(2, 15) // 세션 ID 생성
                 });
