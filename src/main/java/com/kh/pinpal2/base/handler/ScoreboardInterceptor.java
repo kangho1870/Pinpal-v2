@@ -19,7 +19,17 @@ public class ScoreboardInterceptor implements HandshakeInterceptor {
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
 
         String path = request.getURI().getPath();
-        String scoreboardId = path.substring(path.lastIndexOf("/") + 1);
+        // SockJS 경로에서 scoreboardId 추출 (예: /ws/123/websocket -> 123)
+        String scoreboardId = "default";
+        if (path.contains("/ws/") && path.split("/").length > 2) {
+            String[] pathSegments = path.split("/");
+            for (int i = 0; i < pathSegments.length; i++) {
+                if ("ws".equals(pathSegments[i]) && i + 1 < pathSegments.length) {
+                    scoreboardId = pathSegments[i + 1];
+                    break;
+                }
+            }
+        }
         attributes.put("scoreboardId", scoreboardId);
         
         // JWT 토큰 검증

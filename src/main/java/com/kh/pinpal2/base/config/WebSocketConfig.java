@@ -47,8 +47,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
 
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*") // 모든 origin 허용 (배포 환경 대응)
-                .setAllowedOrigins("http://localhost:3000", "https://pinpal.co.kr")
+                .setAllowedOriginPatterns("https://pinpal.co.kr", "http://localhost:3000")
                 .addInterceptors(scoreboardInterceptor)
                 .withSockJS()
                 .setHeartbeatTime(25000)
