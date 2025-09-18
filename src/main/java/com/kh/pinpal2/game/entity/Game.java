@@ -30,7 +30,7 @@ public class Game extends BaseUpdatableEntity {
     private boolean scoreCounting;
 
     @Column(name = "card_drow")
-    private boolean cardDrow;
+    private boolean cardDraw;
 
     @Column
     private LocalDate date;
@@ -93,6 +93,6 @@ public class Game extends BaseUpdatableEntity {
     }
 
     public void updateCardDraw() {
-        this.cardDrow = !this.cardDrow;
+        this.cardDraw = !this.cardDraw;
     }
 }

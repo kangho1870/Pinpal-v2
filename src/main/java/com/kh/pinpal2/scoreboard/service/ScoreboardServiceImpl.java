@@ -212,10 +212,10 @@ public class ScoreboardServiceImpl implements ScoreboardService {
         Map<String, Object> initialData = new HashMap<>();
         initialData.put("type", "initialData");
         initialData.put("scoreboards", scoreboards);
-        initialData.put("cardDrawStarted", game.isCardDrow());
+        initialData.put("cardDrawStarted", game.isCardDraw());
         
         // 카드뽑기가 시작된 경우에만 카드뽑기 데이터 포함
-        if (game.isCardDrow()) {
+        if (game.isCardDraw()) {
             List<Scoreboard> allScoreboards = scoreboardRepository.findAllByGameId(gameId);
             Map<Integer, List<Scoreboard>> gradeGroups = allScoreboards.stream()
                     .collect(Collectors.groupingBy(scoreboard -> scoreboard.getGrade() != null ? scoreboard.getGrade() : 0));
@@ -260,9 +260,9 @@ public class ScoreboardServiceImpl implements ScoreboardService {
             
             initialData.put("selectedCards", selectedCards);
             log.info("초기 데이터에 카드뽑기 데이터 및 선택된 카드 포함: gameId={}, cardDrawData={}, selectedCards={}, cardDrawStarted={}", 
-                    gameId, cardDrawData, selectedCards, game.isCardDrow());
+                    gameId, cardDrawData, selectedCards, game.isCardDraw());
         } else {
-            log.info("카드뽑기가 시작되지 않음: gameId={}, cardDrawStarted={}", gameId, game.isCardDrow());
+            log.info("카드뽑기가 시작되지 않음: gameId={}, cardDrawStarted={}", gameId, game.isCardDraw());
         }
 
         simpMessagingTemplate.convertAndSend("/sub/scoreboard/" + request.gameId(), initialData);
@@ -400,7 +400,7 @@ public class ScoreboardServiceImpl implements ScoreboardService {
                     .orElseThrow(() -> new RuntimeException("게임을 찾을 수 없습니다."));
             
             // 카드뽑기 상태가 아직 활성화되지 않았다면 활성화
-            if (!game.isCardDrow()) {
+            if (!game.isCardDraw()) {
                 game.updateCardDraw();
                 gameRepository.save(game);
                 log.info("카드뽑기 상태 활성화: gameId={}", request.gameId());
@@ -506,7 +506,7 @@ public class ScoreboardServiceImpl implements ScoreboardService {
             Game game = gameRepository.findById(request.gameId())
                     .orElseThrow(() -> new RuntimeException("게임을 찾을 수 없습니다."));
             
-            if (game.isCardDrow()) {
+            if (game.isCardDraw()) {
                 game.updateCardDraw();
                 gameRepository.save(game);
                 log.info("카드뽑기 상태 비활성화: gameId={}", request.gameId());

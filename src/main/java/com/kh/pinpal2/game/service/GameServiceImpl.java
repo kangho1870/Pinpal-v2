@@ -26,7 +26,6 @@ import com.kh.pinpal2.user.repository.UserRepository;
 import com.kh.pinpal2.user_club.entity.ClubRole;
 import com.kh.pinpal2.user_club.entity.UserClub;
 import com.kh.pinpal2.user_club.repository.UserClubRepository;
-import com.querydsl.core.Tuple;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -186,7 +185,7 @@ public class GameServiceImpl implements GameService {
                 game.getId(),
                 game.getName(),
                 game.isScoreCounting(),
-                game.isCardDrow(),
+                game.isCardDraw(),
                 0,
                 0,
                 0,
