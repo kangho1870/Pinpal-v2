@@ -1,5 +1,6 @@
 package com.kh.pinpal2.auth.service;
 
+import com.kh.pinpal2.user.entity.Role;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -24,7 +25,7 @@ public class CustomOAuth2User implements OAuth2User {
         this.attributes = attributes;
         
         // role이 null이면 기본값 "USER" 사용
-        String role = attributes.get("role") != null ? attributes.get("role").toString() : "USER";
+        String role = attributes.get("role") != null ? attributes.get("role").toString() : Role.USER.name();
         this.authorities = List.of(new SimpleGrantedAuthority(role));
         this.existed = existed;
     }

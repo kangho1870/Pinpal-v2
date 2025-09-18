@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Component
+//@Component
 @RequiredArgsConstructor
 @Slf4j
 public class WebSocketHandler extends TextWebSocketHandler {
@@ -154,13 +154,24 @@ public class WebSocketHandler extends TextWebSocketHandler {
                 TeamNumberUpdateRequestDto requestDto = mapper.readValue(payload, TeamNumberUpdateRequestDto.class);
                 List<UserTeamUpdateDto> users = requestDto.users();
 
+                log.info("팀 번호 업데이트 요청 처리: gameId={}, 사용자 수={}", requestDto.gameId(), users.size());
+
                 for (UserTeamUpdateDto user : users) {
                     Long userId = user.userId();
                     Integer teamNumber = user.teamNumber();
 
                     scoreboardRepository.findByGameIdAndUserId(requestDto.gameId(), userId).ifPresent(scoreboard -> {
+                        // 기존 팀 번호 저장
+                        Integer oldTeamNumber = scoreboard.getTeamNumber();
+                        
+                        // 새 팀 번호로 업데이트
                         scoreboard.updateTeamNumber(teamNumber);
                         scoreboardRepository.save(scoreboard);
+                        
+                        log.info("팀 번호 업데이트: userId={}, {} -> {}", userId, oldTeamNumber, teamNumber);
+                        
+                        // 특정 사용자의 팀 번호 변경만 전송 (STOMP 방식)
+                        sendSpecificTeamUpdate(requestDto.gameId(), userId, teamNumber);
                     });
                 }
             } else if (action.equals("updateTeam")) {
@@ -279,8 +290,13 @@ public class WebSocketHandler extends TextWebSocketHandler {
                 }
             }
 
-            // 업데이트된 데이터 전송
-            sendScoreboardData(session);
+            // 특정 액션에 대해서만 전체 데이터 전송 (필요한 경우)
+            if (action.equals("updateScore") || action.equals("updateGrade") || 
+                action.equals("updateSide") || action.equals("updateConfirm") || 
+                action.equals("updateScoreCounting")) {
+                sendScoreboardData(session);
+            }
+            // updateTeamNumber는 이미 sendSpecificTeamUpdate로 처리됨
             
         } catch (Exception e) {
             log.error("WebSocket 메시지 처리 중 오류: {}", e.getMessage());
@@ -363,6 +379,41 @@ public class WebSocketHandler extends TextWebSocketHandler {
         } catch (Exception e) {
             log.error("Scoreboard 데이터 로딩 실패: {}", e.getMessage());
             return "[]";
+        }
+    }
+
+    /**
+     * 특정 사용자의 팀 번호 변경만 전송 (STOMP 방식)
+     */
+    private void sendSpecificTeamUpdate(Long gameId, Long userId, Integer teamNumber) {
+        try {
+            Map<String, Object> updateData = new HashMap<>();
+            updateData.put("type", "teamNumberUpdate");
+            updateData.put("gameId", gameId);
+            updateData.put("userId", userId);
+            updateData.put("teamNumber", teamNumber);
+            updateData.put("timestamp", System.currentTimeMillis());
+
+            String scoreboardId = gameId.toString();
+            Set<WebSocketSession> sessions = CLIENTS.get(scoreboardId);
+            
+            if (sessions != null) {
+                String jsonData = mapper.writeValueAsString(updateData);
+                sessions.forEach(session -> {
+                    try {
+                        if (session.isOpen()) {
+                            session.sendMessage(new TextMessage(jsonData));
+                        }
+                    } catch (IOException e) {
+                        log.error("팀 번호 업데이트 전송 실패: {}", e.getMessage());
+                    }
+                });
+                
+                log.info("팀 번호 업데이트 전송 완료: gameId={}, userId={}, teamNumber={}, 세션 수={}", 
+                        gameId, userId, teamNumber, sessions.size());
+            }
+        } catch (Exception e) {
+            log.error("팀 번호 업데이트 전송 중 오류: {}", e.getMessage());
         }
     }
     

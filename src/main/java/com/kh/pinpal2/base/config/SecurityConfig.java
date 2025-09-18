@@ -55,7 +55,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests((authorizeRequest) ->
                         authorizeRequest
                                 // 메인, 로그인 화면은 모든 접근 허용 -> permitAll()
-                                .requestMatchers("/api/v1/auth/**", "/api/auth/**", "/oauth2/callback/*","/", "/scoreboard/**", "/sns-success", "/auth", "/actuator/**").permitAll()
+                                .requestMatchers("/api/v1/auth/**", "/api/auth/**", "/oauth2/callback/*","/", "/scoreboard/**", "/sns-success", "/auth", "/actuator/**", "/ws/**").permitAll()
                                 // 나머지 요청은 모두 인증을 거쳐야 함
                                 .anyRequest().authenticated()
                 )
@@ -79,9 +79,11 @@ public class SecurityConfig {
     @Bean
     protected CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOrigin("*");
+        configuration.addAllowedOrigin("http://localhost:3000");
+        configuration.addAllowedOrigin("https://pinpal.co.kr");
         configuration.addAllowedHeader("*");
         configuration.addAllowedMethod("*");
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

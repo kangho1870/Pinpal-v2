@@ -42,7 +42,7 @@ public class ScoreboardCustomRepositoryImpl implements ScoreboardCustomRepositor
                 .select(Projections.constructor(ScoreboardMemberRow.class,
                         s.id,
                         user.id, user.name, user.profile,
-                        game.id, game.name, game.scoreCounting,
+                        game.id, game.name, game.scoreCounting, game.cardDrow,
                         s.score1, s.score2, s.score3, s.score4,
                         s.grade, s.confirmed, s.sideAvg, s.side, s.teamNumber,
                         userClub.role, s.avg, user.gender

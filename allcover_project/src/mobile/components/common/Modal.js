@@ -44,17 +44,52 @@ const Modal = ({
 
                 {buttons.length > 0 && (
                     <div className={styles.modalBtnBox}>
-                        {buttons.map((button, index) => (
-                            <button
-                                key={index}
-                                className={`${styles.btn} ${button.className || ''}`}
-                                onClick={button.onClick}
-                                disabled={button.disabled}
-                            >
-                                {button.icon && <span className={styles.btnIcon}>{button.icon}</span>}
-                                {button.text}
-                            </button>
-                        ))}
+                        {buttons.length <= 2 ? (
+                            // 2개 이하 버튼은 한 줄로 표시
+                            buttons.map((button, index) => (
+                                <button
+                                    key={index}
+                                    className={`${styles.btn} ${button.className || ''}`}
+                                    onClick={button.onClick}
+                                    disabled={button.disabled}
+                                >
+                                    {button.icon && <span className={styles.btnIcon}>{button.icon}</span>}
+                                    {button.text}
+                                </button>
+                            ))
+                        ) : (
+                            // 3개 이상 버튼은 2줄로 나누어 표시
+                            <>
+                                <div className={styles.modalBtnRow}>
+                                    {buttons.slice(0, 3).map((button, index) => (
+                                        <button
+                                            key={index}
+                                            className={`${styles.btn} ${button.className || ''}`}
+                                            onClick={button.onClick}
+                                            disabled={button.disabled}
+                                        >
+                                            {button.icon && <span className={styles.btnIcon}>{button.icon}</span>}
+                                            {button.text}
+                                        </button>
+                                    ))}
+                                </div>
+                                {buttons.length > 3 && (
+                                    <div className={styles.modalBtnRow}>
+                                        {buttons.slice(3).map((button, index) => (
+                                            <button
+                                                key={index + 3}
+                                                className={`${styles.btn} ${button.className || ''}`}
+                                                onClick={button.onClick}
+                                                disabled={button.disabled}
+                                            >
+                                                {button.icon && <span className={styles.btnIcon}>{button.icon}</span>}
+                                                {button.text}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </div>
                 )}
             </div>

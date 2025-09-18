@@ -40,7 +40,7 @@ const useWebSocket = (url, options = {}) => {
         setConnectionStatus('connecting');
 
         try {
-            // JWT 토큰을 쿼리 파라미터로 전달
+            // JWT 토큰을 쿼리 파라미터로 전달 (기존 방식 유지)
             const currentToken = token || cookies.accessToken;
             const wsUrl = currentToken ? `${url}?token=${currentToken}` : url;
             
@@ -108,24 +108,76 @@ const useWebSocket = (url, options = {}) => {
                     if (data.type) {
                         // 메시지 타입별 처리
                         switch (data.type) {
+                            // 팀 관련 업데이트
+                            case 'teamNumberUpdate':
+                                console.log('🔄 팀 번호 업데이트 수신:', data);
+                                onMessage?.(data, event);
+                                break;
+                            case 'batchTeamNumberUpdate':
+                                console.log('🔄 팀 번호 배치 업데이트 수신:', data);
+                                onMessage?.(data, event);
+                                break;
+                            
+                            // 등급 관련 업데이트
+                            case 'batchGradeUpdate':
+                                console.log('📊 등급 배치 업데이트 수신:', data);
+                                onMessage?.(data, event);
+                                break;
+                            
+                            // 점수 관련 업데이트
+                            case 'scoreUpdated':
+                                console.log('🎯 점수 업데이트 수신:', data);
+                                onMessage?.(data, event);
+                                break;
+                            
+                            // 사이드 게임 관련 업데이트
+                            case 'sideUpdated':
+                                console.log('🎮 사이드 게임 업데이트 수신:', data);
+                                onMessage?.(data, event);
+                                break;
+                            
+                            // 참석 확정 관련 업데이트
+                            case 'confirmedUpdated':
+                                console.log('✅ 참석 확정 업데이트 수신:', data);
+                                onMessage?.(data, event);
+                                break;
+                            
+                            // 점수 집계 관련 업데이트
+                            case 'scoreCountingUpdated':
+                                console.log('📊 점수 집계 상태 업데이트 수신:', data);
+                                onMessage?.(data, event);
+                                break;
+                            
+                            // 기존 타입들 (하위 호환성)
                             case 'SCOREBOARD_UPDATE':
+                                console.log('📊 스코어보드 전체 업데이트 수신');
+                                onMessage?.(data, event);
                                 break;
                             case 'MEMBER_JOIN':
+                                console.log('👤 멤버 참가 수신');
+                                onMessage?.(data, event);
                                 break;
                             case 'GAME_START':
+                                console.log('🎮 게임 시작 수신');
+                                onMessage?.(data, event);
                                 break;
                             case 'GAME_END':
+                                console.log('🏁 게임 종료 수신');
+                                onMessage?.(data, event);
                                 break;
                             case 'ERROR':
+                                console.error('❌ 에러 메시지 수신:', data);
+                                onMessage?.(data, event);
                                 break;
                             default:
+                                console.log('📨 알 수 없는 메시지 타입:', data.type);
+                                onMessage?.(data, event);
                         }
                     } else {
-                        // 백엔드에서 직접 배열을 보내는 경우
+                        // 백엔드에서 직접 배열을 보내는 경우 (기존 방식)
                         console.log('📨 직접 데이터 수신:', data);
+                        onMessage?.(data, event);
                     }
-                    
-                    onMessage?.(data, event);
                 } catch (error) {
                     onMessage?.(event.data, event);
                 }

@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8000
 
 spring:
   datasource:
@@ -14,7 +14,7 @@ spring:
           kakao:
             client-id: ${KAKAO_CLIENT_ID:your-dev-client-id}
             client-secret: ${KAKAO_CLIENT_SECRET:your-dev-client-secret}
-            redirect-uri: "https://pinpal.co.kr/oauth2/callback/{registrationId}"
+            redirect-uri: "{baseUrl}/oauth2/callback/{registrationId}"
             authorization-grant-type: authorization_code
             client-authentication-method: client_secret_post
             scope:

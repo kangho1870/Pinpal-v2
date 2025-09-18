@@ -10,6 +10,7 @@ public record ScoreboardMemberRow(
         Long gameId,
         String gameName,
         boolean scoreCounting,
+        boolean cardDrow,
         Integer game1,
         Integer game2,
         Integer game3,

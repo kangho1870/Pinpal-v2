@@ -66,11 +66,21 @@
 
 .modalBtnBox {
     display: flex;
+    flex-direction: column;
     gap: clamp(8px, 2vw, 12px);
     padding: clamp(12px, 2vw, 16px) clamp(20px, 4vw, 32px) clamp(16px, 3vw, 24px);
     border-top: 1px solid #e9ecef;
     background-color: #f8f9fa;
     border-radius: 0 0 clamp(12px, 2.5vw, 20px) clamp(12px, 2.5vw, 20px);
+}
+
+.modalBtnRow {
+    display: flex;
+    gap: clamp(8px, 2vw, 12px);
+}
+
+.modalBtnRow:first-child {
+    margin-bottom: clamp(4px, 1vw, 8px);
 }
 
 /* ===== 버튼 스타일 ===== */
@@ -153,6 +163,24 @@
     background: linear-gradient(135deg, #218838 0%, #1ea085 100%);
 }
 
+.resetBtn {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+}
+
+.resetBtn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+}
+
+.cardDrawBtn {
+    background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
+    color: #212529;
+}
+
+.cardDrawBtn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #e0a800 0%, #d39e00 100%);
+}
+
 /* ===== 입력 필드 스타일 ===== */
 
 .inputField {
@@ -216,6 +244,29 @@
 @media (max-width: 480px) {
     .grid2, .grid3, .grid4 {
         grid-template-columns: 1fr;
+    }
+}
+
+/* ===== 카드뽑기 그리드 ===== */
+
+.cardDrawGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    justify-content: center;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+    .cardDrawGrid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (min-width: 769px) {
+    .cardDrawGrid {
+        grid-template-columns: repeat(5, 1fr);
     }
 }
 

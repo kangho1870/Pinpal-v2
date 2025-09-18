@@ -24,7 +24,7 @@ export default function ConfirmModal() {
     const [failCount, setFailCount] = useState(0);
     const [validCode, setValidCode] = useState(false);
     
-    const { sendMessage } = useWebSocketContext();
+    const { sendAuthenticatedMessage } = useWebSocketContext();
 
     const codeChangeHandler = (e) => {
         setCode(e.target.value);
@@ -43,7 +43,7 @@ export default function ConfirmModal() {
         }
         
         console.log('🔧 updateConfirm 메시지 전송:', confirmCheck);
-        const success = sendMessage(confirmCheck);
+        const success = sendAuthenticatedMessage(confirmCheck);
         if (!success) {
             alert("서버와 연결되지 않았습니다. 잠시 후 다시 시도해주세요.");
         }

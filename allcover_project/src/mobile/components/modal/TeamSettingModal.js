@@ -8,14 +8,34 @@ import Modal from "../common/Modal";
 function TeamSettingModal() {
     const [searchParams] = useSearchParams();
     const gameId = searchParams.get("gameId");
-    const { members, toggleTeamModal } = useScoreboard();
+    const { 
+        members, 
+        toggleTeamModal,
+        setCardDrawData,
+        setSelectedCards,
+        setShowCardDrawModal
+    } = useScoreboard();
     const [selectGrade, setSelectGrade] = useState(1);
-    const [teamBtns] = useState([1, 2, 3, 4, 5, 6, 7, 8]);
     const [updatedMembers, setUpdatedMembers] = useState([]);
     const [showTeamInput, setShowTeamInput] = useState(false);
     const [teamCount, setTeamCount] = useState(2);
+    const [currentPage, setCurrentPage] = useState(1);
     
-    const { sendMessage } = useWebSocketContext();
+    // 24개 팀을 8개씩 3페이지로 나누기
+    const totalTeams = 24;
+    const teamsPerPage = 8;
+    const totalPages = Math.ceil(totalTeams / teamsPerPage);
+    
+    // 현재 페이지의 팀 번호들 계산
+    const getCurrentPageTeams = () => {
+        const startTeam = (currentPage - 1) * teamsPerPage + 1;
+        const endTeam = Math.min(currentPage * teamsPerPage, totalTeams);
+        return Array.from({ length: endTeam - startTeam + 1 }, (_, i) => startTeam + i);
+    };
+    
+    const teamBtns = getCurrentPageTeams();
+    
+    const { sendAuthenticatedMessage } = useWebSocketContext();
 
     // 멤버 초기 세팅 (평균 순으로 정렬)
     useEffect(() => {
@@ -39,6 +59,19 @@ function TeamSettingModal() {
         setSelectGrade(i);
     };
 
+    // 페이지네이션 함수들
+    const goToPreviousPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
+    };
+
+    const goToNextPage = () => {
+        if (currentPage < totalPages) {
+            setCurrentPage(currentPage + 1);
+        }
+    };
+
     const setGradeByMember = (memberId) => {
         setUpdatedMembers(prev =>
             prev.map(member =>
@@ -59,9 +92,69 @@ function TeamSettingModal() {
         setShowTeamInput(true);
     };
 
+    // 카드뽑기 시작
+    const startCardDraw = () => {
+        const payload = {
+            action: "startCardDraw",
+            gameId: gameId
+        };
+        
+        const success = sendAuthenticatedMessage(payload);
+        if (success) {
+            alert('카드뽑기가 시작되었습니다!');
+        } else {
+            alert('서버와 연결되지 않았습니다. 잠시 후 다시 시도해주세요.');
+        }
+    };
+
+    // 팀 초기화 및 카드뽑기 초기화
+    const resetAll = () => {
+        if (window.confirm('팀 설정과 카드뽑기를 모두 초기화하시겠습니까?')) {
+            // 1. 팀 번호 초기화 (모든 멤버의 teamNumber를 0으로 설정)
+            const resetMembers = updatedMembers.map(member => ({
+                ...member,
+                teamNumber: 0
+            }));
+            setUpdatedMembers(resetMembers);
+
+            // 2. 카드뽑기 데이터 초기화
+            setCardDrawData(null);
+            setSelectedCards({});
+            setShowCardDrawModal(false);
+
+            // 3. 백엔드에 팀 초기화 요청
+            const payload = {
+                action: "resetCardDraw",
+                gameId: gameId
+            };
+
+            const success = sendAuthenticatedMessage(payload);
+            if (success) {
+                console.log('🎴 팀 및 카드뽑기 초기화 요청 전송');
+            } else {
+                alert('서버와 연결되지 않았습니다. 잠시 후 다시 시도해주세요.');
+            }
+        }
+    };
+
+
+    // grade별 멤버 그룹화
+    const getMembersByGrade = () => {
+        const gradeGroups = {};
+        updatedMembers.forEach(member => {
+            const grade = member.grade || 0;
+            if (!gradeGroups[grade]) {
+                gradeGroups[grade] = [];
+            }
+            gradeGroups[grade].push(member);
+        });
+        return gradeGroups;
+    };
+
+
     const confirmTeamRandomSetting = () => {
-        if (teamCount < 2 || teamCount > 8) {
-            alert('팀 수는 2팀에서 8팀 사이로 설정해주세요.');
+        if (teamCount < 2 || teamCount > 24) {
+            alert('팀 수는 2팀에서 24팀 사이로 설정해주세요.');
             return;
         }
 
@@ -127,7 +220,7 @@ function TeamSettingModal() {
             gameId: gameId
         };
 
-        const success = sendMessage(payload);
+        const success = sendAuthenticatedMessage(payload);
         if (success) {
             alert(`${teamCount}팀으로 균등하게 랜덤 설정되었습니다.`);
             setShowTeamInput(false);
@@ -150,7 +243,7 @@ function TeamSettingModal() {
             gameId: gameId
         };
 
-        const success = sendMessage(payload);
+        const success = sendAuthenticatedMessage(payload);
         if (success) {
             toggleTeamModal();
         } else {
@@ -173,11 +266,23 @@ function TeamSettingModal() {
             onClick: confirmTeamRandomSetting
         }
     ] : [
+        // 첫 번째 줄: 주요 기능 버튼들
+        {
+            text: "초기화",
+            className: styles.resetBtn,
+            onClick: resetAll
+        },
+        {
+            text: "카드뽑기",
+            className: styles.cardDrawBtn,
+            onClick: startCardDraw
+        },
         {
             text: "랜덤 설정",
             className: styles.randomBtn,
             onClick: teamRandomSetting
         },
+        // 두 번째 줄: 확인/취소 버튼들
         {
             text: "취소",
             className: styles.cancelBtn,
@@ -210,7 +315,7 @@ function TeamSettingModal() {
                         <input
                             type="number"
                             min="2"
-                            max="8"
+                            max="24"
                             value={teamCount}
                             onChange={(e) => setTeamCount(parseInt(e.target.value) || 2)}
                             style={{
@@ -236,6 +341,64 @@ function TeamSettingModal() {
                     <div style={{marginBottom: "12px", fontSize: "14px", color: "#6c757d"}}>
                         미설정: {teamCounts[0]}명
                     </div>
+                    
+                    {/* 페이지네이션 헤더 */}
+                    <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginBottom: "12px",
+                        padding: "8px 0"
+                    }}>
+                        <button
+                            onClick={goToPreviousPage}
+                            disabled={currentPage === 1}
+                            style={{
+                                background: currentPage === 1 ? "#e9ecef" : "#004EA2",
+                                color: currentPage === 1 ? "#6c757d" : "white",
+                                border: "none",
+                                borderRadius: "6px",
+                                padding: "8px 12px",
+                                cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                                fontSize: "14px",
+                                fontWeight: "600",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "4px"
+                            }}
+                        >
+                            ← 이전
+                        </button>
+                        
+                        <div style={{
+                            fontSize: "14px",
+                            color: "#004EA2",
+                            fontWeight: "600"
+                        }}>
+                            {teamBtns[0]}팀 - {teamBtns[teamBtns.length - 1]}팀 ({currentPage}/{totalPages}페이지)
+                        </div>
+                        
+                        <button
+                            onClick={goToNextPage}
+                            disabled={currentPage === totalPages}
+                            style={{
+                                background: currentPage === totalPages ? "#e9ecef" : "#004EA2",
+                                color: currentPage === totalPages ? "#6c757d" : "white",
+                                border: "none",
+                                borderRadius: "6px",
+                                padding: "8px 12px",
+                                cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+                                fontSize: "14px",
+                                fontWeight: "600",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "4px"
+                            }}
+                        >
+                            다음 →
+                        </button>
+                    </div>
+                    
                     <div className={`${styles.grid} ${styles.grid4}`}>
                         {teamBtns.map((team, i) => (
                             <button

@@ -19,42 +19,134 @@ import { WebSocketProvider, useWebSocketContext } from "../../contexts/WebSocket
 
 function ScoreboardContent() {
     const [cookies] = useCookies();
-    const { addMessageHandler, removeMessageHandler, connectionStatus } = useWebSocketContext();
+    const { addMessageHandler, removeMessageHandler, connectionStatus, sendAuthenticatedMessage, token } = useWebSocketContext();
 
     const { 
         members, gradeModal, teamModal, confirmModal, sideJoinUserModal,
         sideRankingModal, scoreInputModal, page, navTitle,
-        setMembers, toggleSideJoinUserModal, toggleSideRankingModal, toggleScoreInputModal, setPage
+        setMembers, addMember, updateMemberTeamNumber, batchUpdateMemberTeamNumbers, 
+        batchUpdateMemberGrades, updateMemberScore, 
+        updateMemberConfirmedStatus, toggleSideJoinUserModal, toggleSideRankingModal, 
+        toggleScoreInputModal, setPage
     } = useScoreboard();
 
     // members 상태 변경 감지
     useEffect(() => {
-        console.log('🔄 Scoreboard members 상태 변경:', members);
     }, [members]);
 
     const navigator = useNavigate();
 
     // WebSocket 메시지 핸들러를 useCallback으로 감싸기
     const handleWebSocketMessage = useCallback((data) => {
-        console.log("📨 WebSocket 메시지 수신:", data);
-        console.log("📨 메시지 타입:", typeof data);
-        console.log("📨 메시지 길이:", Array.isArray(data) ? data.length : '배열 아님');
         
-        if (data && Array.isArray(data)) {
-            console.log("📨 멤버 데이터 업데이트:", data);
+        // 초기 데이터 처리 (배열인 경우)
+        if (Array.isArray(data)) {
             setMembers(data);
-        } else {
-            console.log("📨 유효하지 않은 데이터 형식:", data);
+            return;
         }
-    }, [setMembers]);
+        
+        // 특정 업데이트 타입 처리
+        if (data && data.type) {
+            switch (data.type) {
+                // 팀 관련 업데이트
+                case 'teamNumberUpdate':
+                    updateMemberTeamNumber(data.userId, data.teamNumber);
+                    break;
+                case 'batchTeamNumberUpdate':
+                    if (data.updates && Array.isArray(data.updates)) {
+                        batchUpdateMemberTeamNumbers(data.updates);
+                    }
+                    break;
+                
+                // 등급 관련 업데이트
+                case 'batchGradeUpdate':
+                    if (data.updates && Array.isArray(data.updates)) {
+                        batchUpdateMemberGrades(data.updates);
+                    }
+                    break;
+                
+                // 점수 관련 업데이트
+                case 'scoreUpdated':
+                    updateMemberScore(data.userId, data.score1, data.score2, data.score3, data.score4);
+                    break;
+                
+                // 사이드 게임 관련 업데이트
+                case 'sideUpdated':
+                    // 실제 사이드 상태로 업데이트
+                    if (data.sideType === 'grade1' && data.grade1 !== undefined) {
+                        // grade1 사이드 상태 직접 업데이트
+                        const currentMembers = useScoreboard.getState().members;
+                        const updatedMembers = currentMembers.map(member => {
+                            if (member.memberId === data.userId) {
+                                return { ...member, sideGrade1: data.grade1 };
+                            }
+                            return member;
+                        });
+                        // setMembers로 상태 업데이트
+                        setMembers(updatedMembers);
+                    } else if (data.sideType === 'avg' && data.avg !== undefined) {
+                        // avg 사이드 상태 직접 업데이트
+                        const currentMembers = useScoreboard.getState().members;
+                        const updatedMembers = currentMembers.map(member => {
+                            if (member.memberId === data.userId) {
+                                return { ...member, sideAvg: data.avg };
+                            }
+                            return member;
+                        });
+                        // setMembers로 상태 업데이트
+                        setMembers(updatedMembers);
+                    }
+                    break;
+                
+                // 참석 확정 관련 업데이트
+                case 'confirmedUpdated':
+                    updateMemberConfirmedStatus(data.userId, data.confirmed);
+                    break;
+                
+                // 점수 집계 관련 업데이트
+                case 'scoreCountingUpdated':
+                    // 점수 집계 상태 변경은 게임 레벨에서 처리되므로 여기서는 로그만 출력
+                    break;
+                
+                // 새로운 회원 참여 알림
+                case 'newParticipantJoin':
+                    if (data.newParticipant) {
+                        addMember(data.newParticipant);
+                    }
+                    break;
+                
+                // 기존 타입들 (하위 호환성)
+                case 'SCOREBOARD_UPDATE':
+                    if (data.members && Array.isArray(data.members)) {
+                        setMembers(data.members);
+                    }
+                    break;
+                case 'initialData':
+                    if (data.scoreboards && Array.isArray(data.scoreboards)) {
+                        setMembers(data.scoreboards);
+                    }
+                    break;
+                case 'cardDrawStart':
+                    // 카드뽑기 시작은 WaitingRoom에서 처리하므로 여기서는 로그만 출력
+                    break;
+                case 'cardSelected':
+                    // 카드 선택은 WaitingRoom에서 처리하므로 여기서는 로그만 출력
+                    break;
+                default:
+            }
+        } else if (data && Array.isArray(data)) {
+            // 기존 방식: 전체 멤버 데이터 배열
+            setMembers(data);
+        }
+    }, [setMembers, updateMemberTeamNumber, batchUpdateMemberTeamNumbers, 
+        batchUpdateMemberGrades, updateMemberScore, 
+        updateMemberConfirmedStatus]);
 
     useEffect(() => {
-        console.log("🔗 WebSocket 메시지 핸들러 등록");
         addMessageHandler(handleWebSocketMessage);
 
         // 컴포넌트 언마운트 시 핸들러 제거
         return () => {
-            console.log("🔌 WebSocket 메시지 핸들러 제거");
             removeMessageHandler(handleWebSocketMessage);
         };
     }, [addMessageHandler, removeMessageHandler, handleWebSocketMessage]);
@@ -66,6 +158,48 @@ function ScoreboardContent() {
         }
         setPage(0);
     }, [cookies, navigator, setPage]);
+
+    // STOMP 메시지 전송 예시 함수들
+    const sendTeamUpdateExample = useCallback(() => {
+        if (!token) {
+            console.error('❌ 토큰이 없어서 메시지를 전송할 수 없습니다.');
+            return;
+        }
+
+        // STOMP 방식: 팀 번호 업데이트 메시지
+        const teamUpdateMessage = {
+            action: "updateTeamNumber",
+            gameId: 123,
+            users: [
+                { userId: 1, teamNumber: 2 },
+                { userId: 2, teamNumber: 1 }
+            ]
+        };
+
+        sendAuthenticatedMessage(teamUpdateMessage);
+    }, [token, sendAuthenticatedMessage]);
+
+    const sendScoreUpdateExample = useCallback(() => {
+        if (!token) {
+            console.error('❌ 토큰이 없어서 메시지를 전송할 수 없습니다.');
+            return;
+        }
+
+        // STOMP 방식: 점수 업데이트 메시지
+        const scoreUpdateMessage = {
+            action: "updateScore",
+            gameId: 123,
+            userId: 456,
+            score: {
+                game1Score: 180,
+                game2Score: 200,
+                game3Score: 0,
+                game4Score: 0
+            }
+        };
+
+        sendAuthenticatedMessage(scoreUpdateMessage);
+    }, [token, sendAuthenticatedMessage]);
 
     const navBtnClickHandler = (index) => {
         setPage(index);

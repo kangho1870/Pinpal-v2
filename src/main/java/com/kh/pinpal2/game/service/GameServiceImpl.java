@@ -1,6 +1,7 @@
 package com.kh.pinpal2.game.service;
 
 import com.kh.pinpal2.base.dto.PageResponse;
+import com.kh.pinpal2.base.event.GameParticipantJoinEvent;
 import com.kh.pinpal2.base.exception.PermissionDeniedException;
 import com.kh.pinpal2.base.exception.club.ClubNotFoundException;
 import com.kh.pinpal2.base.exception.game.GameNotFoundException;
@@ -16,6 +17,7 @@ import com.kh.pinpal2.game.dto.*;
 import com.kh.pinpal2.game.entity.Game;
 import com.kh.pinpal2.game.mapper.GameMapper;
 import com.kh.pinpal2.game.repository.GameRepository;
+import com.kh.pinpal2.scoreboard.dto.ScoreboardMemberRow;
 import com.kh.pinpal2.scoreboard.dto.ScoreboardRespDto;
 import com.kh.pinpal2.scoreboard.entity.Scoreboard;
 import com.kh.pinpal2.scoreboard.repository.ScoreboardRepository;
@@ -26,6 +28,7 @@ import com.kh.pinpal2.user_club.entity.UserClub;
 import com.kh.pinpal2.user_club.repository.UserClubRepository;
 import com.querydsl.core.Tuple;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,6 +52,7 @@ public class GameServiceImpl implements GameService {
     private final CeremonyUserRepository ceremonyUserRepository;
     private final GameMapper gameMapper;
     private final PageResponseMapper pageResponseMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional(readOnly = true)
@@ -170,7 +174,33 @@ public class GameServiceImpl implements GameService {
 
         UserClub userClub = userClubRepository.findByClubIdAndUserId(game.getClub().getId(), user.getId()).orElseThrow(UserNotFoundException::new);
         Scoreboard scoreboard = new Scoreboard(game, user, userClub.getAvg());
-        scoreboardRepository.save(scoreboard);
+        Scoreboard savedScoreboard = scoreboardRepository.save(scoreboard);
+
+        // 새로운 회원 참여 이벤트 발행
+
+        ScoreboardMemberRow newUser = new ScoreboardMemberRow(
+                savedScoreboard.getId(),
+                user.getId(),
+                user.getName(),
+                user.getProfile(),
+                game.getId(),
+                game.getName(),
+                game.isScoreCounting(),
+                game.isCardDrow(),
+                0,
+                0,
+                0,
+                0,
+                0,
+                false,
+                false,
+                false,
+                0,
+                userClub.getRole(),
+                userClub.getAvg(),
+                user.getGender()
+        );
+        eventPublisher.publishEvent(new GameParticipantJoinEvent(gameId, newUser));
 
         List<Long> userIdsByGameId = gameRepository.findUserIdsByGameId(gameId);
         long userCount = userIdsByGameId.size();

@@ -17,7 +17,7 @@ export default function ScoreInputModal() {
     const gameId = searchParams.get('gameId');
     const { members, toggleScoreInputModal } = useScoreboard();
     const { signInUser } = useSignInStore();
-    const { sendMessage } = useWebSocketContext();
+    const { sendAuthenticatedMessage } = useWebSocketContext();
     
     const memberId = signInUser?.id || null;
     const member = members.find(member => member?.memberId == memberId);
@@ -118,7 +118,7 @@ export default function ScoreInputModal() {
             score: scores
         }
         
-        const success = sendMessage(scoreInput);
+        const success = sendAuthenticatedMessage(scoreInput);
         if (success) {
             toggleScoreInputModal();
         } else {

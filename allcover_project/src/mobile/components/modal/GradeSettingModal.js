@@ -13,7 +13,7 @@ function GradeSettingModal() {
     const [gradeBtns] = useState([1, 2, 3, 4, 5, 6, 7, 8]);
     const [updatedMembers, setUpdatedMembers] = useState([]);
     
-    const { sendMessage } = useWebSocketContext();
+    const { sendAuthenticatedMessage } = useWebSocketContext();
 
     // 멤버 초기 세팅 (평균 순으로 정렬)
     useEffect(() => {
@@ -66,7 +66,7 @@ function GradeSettingModal() {
             gameId: gameId
         };
 
-        const success = sendMessage(payload);
+        const success = sendAuthenticatedMessage(payload);
         if (success) {
             toggleGradeModal();
         } else {
