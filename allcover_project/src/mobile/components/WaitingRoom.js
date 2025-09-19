@@ -92,21 +92,13 @@ function WaitingRoom() {
         if (success) {
             // 로컬 상태 업데이트
             const cardKey = `${grade}-${cardIndex}`;
-            setSelectedCards(prev => {
-                const newSelectedCards = {
-                    ...prev,
-                    [cardKey]: {
-                        userId: memberId,
-                        teamNumber: teamNumber
-                    }
-                };
-                console.log('🎴 로컬 selectedCards 업데이트:', {
-                    cardKey,
-                    newSelectedCards,
-                    teamNumber
-                });
-                return newSelectedCards;
-            });
+            setSelectedCards(prev => ({
+                ...prev,
+                [cardKey]: {
+                    userId: memberId,
+                    teamNumber: teamNumber
+                }
+            }));
         } else {
             alert('서버와 연결되지 않았습니다. 잠시 후 다시 시도해주세요.');
         }
@@ -114,7 +106,6 @@ function WaitingRoom() {
 
     // WebSocket 메시지 핸들러
     const handleWebSocketMessage = useCallback((data, message) => {
-        
         if (data.type === 'initialData') {
             // 카드뽑기 시작 여부 확인
             if (data.cardDrawStarted) {
@@ -136,21 +127,18 @@ function WaitingRoom() {
         } else if (data.type === 'cardSelected') {
             // 1. selectedCards 상태 업데이트
             const cardKey = `${data.grade}-${data.cardIndex}`;
-            setSelectedCards(prev => {
-                const newSelectedCards = {
-                    ...prev,
-                    [cardKey]: {
-                        userId: data.userId,
-                        teamNumber: data.teamNumber
-                    }
-                };
-                console.log('🎴 WebSocket cardSelected 처리:', {
-                    cardKey,
-                    data,
-                    newSelectedCards
-                });
-                return newSelectedCards;
-            });
+            console.log('🎴 카드 선택 처리:', { cardKey, data });
+            
+            // 현재 selectedCards 상태를 가져와서 직접 업데이트
+            const newSelectedCards = {
+                ...selectedCards,
+                [cardKey]: {
+                    userId: data.userId,
+                    teamNumber: data.teamNumber
+                }
+            };
+            console.log('🎴 selectedCards 업데이트:', { selectedCards, newSelectedCards });
+            setSelectedCards(newSelectedCards);
             
             // 2. members 배열의 해당 사용자 팀 번호 업데이트
             updateMemberTeamNumber(data.userId, data.teamNumber);
@@ -196,6 +184,11 @@ function WaitingRoom() {
             removeMessageHandler(handleWebSocketMessage);
         };
     }, [addMessageHandler, removeMessageHandler, handleWebSocketMessage]);
+
+    // selectedCards 상태 변경 감지
+    useEffect(() => {
+        console.log('🎴 selectedCards 상태 변경됨:', selectedCards);
+    }, [selectedCards]);
 
     // 컴포넌트 마운트 시 초기 데이터 요청
     useEffect(() => {
@@ -512,16 +505,6 @@ function WaitingRoom() {
                                             const isSelected = !!selectedCards[cardKey]; // 존재 여부만 확인
                                             const isMyCard = isMyGrade;
                                             
-                                            // 디버깅 로그
-                                            if (isMyCard && selectedCards[cardKey]) {
-                                                console.log('🎴 카드 선택 상태:', {
-                                                    cardKey,
-                                                    isSelected,
-                                                    selectedCard: selectedCards[cardKey],
-                                                    teamNumber
-                                                });
-                                            }
-                                            
                                             // 현재 사용자가 이미 다른 카드를 선택했는지 확인 (selectedCards와 members 모두 확인)
                                             const userAlreadySelected = Object.keys(selectedCards).some(key => {
                                                 const selectedCard = selectedCards[key];
@@ -532,6 +515,7 @@ function WaitingRoom() {
                                             
                                             // 이 카드가 선택되었는지 확인 (selectedCards만 확인)
                                             const isCardSelected = isSelected;
+                                            
                                             
                                             const canClick = isMyCard && !isCardSelected && !userAlreadySelected;
                                             
