@@ -94,14 +94,67 @@ function TeamSettingModal() {
 
     // 카드뽑기 시작
     const startCardDraw = () => {
+        // 팀 수 입력 받기
+        const teamCount = prompt('몇 팀으로 나누시겠습니까? (2-24팀)', '3');
+        
+        if (!teamCount || isNaN(teamCount) || teamCount < 2 || teamCount > 24) {
+            alert('팀 수는 2팀에서 24팀 사이로 설정해주세요.');
+            return;
+        }
+        
+        const teamCountNum = parseInt(teamCount);
+        
+        // 각 군별 멤버 수 확인
+        const gradeGroups = {};
+        members.forEach(member => {
+            const grade = member.grade || 0;
+            if (!gradeGroups[grade]) {
+                gradeGroups[grade] = [];
+            }
+            gradeGroups[grade].push(member);
+        });
+        
+        // 각 군별로 팀에 균등하게 분배
+        const cardDrawData = {};
+        Object.keys(gradeGroups).forEach(grade => {
+            const membersInGrade = gradeGroups[grade];
+            const membersPerTeam = Math.floor(membersInGrade.length / teamCountNum);
+            const remainingMembers = membersInGrade.length % teamCountNum;
+            
+            // 각 팀에 배정할 카드 번호 생성
+            const teamCards = [];
+            
+            // 각 팀에 기본 카드 수 배정
+            for (let team = 1; team <= teamCountNum; team++) {
+                const baseCount = membersPerTeam;
+                const extraCount = team <= remainingMembers ? 1 : 0;
+                const totalForThisTeam = baseCount + extraCount;
+                
+                // 해당 팀에 배정할 카드 번호들 추가
+                for (let i = 0; i < totalForThisTeam; i++) {
+                    teamCards.push(team);
+                }
+            }
+            
+            // 카드 섞기
+            for (let i = teamCards.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [teamCards[i], teamCards[j]] = [teamCards[j], teamCards[i]];
+            }
+            
+            cardDrawData[grade] = teamCards;
+        });
+        
         const payload = {
             action: "startCardDraw",
-            gameId: gameId
+            gameId: gameId,
+            teamCount: teamCountNum,
+            cardDrawData: cardDrawData
         };
         
         const success = sendAuthenticatedMessage(payload);
         if (success) {
-            alert('카드뽑기가 시작되었습니다!');
+            alert(`${teamCountNum}팀으로 카드뽑기가 시작되었습니다!`);
         } else {
             alert('서버와 연결되지 않았습니다. 잠시 후 다시 시도해주세요.');
         }

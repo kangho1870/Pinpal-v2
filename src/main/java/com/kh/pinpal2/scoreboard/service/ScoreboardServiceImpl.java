@@ -430,41 +430,55 @@ public class ScoreboardServiceImpl implements ScoreboardService {
      */
     @Override
     public void startCardDraw(CardDrawStartRequestDto request) {
-        log.info("카드뽑기 시작: gameId={}", request.gameId());
+        log.info("카드뽑기 시작: gameId={}, teamCount={}", request.gameId(), request.teamCount());
         
         try {
             // 게임 조회 및 카드뽑기 상태 활성화
             Game game = gameRepository.findById(request.gameId())
                     .orElseThrow(() -> new RuntimeException("게임을 찾을 수 없습니다."));
             
-            // 카드뽑기 상태가 아직 활성화되지 않았거나 카드뽑기 데이터가 없는 경우에만 새로 생성
             Map<Integer, List<Integer>> cardDrawData;
             
-            if (game.isCardDraw() == null || !game.isCardDraw() || game.getCardDrawData() == null || game.getCardDrawData().isEmpty()) {
-                // 새로운 카드뽑기 데이터 생성
-                cardDrawData = generateCardDrawData(request.gameId());
-                
-                // 카드뽑기 데이터를 JSON 문자열로 변환하여 DB에 저장
-                try {
-                    String cardDrawDataJson = objectMapper.writeValueAsString(cardDrawData);
-                    game.setCardDrawData(cardDrawDataJson);
-                    game.updateCardDraw(); // 카드뽑기 상태 활성화
-                    gameRepository.save(game);
-                    log.info("카드뽑기 데이터 저장 완료: gameId={}", request.gameId());
-                } catch (JsonProcessingException e) {
-                    log.error("카드뽑기 데이터 JSON 변환 실패: gameId={}, error={}", request.gameId(), e.getMessage());
-                    throw new RuntimeException("카드뽑기 데이터 저장 실패", e);
+            // 프론트엔드에서 전송한 카드뽑기 데이터가 있으면 사용, 없으면 기존 로직 사용
+            if (request.cardDrawData() != null && !request.cardDrawData().isEmpty()) {
+                // 프론트엔드에서 전송한 데이터 사용
+                cardDrawData = new HashMap<>();
+                for (Map.Entry<String, Object> entry : request.cardDrawData().entrySet()) {
+                    Integer grade = Integer.parseInt(entry.getKey());
+                    @SuppressWarnings("unchecked")
+                    List<Integer> cards = (List<Integer>) entry.getValue();
+                    cardDrawData.put(grade, cards);
                 }
+                log.info("프론트엔드에서 전송한 카드뽑기 데이터 사용: gameId={}, teamCount={}", request.gameId(), request.teamCount());
             } else {
-                // 이미 저장된 카드뽑기 데이터가 있으면 그것을 사용
-                try {
-                    cardDrawData = objectMapper.readValue(game.getCardDrawData(), 
-                        objectMapper.getTypeFactory().constructMapType(Map.class, Integer.class, List.class));
-                    log.info("저장된 카드뽑기 데이터 사용: gameId={}", request.gameId());
-                } catch (JsonProcessingException e) {
-                    log.error("저장된 카드뽑기 데이터 파싱 실패: gameId={}, error={}", request.gameId(), e.getMessage());
-                    throw new RuntimeException("카드뽑기 데이터 파싱 실패", e);
+                // 기존 로직: 카드뽑기 상태가 아직 활성화되지 않았거나 카드뽑기 데이터가 없는 경우에만 새로 생성
+                if (game.isCardDraw() == null || !game.isCardDraw() || game.getCardDrawData() == null || game.getCardDrawData().isEmpty()) {
+                    // 새로운 카드뽑기 데이터 생성
+                    cardDrawData = generateCardDrawData(request.gameId());
+                    log.info("새로운 카드뽑기 데이터 생성: gameId={}", request.gameId());
+                } else {
+                    // 이미 저장된 카드뽑기 데이터가 있으면 그것을 사용
+                    try {
+                        cardDrawData = objectMapper.readValue(game.getCardDrawData(), 
+                            objectMapper.getTypeFactory().constructMapType(Map.class, Integer.class, List.class));
+                        log.info("저장된 카드뽑기 데이터 사용: gameId={}", request.gameId());
+                    } catch (JsonProcessingException e) {
+                        log.error("저장된 카드뽑기 데이터 파싱 실패: gameId={}, error={}", request.gameId(), e.getMessage());
+                        throw new RuntimeException("카드뽑기 데이터 파싱 실패", e);
+                    }
                 }
+            }
+            
+            // 카드뽑기 데이터를 JSON 문자열로 변환하여 DB에 저장
+            try {
+                String cardDrawDataJson = objectMapper.writeValueAsString(cardDrawData);
+                game.setCardDrawData(cardDrawDataJson);
+                game.updateCardDraw(); // 카드뽑기 상태 활성화
+                gameRepository.save(game);
+                log.info("카드뽑기 데이터 저장 완료: gameId={}", request.gameId());
+            } catch (JsonProcessingException e) {
+                log.error("카드뽑기 데이터 JSON 변환 실패: gameId={}, error={}", request.gameId(), e.getMessage());
+                throw new RuntimeException("카드뽑기 데이터 저장 실패", e);
             }
             
             // STOMP 메시지로 모든 클라이언트에게 카드뽑기 데이터 전송
@@ -472,11 +486,12 @@ public class ScoreboardServiceImpl implements ScoreboardService {
             cardDrawStart.put("type", "cardDrawStart");
             cardDrawStart.put("gameId", request.gameId());
             cardDrawStart.put("cardData", cardDrawData);
+            cardDrawStart.put("teamCount", request.teamCount());
             cardDrawStart.put("timestamp", System.currentTimeMillis());
             
             String destination = "/sub/scoreboard/" + request.gameId();
             simpMessagingTemplate.convertAndSend(destination, cardDrawStart);
-            log.info("카드뽑기 시작 알림 전송 완료: destination={}", destination);
+            log.info("카드뽑기 시작 알림 전송 완료: destination={}, teamCount={}", destination, request.teamCount());
             
         } catch (Exception e) {
             log.error("카드뽑기 시작 실패: gameId={}, error={}", request.gameId(), e.getMessage());
