@@ -502,10 +502,8 @@ function WaitingRoom() {
                                                 member.memberId === memberId && member.teamNumber && member.teamNumber > 0
                                             );
                                             
-                                            // 이 카드가 선택되었는지 확인 (selectedCards와 members 모두 확인)
-                                            const isCardSelected = isSelected || members.some(member => 
-                                                member.teamNumber === teamNumber && member.teamNumber > 0
-                                            );
+                                            // 이 카드가 선택되었는지 확인 (selectedCards만 확인)
+                                            const isCardSelected = isSelected;
                                             
                                             const canClick = isMyCard && !isCardSelected && !userAlreadySelected;
                                             
