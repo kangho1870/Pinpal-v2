@@ -91,13 +91,22 @@ function WaitingRoom() {
         const success = sendAuthenticatedMessage(payload);
         if (success) {
             // 로컬 상태 업데이트
-            setSelectedCards(prev => ({
-                ...prev,
-                [`${grade}-${cardIndex}`]: {
-                    userId: memberId,
-                    teamNumber: teamNumber
-                }
-            }));
+            const cardKey = `${grade}-${cardIndex}`;
+            setSelectedCards(prev => {
+                const newSelectedCards = {
+                    ...prev,
+                    [cardKey]: {
+                        userId: memberId,
+                        teamNumber: teamNumber
+                    }
+                };
+                console.log('🎴 로컬 selectedCards 업데이트:', {
+                    cardKey,
+                    newSelectedCards,
+                    teamNumber
+                });
+                return newSelectedCards;
+            });
         } else {
             alert('서버와 연결되지 않았습니다. 잠시 후 다시 시도해주세요.');
         }
@@ -126,13 +135,22 @@ function WaitingRoom() {
             setCardDrawData(data.cardData);
         } else if (data.type === 'cardSelected') {
             // 1. selectedCards 상태 업데이트
-            setSelectedCards(prev => ({
-                ...prev,
-                [`${data.grade}-${data.cardIndex}`]: {
-                    userId: data.userId,
-                    teamNumber: data.teamNumber
-                }
-            }));
+            const cardKey = `${data.grade}-${data.cardIndex}`;
+            setSelectedCards(prev => {
+                const newSelectedCards = {
+                    ...prev,
+                    [cardKey]: {
+                        userId: data.userId,
+                        teamNumber: data.teamNumber
+                    }
+                };
+                console.log('🎴 WebSocket cardSelected 처리:', {
+                    cardKey,
+                    data,
+                    newSelectedCards
+                });
+                return newSelectedCards;
+            });
             
             // 2. members 배열의 해당 사용자 팀 번호 업데이트
             updateMemberTeamNumber(data.userId, data.teamNumber);
@@ -491,8 +509,18 @@ function WaitingRoom() {
                                     }}>
                                         {cardDrawData[grade].map((teamNumber, cardIndex) => {
                                             const cardKey = `${grade}-${cardIndex}`;
-                                            const isSelected = selectedCards[cardKey];
+                                            const isSelected = !!selectedCards[cardKey]; // 존재 여부만 확인
                                             const isMyCard = isMyGrade;
+                                            
+                                            // 디버깅 로그
+                                            if (isMyCard && selectedCards[cardKey]) {
+                                                console.log('🎴 카드 선택 상태:', {
+                                                    cardKey,
+                                                    isSelected,
+                                                    selectedCard: selectedCards[cardKey],
+                                                    teamNumber
+                                                });
+                                            }
                                             
                                             // 현재 사용자가 이미 다른 카드를 선택했는지 확인 (selectedCards와 members 모두 확인)
                                             const userAlreadySelected = Object.keys(selectedCards).some(key => {
