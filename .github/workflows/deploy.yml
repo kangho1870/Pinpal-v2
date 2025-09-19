@@ -219,16 +219,16 @@ jobs:
                 }
 
                 location /ws {
-                    proxy_pass http://localhost:8000/ws;
-                    proxy_http_version 1.1;
-                    proxy_set_header Upgrade \$http_upgrade;
-                    proxy_set_header Connection "upgrade";
-                    proxy_set_header Host \$host;
-                    proxy_set_header X-Real-IP \$remote_addr;
-                    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                    proxy_set_header X-Forwarded-Proto \$scheme;
-                    proxy_read_timeout 86400;
-                }
+                  proxy_pass http://localhost:8000;   # /ws를 그대로 백엔드에 전달
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Connection "upgrade";
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+                  proxy_read_timeout 86400;
+              }
             }
             EOF
 
@@ -242,3 +242,17 @@ jobs:
             sudo systemctl status nginx --no-pager
 
             echo "✅ Nginx WebSocket 프록시 설정 완료"
+            
+            # 프론트엔드 상태 확인
+            echo "=== 프론트엔드 상태 확인 ==="
+            echo "1. Nginx 상태:"
+            sudo systemctl status nginx --no-pager
+            echo "2. 프론트엔드 파일 확인:"
+            ls -la /home/root/pinpal-frontend/frontend-build/ | head -10
+            echo "3. index.html 존재 확인:"
+            test -f /home/root/pinpal-frontend/frontend-build/index.html && echo "✅ index.html 존재" || echo "❌ index.html 없음"
+            echo "4. 포트 확인:"
+            sudo netstat -tlnp | grep :80
+            sudo netstat -tlnp | grep :443
+            echo "5. 로컬 테스트:"
+            curl -I http://localhost 2>/dev/null | head -3 || echo "❌ HTTP 연결 실패"

@@ -62,7 +62,6 @@ export const WebSocketProvider = ({ children, gameId }) => {
 
         // STOMP 클라이언트 생성 (SockJS 사용)
         const client = new Client({
-            brokerURL: stompUrl,
             connectHeaders: {
                 Authorization: `Bearer ${token}`
             },
