@@ -69,7 +69,10 @@ jobs:
       - name: Build frontend
         run: |
           cd allcover_project
-          CI=false npm run build
+          echo "REACT_APP_API_URL=$REACT_APP_API_URL"
+          CI=false REACT_APP_API_URL=https://pinpal.co.kr npm run build
+          echo "=== 빌드된 파일에서 API URL 확인 ==="
+          grep -r "pinpal.co.kr" build/static/js/ | head -5 || echo "API URL을 찾을 수 없습니다"
         env:
           REACT_APP_API_URL: https://pinpal.co.kr
 
