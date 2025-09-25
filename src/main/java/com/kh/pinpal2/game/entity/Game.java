@@ -30,8 +30,8 @@ public class Game extends BaseUpdatableEntity {
     @Column(name = "score_counting")
     private boolean scoreCounting;
 
-    @Column(name = "card_draw")
-    private Boolean cardDraw;
+    @Column(name = "card_draw", nullable = false)
+    private Boolean cardDraw = false;
 
     @Column(name = "card_draw_data", columnDefinition = "TEXT")
     private String cardDrawData;
@@ -59,6 +59,7 @@ public class Game extends BaseUpdatableEntity {
         this.date = gameCreateDto.date();
         this.time = gameCreateDto.time();
         this.scoreCounting = true;
+        this.cardDraw = false; // 기본값 설정
         this.status = "ACTIVE";
         this.isDelete = false;
         this.club = club;
