@@ -1,5 +1,6 @@
 package com.kh.pinpal2.auth.service;
 
+import com.kh.pinpal2.user.dto.UserRespDto;
 import com.kh.pinpal2.user.entity.Role;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
@@ -15,13 +16,13 @@ import java.util.Map;
 @Getter
 public class CustomOAuth2User implements OAuth2User {
 
-    private String name;
+    private UserRespDto dto;
     private Map<String, Object> attributes;
     private Collection<? extends GrantedAuthority> authorities;
     private boolean existed;
 
-    public CustomOAuth2User(String name, Map<String, Object> attributes, boolean existed) {
-        this.name = name;
+    public CustomOAuth2User(UserRespDto dto, Map<String, Object> attributes, boolean existed) {
+        this.dto = dto;
         this.attributes = attributes;
         
         // role이 null이면 기본값 "USER" 사용
@@ -42,7 +43,7 @@ public class CustomOAuth2User implements OAuth2User {
 
     @Override
     public String getName() {
-        return this.name;
+        return this.dto.name();
     }
 
 }

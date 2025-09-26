@@ -14,11 +14,11 @@ public interface GameService {
 
     GameRespDto updateGame(GameUpdateDto gameUpdateDto);
 
-    void deleteGame(Long gameId);
+    void deleteGame(Long gameId, Long clubId);
 
-    GameRespDto joinGame(Long gameId);
+    GameRespDto joinGame(Long gameId, Long clubId);
 
-    GameRespDto joinCancelGame(Long gameId);
+    GameRespDto joinCancelGame(Long gameId, Long clubId);
 
     List<GameParticipantDto> getGameParticipants(Long gameId);
 

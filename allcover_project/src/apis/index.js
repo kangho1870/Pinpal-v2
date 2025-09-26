@@ -268,16 +268,16 @@ export const getClubScoreboardsRequest = async (clubId, startDate, endDate, game
     return responseBody;
 };
 
-export const gameJoinRequest = async (gameId, accessToken) => {
-    const responseBody = await axios.post(GAME_JOIN_API_URL(gameId), {}, bearerAuthorization(accessToken))
+export const gameJoinRequest = async (gameId, clubId, accessToken) => {
+    const responseBody = await axios.post(`${GAME_JOIN_API_URL(gameId)}?clubId=${clubId}`, {}, bearerAuthorization(accessToken))
         .then(responseDataHandler)
         .catch(responseErrorHandler);
 
     return responseBody;
 }
 
-export const gameJoinCancelRequest = async (gameId, accessToken) => {
-    const responseBody = await axios.delete(GAME_JOIN_CANCEL_API_URL(gameId), bearerAuthorization(accessToken))
+export const gameJoinCancelRequest = async (gameId, clubId, accessToken) => {
+    const responseBody = await axios.delete(`${GAME_JOIN_CANCEL_API_URL(gameId)}?clubId=${clubId}`, bearerAuthorization(accessToken))
         .then(responseDataHandler)
         .catch(responseErrorHandler);
     return responseBody;
@@ -387,6 +387,13 @@ export const addGameRequest = async (game, accessToken) => {
     const responseBody = await axios.post(`${ADD_GAME_API_URL}`, game, bearerAuthorization(accessToken))
         .then(responseDataHandler)
         .catch(responseErrorHandler)
+    return responseBody;
+}
+
+export const deleteGameRequest = async (gameId, clubId, accessToken) => {
+    const responseBody = await axios.delete(`${GAME_API_URL}?gameId=${gameId}&clubId=${clubId}`, bearerAuthorization(accessToken))
+        .then(responseDataHandler)
+        .catch(responseErrorHandler);
     return responseBody;
 }
 

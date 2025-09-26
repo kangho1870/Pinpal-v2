@@ -2,6 +2,7 @@ package com.kh.pinpal2.auth.service;
 
 import com.kh.pinpal2.base.provider.JwtProvider;
 import com.kh.pinpal2.user.entity.User;
+import com.kh.pinpal2.user.mapper.UserMapper;
 import com.kh.pinpal2.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +25,7 @@ public class OAuth2UserServiceImpl extends DefaultOAuth2UserService {
 
     private final UserRepository userRepository;
     private final JwtProvider jwtProvider;
+    private final UserMapper userMapper;
 
     // OAuth2 인증 정보를 받고 실행할 비즈니스 로직 메서드
     @Override
@@ -104,7 +106,7 @@ public class OAuth2UserServiceImpl extends DefaultOAuth2UserService {
             attributes.put("profileImageUrl", profileImageUrl);
             attributes.put("accountEmail", accountEmail);
             attributes.put("role", "USER"); // 신규 사용자는 기본적으로 USER 역할
-            customOAuth2User = new CustomOAuth2User(snsId, attributes, false);
+            customOAuth2User = new CustomOAuth2User(null, attributes, false);
         } else {
             log.info("기존 사용자 - SNS ID: {}, Provider: {}", snsId, registration);
             String memberId = user.getEmail();
@@ -114,7 +116,7 @@ public class OAuth2UserServiceImpl extends DefaultOAuth2UserService {
             attributes.put("accessToken", token);
             attributes.put("profileImageUrl", profileImageUrl);
             attributes.put("role", user.getRole().name()); // 기존 사용자의 역할 추가
-            customOAuth2User = new CustomOAuth2User(memberId, attributes, true);
+            customOAuth2User = new CustomOAuth2User(userMapper.toDto(user), attributes, true);
         }
 
         return customOAuth2User;

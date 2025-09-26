@@ -27,6 +27,8 @@ import com.kh.pinpal2.user_club.entity.ClubRole;
 import com.kh.pinpal2.user_club.entity.UserClub;
 import com.kh.pinpal2.user_club.repository.UserClubRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,6 +57,7 @@ public class GameServiceImpl implements GameService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "games", key = "#clubId", condition = "#cursor == null")
     public PageResponse<GameRespDto> findAllByClubId(Long clubId, Instant cursor) {
         List<Game> games = gameRepository.findAllByClubId(clubId, cursor, 50);
 
@@ -88,6 +91,7 @@ public class GameServiceImpl implements GameService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "games", key = "#gameCreateDto.clubId")
     public GameRespDto registerGame(GameCreateDto gameCreateDto) {
         Club club = clubRepository.findById(gameCreateDto.clubId()).orElseThrow(
                 ClubNotFoundException::new
@@ -111,6 +115,7 @@ public class GameServiceImpl implements GameService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "games", key = "#gameUpdateDto.clubId")
     public GameRespDto updateGame(GameUpdateDto gameUpdateDto) {
         Game game = gameRepository.findById(gameUpdateDto.gameId()).orElseThrow(
                 GameNotFoundException::new
@@ -140,8 +145,17 @@ public class GameServiceImpl implements GameService {
 
     @Override
     @Transactional
-    public void deleteGame(Long gameId) {
+    @CacheEvict(cacheNames = "games", key = "#clubId")
+    public void deleteGame(Long gameId, Long clubId) {
         if (!gameRepository.existsById(gameId)) throw new GameNotFoundException();
+
+        User user = SecurityUtil.getCurrentUser(userRepository);
+        Game game = gameRepository.findById(gameId).orElseThrow(GameNotFoundException::new);
+        UserClub userClub = userClubRepository.findByClubIdAndUserId(clubId, user.getId()).orElseThrow(UserNotFoundException::new);
+
+        if (!game.getClub().getId().equals(userClub.getClub().getId())) {
+            throw new PermissionDeniedException();
+        }
 
         scoreboardRepository.deleteByGameIds(List.of(gameId));
 
@@ -156,22 +170,22 @@ public class GameServiceImpl implements GameService {
 
     @Override
     @Transactional
-    public GameRespDto joinGame(Long gameId) {
+    @CacheEvict(cacheNames = "games", key = "#clubId")
+    public GameRespDto joinGame(Long gameId, Long clubId) {
         Game game = gameRepository.findById(gameId).orElseThrow(
                 GameNotFoundException::new
         );
 
         User user = SecurityUtil.getCurrentUser(userRepository);
 
-        userClubRepository.findByClubIdAndUserId(game.getClub().getId(), user.getId()).orElseThrow(
-                PermissionDeniedException::new
+        UserClub userClub = userClubRepository.findByClubIdAndUserId(clubId, user.getId()).orElseThrow(
+            PermissionDeniedException::new
         );
 
         if (scoreboardRepository.existsByGameIdAndUserId(gameId, user.getId())) {
             throw new UserAlreadyJoinedGameException();
         }
 
-        UserClub userClub = userClubRepository.findByClubIdAndUserId(game.getClub().getId(), user.getId()).orElseThrow(UserNotFoundException::new);
         Scoreboard scoreboard = new Scoreboard(game, user, userClub.getAvg());
         Scoreboard savedScoreboard = scoreboardRepository.save(scoreboard);
 
@@ -209,14 +223,15 @@ public class GameServiceImpl implements GameService {
 
     @Override
     @Transactional
-    public GameRespDto joinCancelGame(Long gameId) {
+    @CacheEvict(cacheNames = "games", key = "#clubId")
+    public GameRespDto joinCancelGame(Long gameId, Long clubId) {
         Game game = gameRepository.findById(gameId).orElseThrow(
                 GameNotFoundException::new
         );
 
         User user = SecurityUtil.getCurrentUser(userRepository);
 
-        userClubRepository.findByClubIdAndUserId(game.getClub().getId(), user.getId()).orElseThrow(
+        userClubRepository.findByClubIdAndUserId(clubId, user.getId()).orElseThrow(
                 PermissionDeniedException::new
         );
 
@@ -255,6 +270,12 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    @Cacheable(
+        cacheNames = "scoreboards",
+        key = "#clubId",
+        condition = "#startDate == null && #endDate == null && type == null"
+    )
     public List<GameScoreboardsRespDto> getScoreboardByClubId(Long clubId, LocalDate startDate, LocalDate endDate, String type) {
         clubRepository.findById(clubId).orElseThrow(ClubNotFoundException::new);
 

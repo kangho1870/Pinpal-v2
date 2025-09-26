@@ -5,7 +5,7 @@ import { useCookies } from "react-cookie";
 import { ACCESS_TOKEN, CLUB_DETAIL_PATH, ROOT_PATH, SCOREBOARD_PATH } from "../../constants";
 import { useNavigate, useParams } from "react-router-dom";
 import { onClickBackBtn } from "../../hooks";
-import { addGameRequest, clubJoinRequest, clubMemberAvgUpdateRequest, clubMemberRoleUpdateRequest, getCeremoniesRequest, getClubInfoRequest, getClubMembersRequest, getGameListRequest, getMemberListRequest, gameJoinRequest, gameJoinCancelRequest, getScoreboardMembers, getClubScoreboardsRequest, exportScoreboardExcelRequest } from "../../apis";
+import { addGameRequest, clubJoinRequest, clubMemberAvgUpdateRequest, clubMemberRoleUpdateRequest, getCeremoniesRequest, getClubInfoRequest, getClubMembersRequest, getGameListRequest, getMemberListRequest, gameJoinRequest, gameJoinCancelRequest, getScoreboardMembers, getClubScoreboardsRequest, exportScoreboardExcelRequest, deleteGameRequest } from "../../apis";
 import Loading from "../components/loading/Loading";
 import useClubStore from "../../stores/useClubStore";
 import { tr } from "framer-motion/client";
@@ -140,6 +140,74 @@ function MyClub() {
             return false;
         }
         return game.participantUserIds.includes(memberId);
+    };
+
+    const handleDeleteGame = async (gameId, gameName) => {
+        if (!window.confirm(`"${gameName}" 게임을 삭제하시겠습니까?\n삭제된 게임은 복구할 수 없습니다.`)) {
+            return;
+        }
+
+        setLoading(true);
+        try {
+            await deleteGameRequest(gameId, clubId, cookies[ACCESS_TOKEN]);
+            alert('게임이 성공적으로 삭제되었습니다.');
+            // 게임 목록 새로고침
+            getGameListRequest(clubId, cookies[ACCESS_TOKEN]).then((responseBody) => {
+                if (!responseBody) {
+                    alert('서버에 문제가 있습니다.');
+                    return;
+                }
+                
+                // 백엔드에서 PageResponse<GameRespDto>를 반환하는 경우
+                if (responseBody.content !== undefined) {
+                    const { content: games } = responseBody;
+                    
+                    if (games && Array.isArray(games)) {
+                        // 백엔드 응답 구조를 프론트엔드에서 사용하는 구조로 변환
+                        const transformedGames = games.map(game => ({
+                            id: game.id,
+                            gameName: game.name,
+                            gameDate: game.date,
+                            gameTime: game.time,
+                            gameType: game.type,
+                            members: game.members || [],
+                            participantUserIds: game.participantUserIds || [],
+                            status: game.status || 'ACTIVE'
+                        }));
+                        
+                        setGames(transformedGames);
+                        // 참여한 게임들 추출
+                        const participatedGameIds = new Set();
+                        transformedGames.forEach(game => {
+                            if (isUserParticipatingInGame(game)) {
+                                participatedGameIds.add(game.id);
+                            }
+                        });
+                        setParticipatedGames(participatedGameIds);
+                    } else {
+                        setGames([]);
+                    }
+                } else if (Array.isArray(responseBody)) {
+                    // 백엔드에서 배열을 직접 반환하는 경우
+                    setGames(responseBody);
+                    // 참여한 게임들 추출
+                    const participatedGameIds = new Set();
+                    responseBody.forEach(game => {
+                        if (isUserParticipatingInGame(game)) {
+                            participatedGameIds.add(game.id);
+                        }
+                    });
+                    setParticipatedGames(participatedGameIds);
+                } else {
+                    setGames([]);
+                }
+            });
+        } catch (error) {
+            const errorMessage = error.response?.data?.message || error.message || '게임 삭제에 실패했습니다.';
+            alert(`게임 삭제 실패: ${errorMessage}`);
+        } finally {
+            setLoading(false);
+        }
     };
 
     // 게임 목록에서 참여한 게임들을 추출하는 함수
@@ -326,7 +394,7 @@ function MyClub() {
                     </div>
                 </div>
                 <div className={styles.contextArea}>
-                    {page === 0 && <ClubHome clubInfo={clubInfo} setLoading={setLoading} pageLoad={pageLoad} participatedGames={participatedGames} setParticipatedGames={setParticipatedGames} clubId={clubId}></ClubHome>}
+                    {page === 0 && <ClubHome clubInfo={clubInfo} setLoading={setLoading} pageLoad={pageLoad} participatedGames={participatedGames} setParticipatedGames={setParticipatedGames} clubId={clubId} handleDeleteGame={handleDeleteGame}></ClubHome>}
                     {page === 1 && <ClubCeremony setLoading={setLoading}></ClubCeremony>}
                     {page === 3 && <ClubRanking setLoading={setLoading}></ClubRanking>}
                     {page === 4 && <ClubSetting setLoading={setLoading} pageLoad={pageLoad} clubId={clubId}></ClubSetting>}
@@ -369,7 +437,7 @@ function MyClub() {
 
 export default MyClub;
 
-function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setParticipatedGames, clubId }) {
+function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setParticipatedGames, clubId, handleDeleteGame }) {
 
     const { members, ceremonys, games } = useClubStore();
     const { signInUser, setSignInUser } = useSignInStore();
@@ -543,7 +611,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
         setLoading(true);
         
         if (isJoining) {
-            gameJoinRequest(gameId, token)
+            gameJoinRequest(gameId, clubId, token)
                 .then(gameJoinResponse)
                 .catch((error) => {
                     const errorMessage = error.response?.data?.details || error.response?.data?.message || error.message;
@@ -559,7 +627,7 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                     setLoading(false);
                 });
         } else {
-            gameJoinCancelRequest(gameId, token)
+            gameJoinCancelRequest(gameId, clubId, token)
                 .then(gameJoinCancelResponse)
                 .catch((error) => {
                     alert('게임 참여 취소에 실패했습니다: ' + (error.response?.data?.message || error.message));
@@ -674,6 +742,25 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                                 참석불가
                                                             </button>
                                                         )}
+                                                        {/* 관리자만 게임 삭제 가능 */}
+                                                        {roles === 'STAFF' || roles === 'MASTER' && (
+                                                            <button 
+                                                                className={styles.scheduleDeleteBtn}
+                                                                onClick={() => handleDeleteGame(game.id, game.name)}
+                                                                style={{
+                                                                    backgroundColor: '#dc3545',
+                                                                    color: 'white',
+                                                                    border: 'none',
+                                                                    borderRadius: '4px',
+                                                                    padding: '8px 12px',
+                                                                    marginLeft: '8px',
+                                                                    cursor: 'pointer',
+                                                                    fontSize: '14px'
+                                                                }}
+                                                            >
+                                                                삭제
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <div className={styles.scheduleContnet}>
@@ -761,6 +848,25 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                                 }}
                                                             >
                                                                 {game.status === "FINISHED" ? "게임종료" : "참석불가"}
+                                                            </button>
+                                                        )}
+                                                        {/* 관리자만 게임 삭제 가능 */}
+                                                        {roles === 'STAFF' || roles === 'MASTER' && (
+                                                            <button 
+                                                                className={styles.scheduleDeleteBtn}
+                                                                onClick={() => handleDeleteGame(game.id, game.name)}
+                                                                style={{
+                                                                    backgroundColor: '#dc3545',
+                                                                    color: 'white',
+                                                                    border: 'none',
+                                                                    borderRadius: '4px',
+                                                                    padding: '8px 12px',
+                                                                    marginLeft: '8px',
+                                                                    cursor: 'pointer',
+                                                                    fontSize: '14px'
+                                                                }}
+                                                            >
+                                                                삭제
                                                             </button>
                                                         )}
                                                     </div>
@@ -857,6 +963,25 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
                                                                 }}
                                                             >
                                                                 {game.status === "FINISHED" ? "게임종료" : "참석불가"}
+                                                            </button>
+                                                        )}
+                                                        {/* 관리자만 게임 삭제 가능 */}
+                                                        {roles === 'STAFF' || roles === 'MASTER' && (
+                                                            <button 
+                                                                className={styles.scheduleDeleteBtn}
+                                                                onClick={() => handleDeleteGame(game.id, game.name)}
+                                                                style={{
+                                                                    backgroundColor: '#dc3545',
+                                                                    color: 'white',
+                                                                    border: 'none',
+                                                                    borderRadius: '4px',
+                                                                    padding: '8px 12px',
+                                                                    marginLeft: '8px',
+                                                                    cursor: 'pointer',
+                                                                    fontSize: '14px'
+                                                                }}
+                                                            >
+                                                                삭제
                                                             </button>
                                                         )}
                                                     </div>

@@ -27,6 +27,9 @@ import com.kh.pinpal2.user_club.dto.UserClubRespDto;
 import com.kh.pinpal2.user_club.entity.UserClub;
 import com.kh.pinpal2.user_club.repository.UserClubRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,6 +55,7 @@ public class ClubServiceImpl implements ClubService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "clubs", allEntries = true)
     public ClubRespDto register(ClubCreateDto clubCreateDto) {
         // 현재 인증된 사용자 정보 가져오기
         User user = SecurityUtil.getCurrentUser(userRepository);
@@ -67,6 +71,7 @@ public class ClubServiceImpl implements ClubService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "clubs", allEntries = true)
     public ClubRespDto updateClub(Long clubId, ClubUpdateDto clubUpdateDto) {
         Club club = clubRepository.findById(clubId).orElseThrow(
                 ClubNotFoundException::new
@@ -86,6 +91,10 @@ public class ClubServiceImpl implements ClubService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(cacheNames = "clubs", allEntries = true),      // 클럽 목록 캐시 무효화
+        @CacheEvict(cacheNames = "users", key = "#clubId")         // 해당 클럽 멤버 캐시 무효화
+    })
     public UserClubRespDto joinClub(Long clubId) {
         // 현재 인증된 사용자 정보 가져오기
         User user = SecurityUtil.getCurrentUser(userRepository);
@@ -108,6 +117,10 @@ public class ClubServiceImpl implements ClubService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(
+        cacheNames = "clubs",
+        condition = "#cursor == null && #page == null"
+    )
     public PageResponse<ClubRespDto> getAllClubs(Instant cursor, Integer page) {
         // cursor가 있으면 cursor 기반 페이지네이션, 없으면 page 기반 페이지네이션
         List<Club> clubs;
@@ -141,6 +154,7 @@ public class ClubServiceImpl implements ClubService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "clubs", key = "#clubId")
     public ClubRespDto getClubById(Long clubId) {
         Club club = clubRepository.findById(clubId).orElseThrow(
                 ClubNotFoundException::new
@@ -150,6 +164,7 @@ public class ClubServiceImpl implements ClubService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "users", key = "#clubId")
     public List<UserClubRespDto> getClubMembers(Long clubId) {
         List<UserClub> userClubs = userClubRepository.findByClubId(clubId);
         return userClubs.stream()
@@ -159,6 +174,10 @@ public class ClubServiceImpl implements ClubService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(cacheNames = "clubs", allEntries = true),      // 클럽 목록 캐시 무효화
+        @CacheEvict(cacheNames = "users", key = "#clubId")         // 해당 클럽 멤버 캐시 무효화
+    })
     public void delete(Long clubId) {
         Club club = clubRepository.findById(clubId).orElseThrow(
                 ClubNotFoundException::new
@@ -198,6 +217,8 @@ public class ClubServiceImpl implements ClubService {
     }
 
     @Override
+    @Transactional
+    @CacheEvict(cacheNames = "users", key = "#clubId")
     public List<UserClubRespDto> updateAvgAndGradeByMembers(Long clubId, UserClubAvgUpdateReqDto userClubAvgUpdateReqDto) {
         Club club = clubRepository.findById(clubId).orElseThrow(ClubNotFoundException::new);
 
@@ -231,6 +252,8 @@ public class ClubServiceImpl implements ClubService {
     }
 
     @Override
+    @Transactional
+    @CacheEvict(cacheNames = "users", key = "#clubId")
     public void updateRoleByMember(Long clubId, UserClubRoleUpdateReqDto userClubRoleUpdateReqDto) {
         Club club = clubRepository.findById(clubId).orElseThrow(ClubNotFoundException::new);
 

@@ -11,6 +11,7 @@ import com.kh.pinpal2.game.entity.Game;
 import com.kh.pinpal2.game.repository.GameRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,7 @@ public class CeremonyServiceImpl implements CeremonyService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "recentCeremonies", key = "#clubId")
     public Map<Long, List<CeremonyRespDto>> getCeremoniesByClubId(Long clubId) {
         // 1. 클럽의 최근 5게임 조회 (ID 내림차순 정렬)
         List<Game> games = gameRepository.findRecentGamesByClubId(clubId, Limit.of(5));
@@ -42,14 +44,6 @@ public class CeremonyServiceImpl implements CeremonyService {
         });
 
         Map<Long, List<CeremonyRespDto>> result = new HashMap<>();
-
-        // 디버깅: 모든 ceremony 조회
-        List<Object[]> allCeremonies = ceremonyRepository.getAllCeremonies();
-        log.info("=== 모든 ceremony 데이터 ===");
-        log.info("전체 ceremony 개수: {}", allCeremonies.size());
-        for(Object[] row : allCeremonies) {
-            log.info("ceremony: id={}, type={}, game_id={}", row[0], row[1], row[2]);
-        }
 
         // 2. 최근 5게임의 Ceremony 조회
         games.forEach(game -> {

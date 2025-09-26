@@ -1,7 +1,7 @@
 # 기본 설정 (공통)
 spring:
   profiles:
-    active: prod  # 기본값은 dev 프로필
+    active: dev  # 기본값은 dev 프로필
 
 # 공통 설정들
 jwt:
@@ -14,3 +14,11 @@ management:
   endpoint:
     info:
       enabled: true
+pinpal:
+  jwt:
+    access-token:
+      secret: ${ACCESS_TOKEN_SECRET}
+      expiration-ms: ${ACCESS_TOKEN_EXPIRATION_MS}
+    refresh-token:
+      secret: ${REFRESH_TOKEN_SECRET}
+      expiration-ms: ${REFRESH_TOKEN_EXPIRATION_MS}

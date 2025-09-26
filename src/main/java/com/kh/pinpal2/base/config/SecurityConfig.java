@@ -3,6 +3,8 @@ package com.kh.pinpal2.base.config;
 import com.kh.pinpal2.auth.service.OAuth2UserServiceImpl;
 import com.kh.pinpal2.base.filter.JwtAuthenticationFilter;
 import com.kh.pinpal2.base.handler.OAuth2SuccessHandler;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.context.annotation.Bean;
@@ -15,9 +17,14 @@ import org.springframework.security.config.annotation.web.configurers.HttpBasicC
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.function.Supplier;
 
 @Configurable
 @Configuration
@@ -36,9 +43,11 @@ public class SecurityConfig {
         security
                 // basic 인증 방식 미사용
                 .httpBasic(HttpBasicConfigurer::disable)
-                // session 미사용 (유지 x)
-                .sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // CSRF 취약점 대비 미지정
+                // session 사용 (CSRF 토큰을 위해 필요)
+                .sessionManagement(session -> session
+                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                // CSRF 비활성화 (JWT 토큰 기반 인증에서는 불필요)
                 .csrf(CsrfConfigurer::disable)
                 // CORS 정책 설정
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()));

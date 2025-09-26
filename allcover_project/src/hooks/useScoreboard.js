@@ -14,7 +14,7 @@ import {
   scoreboardGameStop
 } from '../apis';
 
-const useScoreboard = () => {
+const useScoreboard = (clubId) => {
   const [cookies] = useCookies(['accessToken']);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -56,7 +56,7 @@ const useScoreboard = () => {
     setError(null);
     
     try {
-      const response = await gameJoinRequest(gameId, cookies.accessToken);
+      const response = await gameJoinRequest(gameId, clubId, cookies.accessToken);
       
       if (response && response.id && response.name) {
         // 성공적으로 게임에 참여함
@@ -72,7 +72,7 @@ const useScoreboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [cookies.accessToken]);
+  }, [cookies.accessToken, clubId]);
 
   // 스코어보드 참가 취소
   const cancelScoreboardJoin = useCallback(async (gameId) => {
@@ -80,7 +80,7 @@ const useScoreboard = () => {
     setError(null);
     
     try {
-      const response = await gameJoinCancelRequest(gameId, cookies.accessToken);
+      const response = await gameJoinCancelRequest(gameId, clubId, cookies.accessToken);
       
       if (response && response.id && response.name) {
         // 성공적으로 게임 참여를 취소함
@@ -96,7 +96,7 @@ const useScoreboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [cookies.accessToken]);
+  }, [cookies.accessToken, clubId]);
 
   // 사이드 참가
   const joinSide = useCallback(async (gameId, memberId, sideType) => {

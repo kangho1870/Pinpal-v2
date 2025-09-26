@@ -46,6 +46,9 @@ logging:
     com.kh.pinpal2: DEBUG
     org.springframework.security: DEBUG
     org.springframework.web: DEBUG
+    # Spring Cache 관련 디버그 로그 활성화 (캐시 Hit/Miss 추적)
+    org.springframework.cache: DEBUG
+    org.springframework.cache.interceptor: TRACE
 
 management:
   endpoints:

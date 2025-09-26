@@ -44,8 +44,8 @@ public class GameController {
     }
 
     @DeleteMapping
-    public ResponseEntity<Void> deleteGame(@RequestParam Long gameId) {
-        gameService.deleteGame(gameId);
+    public ResponseEntity<Void> deleteGame(@RequestParam Long gameId, @RequestParam Long clubId) {
+        gameService.deleteGame(gameId, clubId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
@@ -56,14 +56,14 @@ public class GameController {
     }
 
     @PostMapping("/{gameId}/scoreboards")
-    public ResponseEntity<GameRespDto> joinGame(@PathVariable Long gameId) {
-        GameRespDto response = gameService.joinGame(gameId);
+    public ResponseEntity<GameRespDto> joinGame(@PathVariable Long gameId, @RequestParam Long clubId) {
+        GameRespDto response = gameService.joinGame(gameId, clubId);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @DeleteMapping("/{gameId}/scoreboards")
-    public ResponseEntity<GameRespDto> joinCancelGame(@PathVariable Long gameId) {
-        GameRespDto response = gameService.joinCancelGame(gameId);
+    public ResponseEntity<GameRespDto> joinCancelGame(@PathVariable Long gameId, @RequestParam Long clubId) {
+        GameRespDto response = gameService.joinCancelGame(gameId, clubId);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 

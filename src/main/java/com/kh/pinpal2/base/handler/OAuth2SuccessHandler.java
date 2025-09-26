@@ -153,9 +153,11 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         // 회원가입이 되어있을경우
         if (existed) {
-            User user = userRepository.findByEmail(customOAuth2User.getName()).orElse(null);
-            user.updateProfile((String) attributes.get("profileImageUrl"));
-            userRepository.save(user);
+            User user = userRepository.findById(customOAuth2User.getDto().id()).orElse(null);
+            if (user.getProfile().equals((String) attributes.get("profileImageUrl"))) {
+                user.updateProfile((String) attributes.get("profileImageUrl"));
+                userRepository.save(user);
+            }
             String accessToken = (String) attributes.get("accessToken");
 
             // 토큰이 있는 경우에만 리다이렉트

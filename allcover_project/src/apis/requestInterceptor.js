@@ -3,6 +3,9 @@ import axios from 'axios';
 // 진행 중인 요청을 추적하는 Map (타임스탬프 포함)
 const pendingRequests = new Map();
 
+// CSRF 토큰 저장
+let csrfToken = null;
+
 // 요청 타임아웃 (3초로 단축)
 const REQUEST_TIMEOUT = 3000;
 
@@ -30,11 +33,24 @@ const generateRequestKey = (config) => {
     return `${method?.toUpperCase() || 'GET'}:${url}${sortedParams ? `?${sortedParams}` : ''}${requestData ? `:${requestData}` : ''}`;
 };
 
-// 요청 인터셉터 - 중복 요청 방지
+// CSRF 토큰 설정 함수
+export const setCsrfToken = (token) => {
+    csrfToken = token;
+    console.log('🔒 CSRF 토큰 설정:', token);
+};
+
+// CSRF 토큰 가져오기 함수
+export const getCsrfToken = () => {
+    return csrfToken;
+};
+
+// 요청 인터셉터 - 중복 요청 방지 및 CSRF 토큰 추가
 axios.interceptors.request.use(
     (config) => {
         const requestKey = generateRequestKey(config);
         const currentTime = Date.now();
+        
+        // CSRF 토큰 비활성화됨 (JWT 토큰 기반 인증 사용)
         
         // 페이지 로드 후 2초 이내의 요청은 중복 요청 방지 비활성화
         if (currentTime - pageLoadTime < 2000) {
@@ -98,7 +114,7 @@ axios.interceptors.request.use(
     }
 );
 
-// 응답 인터셉터 - 요청 완료 후 pendingRequests에서 제거
+// 응답 인터셉터 - 요청 완료 후 pendingRequests에서 제거 및 CSRF 토큰 업데이트
 axios.interceptors.response.use(
     (response) => {
         const requestKey = response.config.requestKey;
@@ -106,6 +122,12 @@ axios.interceptors.response.use(
         if (requestKey) {
             pendingRequests.delete(requestKey);
             console.log('✅ 요청 완료:', requestKey);
+        }
+        
+        // CSRF 토큰 업데이트 (응답 헤더에서)
+        const newCsrfToken = response.headers['x-csrf-token'];
+        if (newCsrfToken && newCsrfToken !== csrfToken) {
+            setCsrfToken(newCsrfToken);
         }
         
         return response;
@@ -116,6 +138,14 @@ axios.interceptors.response.use(
         if (requestKey) {
             pendingRequests.delete(requestKey);
             console.log('❌ 요청 실패:', requestKey);
+        }
+        
+        // CSRF 토큰 업데이트 (에러 응답에서도)
+        if (error.response?.headers['x-csrf-token']) {
+            const newCsrfToken = error.response.headers['x-csrf-token'];
+            if (newCsrfToken !== csrfToken) {
+                setCsrfToken(newCsrfToken);
+            }
         }
         
         // 중복 요청 에러인 경우 특별 처리
