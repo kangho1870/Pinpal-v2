@@ -2,8 +2,7 @@
     display: flex;
     flex-direction: column;
     scrollbar-width: none;
-    height: calc(var(--vh, 1vh) * 100);
-    overflow: hidden;
+    min-height: 100vh;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
@@ -35,10 +34,7 @@
 .contentsBox {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - var(--header-height) - var(--bottom-nav-height));
-    height: calc((var(--vh, 1vh) * 100) - var(--header-height) - var(--bottom-nav-height));
-    overflow-y: auto;
-    overflow-x: hidden;
+    flex: 1;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
 }

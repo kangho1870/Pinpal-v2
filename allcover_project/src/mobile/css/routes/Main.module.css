@@ -1,13 +1,12 @@
 .container {
     display: flex;
     flex-direction: column;
-    height: calc(var(--vh, 1vh) * 100);
+    min-height: 100vh;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     width: 100%;
     margin: 0px auto;
     padding: 0 1rem;
     position: relative;
-    overflow: hidden;
 }
 
 .container::before {
