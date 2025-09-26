@@ -14,11 +14,3 @@ management:
   endpoint:
     info:
       enabled: true
-pinpal:
-  jwt:
-    access-token:
-      secret: ${ACCESS_TOKEN_SECRET}
-      expiration-ms: ${ACCESS_TOKEN_EXPIRATION_MS}
-    refresh-token:
-      secret: ${REFRESH_TOKEN_SECRET}
-      expiration-ms: ${REFRESH_TOKEN_EXPIRATION_MS}
