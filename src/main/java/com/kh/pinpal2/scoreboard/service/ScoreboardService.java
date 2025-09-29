@@ -17,4 +17,6 @@ public interface ScoreboardService {
     void startCardDraw(CardDrawStartRequestDto request);
     void selectCard(CardSelectRequestDto request);
     void resetCardDraw(CardDrawStartRequestDto request);
+
+    void updateAvg(AvgUpdateRequestDto request);
 }

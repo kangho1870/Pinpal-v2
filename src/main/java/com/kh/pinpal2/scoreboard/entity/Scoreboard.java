@@ -99,4 +99,8 @@ public class Scoreboard extends BaseUpdatableEntity {
         this.confirmed = confirmed;
         this.confirmDate = Instant.now();
     }
+
+    public void updateAvg(int avg) {
+        this.avg = avg;
+    }
 }

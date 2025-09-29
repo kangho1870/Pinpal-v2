@@ -1882,7 +1882,7 @@ function ClubSetting({ pageLoad, clubId }) {
 
     return (
         <div className={styles.container}>
-            <div className={styles.clubNav}>
+            <div className={styles.settingNav}>
                 <button
                     className={`${styles.clubNavBtns} ${page === 0 ? styles.selectedClubNavBtn : ""}`}
                     onClick={() => setPage(0)}

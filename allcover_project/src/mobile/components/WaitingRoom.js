@@ -25,6 +25,9 @@ function WaitingRoom() {
     const [currentUserRole, setCurrentUserRole] = useState(null);
     const [showHandicapInput, setShowHandicapInput] = useState(false);
     const [handicapInput, setHandicapInput] = useState(femaleHandicap.toString());
+    const [showAvgEditModal, setShowAvgEditModal] = useState(false);
+    const [selectedMemberForAvg, setSelectedMemberForAvg] = useState(null);
+    const [avgInput, setAvgInput] = useState('');
 
     const memberId = signInUser?.id || null;
     const gameId = searchParams.get("gameId");
@@ -174,6 +177,16 @@ function WaitingRoom() {
                 // setMembers로 상태 업데이트
                 setMembers(updatedMembers);
             }
+        } else if (data.type === 'avgUpdated') {
+            // 에버리지 업데이트 처리
+            const currentMembers = useScoreboard.getState().members;
+            const updatedMembers = currentMembers.map(member => {
+                if (member.memberId === data.userId) {
+                    return { ...member, memberAvg: data.memberAvg };
+                }
+                return member;
+            });
+            setMembers(updatedMembers);
         }
     }, []);
 
@@ -267,6 +280,43 @@ function WaitingRoom() {
         setShowHandicapInput(false);
     };
 
+    // 에버리지 수정 관련 함수들
+    const openAvgEditModal = (member) => {
+        setSelectedMemberForAvg(member);
+        setAvgInput(member?.memberAvg?.toString() || '');
+        setShowAvgEditModal(true);
+    };
+
+    const handleAvgEditConfirm = () => {
+        const newAvg = parseInt(avgInput);
+        if (isNaN(newAvg) || newAvg < 0) {
+            alert('올바른 에버리지를 입력해주세요.');
+            return;
+        }
+
+        const payload = {
+            action: "updateAvg",
+            gameId: parseInt(gameId),
+            userId: selectedMemberForAvg.memberId,
+            avg: newAvg
+        };
+
+        const success = sendAuthenticatedMessage(payload);
+        if (success) {
+            setShowAvgEditModal(false);
+            setSelectedMemberForAvg(null);
+            setAvgInput('');
+        } else {
+            alert('서버와 연결되지 않았습니다. 잠시 후 다시 시도해주세요.');
+        }
+    };
+
+    const handleAvgEditCancel = () => {
+        setShowAvgEditModal(false);
+        setSelectedMemberForAvg(null);
+        setAvgInput('');
+    };
+
     return (
         <div className={styles.mainBox}>
             <div className={styles.contentsBox}>
@@ -293,6 +343,16 @@ function WaitingRoom() {
                                             </div>
                                             <div className={styles.description}>
                                                 <p>{member?.memberAvg}</p>
+                                                {/* 운영진만 에버리지 수정 버튼 표시 */}
+                                                {(currentUserRole === "STAFF" || currentUserRole === "MASTER") && (
+                                                    <button 
+                                                        className={styles.avgEditBtn}
+                                                        onClick={() => openAvgEditModal(member)}
+                                                        title="에버리지 수정"
+                                                    >
+                                                        <i className="fa-solid fa-edit"></i>
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -601,6 +661,121 @@ function WaitingRoom() {
                                 }}
                             >
                                 닫기
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            
+            {/* 에버리지 수정 모달 */}
+            {showAvgEditModal && selectedMemberForAvg && (
+                <div style={{
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: "rgba(0, 0, 0, 0.8)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    zIndex: 1000,
+                    padding: "20px"
+                }}>
+                    <div style={{
+                        background: "white",
+                        borderRadius: "16px",
+                        padding: "24px",
+                        maxWidth: "400px",
+                        width: "100%"
+                    }}>
+                        <h3 style={{
+                            marginBottom: "20px", 
+                            color: "#004EA2", 
+                            textAlign: "center",
+                            fontSize: "18px"
+                        }}>
+                            에버리지 수정
+                        </h3>
+                        
+                        <div style={{
+                            marginBottom: "16px",
+                            padding: "12px",
+                            background: "#f8f9fa",
+                            borderRadius: "8px",
+                            textAlign: "center"
+                        }}>
+                            <p style={{ margin: "0 0 8px 0", color: "#6c757d", fontSize: "14px" }}>수정할 사용자</p>
+                            <h4 style={{ margin: "0", color: "#004EA2" }}>{selectedMemberForAvg.memberName}</h4>
+                            <p style={{ margin: "4px 0 0 0", color: "#6c757d", fontSize: "12px" }}>
+                                현재 에버리지: {selectedMemberForAvg.memberAvg}
+                            </p>
+                        </div>
+                        
+                        <div style={{ marginBottom: "20px" }}>
+                            <label style={{
+                                display: "block",
+                                marginBottom: "8px",
+                                fontSize: "14px",
+                                fontWeight: "600",
+                                color: "#004EA2"
+                            }}>
+                                새로운 에버리지
+                            </label>
+                            <input
+                                type="number"
+                                value={avgInput}
+                                onChange={(e) => setAvgInput(e.target.value)}
+                                placeholder="에버리지를 입력하세요"
+                                style={{
+                                    width: "100%",
+                                    padding: "12px",
+                                    border: "2px solid #e9ecef",
+                                    borderRadius: "8px",
+                                    fontSize: "16px",
+                                    boxSizing: "border-box"
+                                }}
+                                min="0"
+                                max="300"
+                            />
+                        </div>
+                        
+                        <div style={{
+                            display: "flex",
+                            gap: "12px",
+                            justifyContent: "center"
+                        }}>
+                            <button
+                                onClick={handleAvgEditConfirm}
+                                style={{
+                                    background: "#28a745",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "8px",
+                                    padding: "12px 24px",
+                                    fontSize: "16px",
+                                    fontWeight: "600",
+                                    cursor: "pointer",
+                                    flex: 1
+                                }}
+                            >
+                                확인
+                            </button>
+                            <button
+                                onClick={handleAvgEditCancel}
+                                style={{
+                                    background: "#6c757d",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "8px",
+                                    padding: "12px 24px",
+                                    fontSize: "16px",
+                                    fontWeight: "600",
+                                    cursor: "pointer",
+                                    flex: 1
+                                }}
+                            >
+                                취소
                             </button>
                         </div>
                     </div>

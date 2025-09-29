@@ -121,6 +121,26 @@ public class WebsocketRequiredEventListener {
         }
     }
 
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void update(ScoreboardAvgUpdate request) {
+        sendAvgUpdate(request.gameId(), request.userId(), request.memberAvg());
+    }
+
+    private void sendAvgUpdate(Long gameId, Long userId, int memberAvg) {
+        try {
+            Map<String, Object> updateData = new HashMap<>();
+            updateData.put("type", "avgUpdated");
+            updateData.put("gameId", gameId);
+            updateData.put("userId", userId);
+            updateData.put("memberAvg", memberAvg);
+
+            String destination = "/sub/scoreboard/" + gameId;
+            messagingTemplate.convertAndSend(destination, updateData);
+        } catch (Exception e) {
+
+        }
+    }
+
     private void sendConfirmUpdate(Long gameId, Long userId, boolean confirmed) {
         try {
             Map<String, Object> updateData = new HashMap<>();

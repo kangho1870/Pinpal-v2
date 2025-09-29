@@ -297,6 +297,9 @@ export const WebSocketProvider = ({ children, gameId }) => {
                 case 'resetCardDraw':
                     destination = '/pub/resetCardDraw';
                     break;
+                case 'updateAvg':
+                    destination = '/pub/updateAvg';
+                    break;
                 default:
                     destination = '/pub/default';
             }

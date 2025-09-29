@@ -578,4 +578,14 @@ public class ScoreboardServiceImpl implements ScoreboardService {
             log.error("카드뽑기 초기화 실패: gameId={}, error={}", request.gameId(), e.getMessage());
         }
     }
+
+    @Override
+    public void updateAvg(AvgUpdateRequestDto request) {
+        Scoreboard scoreboard = scoreboardRepository.findByGameIdAndUserId(request.gameId(), request.userId()).orElseThrow(ScoreboardNotFoundException::new);
+
+        scoreboard.updateAvg(request.avg());
+        scoreboardRepository.save(scoreboard);
+
+        eventPublisher.publishEvent(new ScoreboardAvgUpdate(request.gameId(), request.userId(), request.avg()));
+    }
 }

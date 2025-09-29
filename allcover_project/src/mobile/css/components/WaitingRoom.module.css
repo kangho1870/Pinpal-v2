@@ -638,6 +638,34 @@
     box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
 }
 
+/* 에버리지 수정 버튼 */
+.avgEditBtn {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-left: 8px;
+    font-size: 10px;
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+}
+
+.avgEditBtn:hover {
+    background: linear-gradient(135deg, #0056b3, #004085);
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.4);
+}
+
+.avgEditBtn:active {
+    transform: scale(0.95);
+}
+
 /* 반응형 핸디캡 스타일 */
 @media screen and (max-width: 480px) {
     .handicapInput {

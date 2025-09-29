@@ -70,4 +70,8 @@ public class WebsocketController {
         scoreboardService.resetCardDraw(request);
     }
 
+    @MessageMapping("/updateAvg")
+    public void updateAvg(@Payload AvgUpdateRequestDto request) {
+        scoreboardService.updateAvg(request);
+    }
 }
