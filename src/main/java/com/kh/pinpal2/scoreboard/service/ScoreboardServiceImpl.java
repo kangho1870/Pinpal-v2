@@ -215,6 +215,7 @@ public class ScoreboardServiceImpl implements ScoreboardService {
     }
 
     @Override
+    @Transactional
     public void scoreCounting(ScoreCountingUpdate request) {
         Long gameId = request.gameId();
         Game game = gameRepository.findById(gameId).orElseThrow(GameNotFoundException::new);
@@ -223,12 +224,22 @@ public class ScoreboardServiceImpl implements ScoreboardService {
                 .map(scoreboard -> scoreboard.getUser().getId())
                 .toList();
 
-        if (list.contains(request.userId())) {
-            game.updateScoreCounting(request.scoreCounting());
-            gameRepository.save(game);
-        }
+        log.info("점수 집계 상태 변경 요청: gameId={}, userId={}, scoreCounting={}, 참여자 목록={}", 
+                gameId, request.userId(), request.scoreCounting(), list);
 
-        eventPublisher.publishEvent(new ScoreboardCounting(gameId, game.isScoreCounting()));
+        if (list.contains(request.userId())) {
+            // null 체크 및 boolean 변환
+            boolean newScoreCounting = request.scoreCounting() != null ? request.scoreCounting() : false;
+            game.updateScoreCounting(newScoreCounting);
+            Game savedGame = gameRepository.save(game);
+            log.info("점수 집계 상태 DB 저장 완료: gameId={}, scoreCounting={}", gameId, savedGame.isScoreCounting());
+            
+            // 저장 후 이벤트 발행 (업데이트된 값 전송)
+            eventPublisher.publishEvent(new ScoreboardCounting(gameId, savedGame.isScoreCounting()));
+        } else {
+            log.warn("점수 집계 상태 변경 실패: 사용자(userId={})가 게임(gameId={})에 참여하지 않았습니다.", 
+                    request.userId(), gameId);
+        }
     }
 
     @Override

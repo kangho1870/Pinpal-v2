@@ -246,6 +246,7 @@ function WaitingRoom() {
             const updateScoreCounting = {
                 action: "updateScoreCounting",
                 gameId: parseInt(gameId),
+                userId: memberId,
                 scoreCounting: newScoreCounting
             };
             

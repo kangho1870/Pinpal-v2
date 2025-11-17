@@ -13,7 +13,6 @@ export default function GameResult() {
     const [cookies] = useCookies();
     const token = cookies[ACCESS_TOKEN];
     const { members = [], team1stMember, setTeam1stMember } = useScoreboard();
-    const [scoreCounting, setScoreCounting] = useState(true);
     const [searchParams] = useSearchParams();
     const gameId = searchParams.get("gameId");
     const clubId = searchParams.get("clubId");
@@ -26,17 +25,8 @@ export default function GameResult() {
     };
     const roles = getCurrentUserClubRole();
 
-    const findCurrentUser = useCallback(() => {
-        if (members.length > 0 && members[0] && typeof members[0].scoreCounting !== 'undefined') {
-            const newScoreCounting = members[0].scoreCounting;
-            console.log('GameResult - scoreCounting 상태 업데이트:', newScoreCounting);
-            setScoreCounting(newScoreCounting);
-        }
-    }, [members]);
-
-    useEffect(() => {
-        findCurrentUser();
-    }, [findCurrentUser]);
+    // members에서 직접 scoreCounting 상태 가져오기 (상태 동기화 문제 방지)
+    const scoreCounting = members.length > 0 && members[0] ? members[0].scoreCounting : true;
 
     // 팀 1등 계산 함수 (TeamScoreboard와 동일한 로직)
     const calculateTeam1st = useCallback(() => {
@@ -280,6 +270,8 @@ export default function GameResult() {
         scoreboardGameStop(resultSetOfLong, token).then(stopGameResponse);
     }
 
+    console.log('GameResult - scoreCounting:', scoreCounting, 'members[0]?.scoreCounting:', members[0]?.scoreCounting);
+    
     return (
         <div className={styles.container}>
             {scoreCounting === false && sortedMembers?.length > 0 ? (

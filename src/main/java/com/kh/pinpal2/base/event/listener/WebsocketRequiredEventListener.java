@@ -112,7 +112,7 @@ public class WebsocketRequiredEventListener {
             Map<String, Object> updateData = new HashMap<>();
             updateData.put("type", "scoreCountingUpdated");
             updateData.put("gameId", gameId);
-            updateData.put("confirmed", scoreCounting);
+            updateData.put("scoreCounting", scoreCounting);
 
             String destination = "/sub/scoreboard/" + gameId;
             messagingTemplate.convertAndSend(destination, updateData);

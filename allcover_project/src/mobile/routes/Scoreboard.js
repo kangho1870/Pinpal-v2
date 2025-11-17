@@ -19,7 +19,7 @@ import { WebSocketProvider, useWebSocketContext } from "../../contexts/WebSocket
 
 function ScoreboardContent() {
     const [cookies] = useCookies();
-    const { addMessageHandler, removeMessageHandler, connectionStatus, sendAuthenticatedMessage, token } = useWebSocketContext();
+    const { addMessageHandler, removeMessageHandler, connectionStatus, sendAuthenticatedMessage, token, requestInitialData } = useWebSocketContext();
 
     const { 
         members, gradeModal, teamModal, confirmModal, sideJoinUserModal,
@@ -30,9 +30,6 @@ function ScoreboardContent() {
         toggleScoreInputModal, setPage
     } = useScoreboard();
 
-    // members 상태 변경 감지
-    useEffect(() => {
-    }, [members]);
 
     const navigator = useNavigate();
 
@@ -105,7 +102,10 @@ function ScoreboardContent() {
                 
                 // 점수 집계 관련 업데이트
                 case 'scoreCountingUpdated':
-                    // 점수 집계 상태 변경은 게임 레벨에서 처리되므로 여기서는 로그만 출력
+                    // 점수 집계 상태가 변경되면 전체 데이터를 다시 요청하여 members 업데이트
+                    console.log('점수 집계 상태 변경됨:', data.scoreCounting);
+                    // 초기 데이터를 다시 요청하여 members 배열 업데이트
+                    requestInitialData();
                     break;
                 
                 // 새로운 회원 참여 알림
@@ -140,7 +140,7 @@ function ScoreboardContent() {
         }
     }, [setMembers, updateMemberTeamNumber, batchUpdateMemberTeamNumbers, 
         batchUpdateMemberGrades, updateMemberScore, 
-        updateMemberConfirmedStatus]);
+        updateMemberConfirmedStatus, requestInitialData]);
 
     useEffect(() => {
         addMessageHandler(handleWebSocketMessage);

@@ -69,6 +69,10 @@ public class Game extends BaseUpdatableEntity {
         this.scoreCounting = counting;
     }
 
+    public boolean isScoreCounting() {
+        return this.scoreCounting;
+    }
+
     public void update(GameUpdateDto gameUpdateDto) {
         if (gameUpdateDto.newName() != null && !gameUpdateDto.newName().equals(this.name)) {
             this.name = gameUpdateDto.newName();

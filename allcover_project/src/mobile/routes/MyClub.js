@@ -669,11 +669,19 @@ function ClubHome({ clubInfo, setLoading, pageLoad, participatedGames, setPartic
             </div>
             <div className={`${styles.clubSchedule}`}>
                 {(() => {
-                    // 현재 시간보다 지나간 게임들을 필터링
+                    // 현재 날짜와 시간
                     const now = new Date();
+                    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    
                     const futureGames = games.filter(game => {
                         const gameDateTime = new Date(`${game.gameDate}T${game.gameTime}+09:00`);
-                        return gameDateTime > now; // 현재 시간보다 미래인 게임만 포함
+                        const gameDate = new Date(gameDateTime.getFullYear(), gameDateTime.getMonth(), gameDateTime.getDate());
+                        
+                        // 오늘 날짜의 게임은 시간과 관계없이 포함, 오늘이 아닌 게임은 미래 게임만 포함
+                        if (gameDate.getTime() === today.getTime()) {
+                            return true; // 오늘 날짜의 게임은 항상 포함
+                        }
+                        return gameDateTime > now; // 오늘이 아닌 게임은 미래 게임만 포함
                     });
 
                     if (futureGames.length === 0) {
