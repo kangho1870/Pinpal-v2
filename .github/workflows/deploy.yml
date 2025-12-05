@@ -190,6 +190,16 @@ jobs:
           port: ${{ secrets.CAFE24_PORT }}
           script: |
             echo "=== Nginx WebSocket 프록시 설정 ==="
+            
+            # 사용자명 확인
+            USERNAME="${{ secrets.CAFE24_USERNAME }}"
+            FRONTEND_ROOT="/home/$USERNAME/pinpal-frontend"
+            echo "프론트엔드 경로: $FRONTEND_ROOT"
+            
+            # 프론트엔드 파일 확인
+            echo "=== 프론트엔드 파일 확인 ==="
+            ls -la $FRONTEND_ROOT/ | head -10 || echo "프론트엔드 디렉토리가 없습니다"
+            test -f $FRONTEND_ROOT/index.html && echo "✅ index.html 존재" || echo "❌ index.html 없음"
 
             # nginx 설정 파일 전체 재작성
             sudo tee /etc/nginx/sites-available/pinpal.conf > /dev/null <<EOF
@@ -208,7 +218,7 @@ jobs:
                 include /etc/letsencrypt/options-ssl-nginx.conf;
                 ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 
-                root /home/root/pinpal-frontend/frontend-build;
+                root $FRONTEND_ROOT;
                 index index.html;
 
                 location / {
@@ -281,14 +291,18 @@ jobs:
             echo "1. Nginx 상태:"
             sudo systemctl status nginx --no-pager
             echo "2. 프론트엔드 파일 확인:"
-            ls -la /home/root/pinpal-frontend/frontend-build/ | head -10
+            ls -la $FRONTEND_ROOT/ | head -10
             echo "3. index.html 존재 확인:"
-            test -f /home/root/pinpal-frontend/frontend-build/index.html && echo "✅ index.html 존재" || echo "❌ index.html 없음"
+            test -f $FRONTEND_ROOT/index.html && echo "✅ index.html 존재" || echo "❌ index.html 없음"
             echo "4. 포트 확인:"
             sudo netstat -tlnp | grep :80
             sudo netstat -tlnp | grep :443
             echo "5. 로컬 테스트:"
             curl -I http://localhost 2>/dev/null | head -3 || echo "❌ HTTP 연결 실패"
+            echo "6. HTTPS 로컬 테스트:"
+            curl -k -I https://localhost 2>/dev/null | head -3 || echo "❌ HTTPS 연결 실패"
+            echo "7. 외부 접속 테스트 (pinpal.co.kr):"
+            curl -I https://pinpal.co.kr 2>/dev/null | head -5 || echo "❌ 외부 접속 실패"
 
       - name: Renew SSL Certificate
         uses: appleboy/ssh-action@v1.0.3
@@ -346,7 +360,65 @@ jobs:
               echo "✅ SSL 인증서 파일 확인 완료"
               echo "인증서 만료일:"
               sudo openssl x509 -in /etc/letsencrypt/live/pinpal.co.kr/fullchain.pem -noout -enddate
+              
+              # Nginx 재시작 (인증서 갱신 후)
+              echo "=== Nginx 재시작 ==="
+              sudo systemctl reload nginx || sudo systemctl restart nginx
+              sleep 2
+              sudo systemctl status nginx --no-pager
             else
               echo "❌ SSL 인증서 파일을 찾을 수 없습니다"
               exit 1
             fi
+
+      - name: Server Status Check
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.CAFE24_HOST }}
+          username: ${{ secrets.CAFE24_USERNAME }}
+          password: ${{ secrets.CAFE24_PASSWORD }}
+          port: ${{ secrets.CAFE24_PORT }}
+          script: |
+            echo "=== 최종 서버 상태 진단 ==="
+            
+            USERNAME="${{ secrets.CAFE24_USERNAME }}"
+            FRONTEND_ROOT="/home/$USERNAME/pinpal-frontend"
+            
+            echo "1. Docker 컨테이너 상태:"
+            docker ps -a | grep pinpal || echo "❌ 컨테이너 없음"
+            
+            echo "2. 백엔드 포트 8000 확인:"
+            netstat -tlnp | grep :8000 || echo "❌ 포트 8000 미사용"
+            curl -I http://localhost:8000/actuator/health 2>/dev/null | head -3 || echo "❌ 백엔드 응답 없음"
+            
+            echo "3. Nginx 상태:"
+            sudo systemctl status nginx --no-pager | head -10
+            
+            echo "4. Nginx 설정 테스트:"
+            sudo nginx -t
+            
+            echo "5. 프론트엔드 파일 확인:"
+            ls -la $FRONTEND_ROOT/ | head -5
+            test -f $FRONTEND_ROOT/index.html && echo "✅ index.html 존재" || echo "❌ index.html 없음"
+            
+            echo "6. 포트 80, 443 확인:"
+            sudo netstat -tlnp | grep -E ':(80|443)' || echo "❌ 포트 미사용"
+            
+            echo "7. SSL 인증서 확인:"
+            if [ -f /etc/letsencrypt/live/pinpal.co.kr/fullchain.pem ]; then
+              echo "✅ 인증서 파일 존재"
+              sudo openssl x509 -in /etc/letsencrypt/live/pinpal.co.kr/fullchain.pem -noout -dates
+            else
+              echo "❌ 인증서 파일 없음"
+            fi
+            
+            echo "8. 외부 접속 테스트:"
+            echo "HTTP:"
+            curl -I http://pinpal.co.kr 2>/dev/null | head -5 || echo "❌ HTTP 접속 실패"
+            echo "HTTPS:"
+            curl -I https://pinpal.co.kr 2>/dev/null | head -5 || echo "❌ HTTPS 접속 실패"
+            
+            echo "9. DNS 확인:"
+            nslookup pinpal.co.kr || echo "❌ DNS 조회 실패"
+            
+            echo "=== 진단 완료 ==="
