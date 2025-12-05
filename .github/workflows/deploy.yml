@@ -198,8 +198,23 @@ jobs:
             
             # 프론트엔드 파일 확인
             echo "=== 프론트엔드 파일 확인 ==="
-            ls -la $FRONTEND_ROOT/ | head -10 || echo "프론트엔드 디렉토리가 없습니다"
-            test -f $FRONTEND_ROOT/index.html && echo "✅ index.html 존재" || echo "❌ index.html 없음"
+            if [ ! -d "$FRONTEND_ROOT" ]; then
+              echo "❌ 프론트엔드 디렉토리가 없습니다: $FRONTEND_ROOT"
+              echo "디렉토리 생성 중..."
+              sudo mkdir -p $FRONTEND_ROOT
+            fi
+            ls -la $FRONTEND_ROOT/ | head -10
+            
+            if [ ! -f "$FRONTEND_ROOT/index.html" ]; then
+              echo "❌ index.html이 없습니다. 임시 파일 생성..."
+              sudo bash -c "echo '<html><body><h1>Frontend files not found</h1></body></html>' > $FRONTEND_ROOT/index.html"
+            else
+              echo "✅ index.html 존재"
+            fi
+            
+            # 프론트엔드 파일 권한 설정
+            sudo chown -R www-data:www-data $FRONTEND_ROOT 2>/dev/null || sudo chown -R nginx:nginx $FRONTEND_ROOT 2>/dev/null || true
+            sudo chmod -R 755 $FRONTEND_ROOT
 
             # nginx 설정 파일 전체 재작성
             sudo tee /etc/nginx/sites-available/pinpal.conf > /dev/null <<EOF
@@ -221,8 +236,12 @@ jobs:
                 root $FRONTEND_ROOT;
                 index index.html;
 
+                location = /index.html {
+                    add_header Cache-Control "no-cache";
+                }
+
                 location / {
-                    try_files \$uri /index.html;
+                    try_files \$uri \$uri/ /index.html;
                 }
 
                 location /api {
@@ -275,14 +294,36 @@ jobs:
             }
             EOF
 
-            # nginx 설정 테스트
-            sudo nginx -t
+            # nginx 설정 파일 활성화
+            sudo ln -sf /etc/nginx/sites-available/pinpal.conf /etc/nginx/sites-enabled/pinpal.conf
+            sudo rm -f /etc/nginx/sites-enabled/default
+            
+            # 설정 파일 내용 확인 (62번째 줄 주변)
+            echo "=== Nginx 설정 파일 60-65번째 줄 확인 ==="
+            sudo sed -n '60,65p' /etc/nginx/sites-available/pinpal.conf
 
-            # nginx 재시작 (안전한 방법)
-            sudo systemctl reload nginx
+            # nginx 설정 테스트
+            echo "=== Nginx 설정 테스트 ==="
+            sudo nginx -t
+            
+            if [ $? -ne 0 ]; then
+              echo "❌ Nginx 설정 테스트 실패"
+              echo "=== 전체 설정 파일 확인 ==="
+              sudo cat /etc/nginx/sites-available/pinpal.conf
+              exit 1
+            fi
+
+            # nginx 재시작
+            echo "=== Nginx 재시작 ==="
+            sudo systemctl restart nginx
+            sleep 2
             
             # nginx 상태 확인
-            sudo systemctl status nginx --no-pager
+            sudo systemctl status nginx --no-pager | head -15
+            
+            # 에러 로그 확인
+            echo "=== Nginx 에러 로그 (최근 10줄) ==="
+            sudo tail -10 /var/log/nginx/error.log 2>/dev/null || echo "에러 로그 없음"
 
             echo "✅ Nginx WebSocket 프록시 설정 완료"
             
