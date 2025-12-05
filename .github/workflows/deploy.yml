@@ -71,6 +71,15 @@ jobs:
           cd allcover_project
           echo "REACT_APP_API_URL=$REACT_APP_API_URL"
           CI=false REACT_APP_API_URL=https://pinpal.co.kr npm run build
+          echo "=== 빌드 결과 확인 ==="
+          if [ ! -f "build/index.html" ]; then
+            echo "❌ 빌드 실패: index.html이 생성되지 않았습니다"
+            exit 1
+          fi
+          echo "✅ index.html 생성됨"
+          ls -lh build/index.html
+          echo "빌드된 파일 개수:"
+          find build -type f | wc -l
           echo "=== 빌드된 파일에서 API URL 확인 ==="
           grep -r "pinpal.co.kr" build/static/js/ | head -5 || echo "API URL을 찾을 수 없습니다"
         env:
@@ -94,6 +103,20 @@ jobs:
         with:
           name: frontend-build
           path: frontend-build/
+
+      - name: Verify downloaded files
+        run: |
+          echo "=== 다운로드된 파일 확인 ==="
+          ls -la frontend-build/ | head -20
+          if [ ! -f "frontend-build/index.html" ]; then
+            echo "❌ index.html이 다운로드되지 않았습니다!"
+            exit 1
+          fi
+          echo "✅ index.html 존재"
+          echo "파일 개수:"
+          find frontend-build -type f | wc -l
+          echo "index.html 크기:"
+          ls -lh frontend-build/index.html
 
       - name: Deploy to Cafe24
         uses: appleboy/ssh-action@v1.0.3
@@ -181,6 +204,43 @@ jobs:
           source: "frontend-build/*"
           target: "/home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend"
 
+      - name: Verify frontend upload
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.CAFE24_HOST }}
+          username: ${{ secrets.CAFE24_USERNAME }}
+          password: ${{ secrets.CAFE24_PASSWORD }}
+          port: ${{ secrets.CAFE24_PORT }}
+          script: |
+            echo "=== 프론트엔드 업로드 확인 ==="
+            FRONTEND_DIR="/home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend"
+            
+            echo "업로드된 파일 목록:"
+            ls -la $FRONTEND_DIR/ | head -20
+            
+            echo "파일 개수:"
+            find $FRONTEND_DIR -type f | wc -l
+            
+            if [ -f "$FRONTEND_DIR/index.html" ]; then
+              echo "✅ index.html 존재"
+              echo "index.html 크기:"
+              ls -lh $FRONTEND_DIR/index.html
+            else
+              echo "❌ index.html 없음!"
+              echo "현재 디렉토리 내용:"
+              ls -la $FRONTEND_DIR/
+              exit 1
+            fi
+            
+            # static 폴더 확인
+            if [ -d "$FRONTEND_DIR/static" ]; then
+              echo "✅ static 폴더 존재"
+              echo "static 폴더 파일 개수:"
+              find $FRONTEND_DIR/static -type f | wc -l
+            else
+              echo "⚠️  static 폴더 없음"
+            fi
+
       - name: Setup Nginx WebSocket proxy
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -200,16 +260,22 @@ jobs:
             echo "=== 프론트엔드 파일 확인 ==="
             if [ ! -d "$FRONTEND_ROOT" ]; then
               echo "❌ 프론트엔드 디렉토리가 없습니다: $FRONTEND_ROOT"
-              echo "디렉토리 생성 중..."
-              sudo mkdir -p $FRONTEND_ROOT
+              exit 1
             fi
-            ls -la $FRONTEND_ROOT/ | head -10
+            
+            echo "프론트엔드 디렉토리 내용:"
+            ls -la $FRONTEND_ROOT/ | head -20
             
             if [ ! -f "$FRONTEND_ROOT/index.html" ]; then
-              echo "❌ index.html이 없습니다. 임시 파일 생성..."
-              sudo bash -c "echo '<html><body><h1>Frontend files not found</h1></body></html>' > $FRONTEND_ROOT/index.html"
+              echo "❌ index.html이 없습니다!"
+              echo "프론트엔드 파일이 제대로 업로드되지 않았습니다."
+              echo "업로드된 파일 목록:"
+              find $FRONTEND_ROOT -type f | head -20
+              exit 1
             else
               echo "✅ index.html 존재"
+              echo "index.html 정보:"
+              ls -lh $FRONTEND_ROOT/index.html
             fi
             
             # 프론트엔드 파일 권한 설정
