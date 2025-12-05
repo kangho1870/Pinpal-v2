@@ -204,13 +204,22 @@ jobs:
             
             # 인증서 갱신 (만료 30일 이내인 경우 자동 갱신)
             echo "=== 인증서 갱신 시도 ==="
+            # 먼저 nginx 모드로 시도
             sudo certbot renew --nginx --non-interactive --quiet || {
-              echo "⚠️  자동 갱신 실패. 강제 갱신을 시도합니다..."
-              # 강제 갱신 시도
-              sudo certbot renew --force-renewal --nginx --non-interactive || {
-                echo "❌ 인증서 갱신 실패"
-                exit 1
+              echo "⚠️  nginx 모드 갱신 실패. standalone 모드로 시도합니다..."
+              # Nginx를 일시 중지하고 standalone 모드로 갱신
+              sudo systemctl stop nginx || true
+              sudo certbot renew --standalone --non-interactive --quiet || {
+                echo "⚠️  자동 갱신 실패. 강제 갱신을 시도합니다..."
+                # 강제 갱신 시도 (standalone 모드)
+                sudo certbot renew --force-renewal --standalone --non-interactive || {
+                  echo "❌ 인증서 갱신 실패"
+                  sudo systemctl start nginx || true
+                  exit 1
+                }
               }
+              # Nginx 재시작
+              sudo systemctl start nginx || true
             }
             
             # 갱신 후 인증서 상태 확인
@@ -300,12 +309,12 @@ jobs:
                 location /ws {
                   proxy_pass http://localhost:8000;   # /ws를 그대로 백엔드에 전달
                   proxy_http_version 1.1;
-                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Upgrade \$http_upgrade;
                   proxy_set_header Connection "upgrade";
-                  proxy_set_header Host $host;
-                  proxy_set_header X-Real-IP $remote_addr;
-                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto $scheme;
+                  proxy_set_header Host \$host;
+                  proxy_set_header X-Real-IP \$remote_addr;
+                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto \$scheme;
                   proxy_read_timeout 86400;
               }
             }
