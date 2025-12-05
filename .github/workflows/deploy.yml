@@ -201,7 +201,7 @@ jobs:
           username: ${{ secrets.CAFE24_USERNAME }}
           password: ${{ secrets.CAFE24_PASSWORD }}
           port: ${{ secrets.CAFE24_PORT }}
-          source: "frontend-build/*"
+          source: "frontend-build/."
           target: "/home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend"
 
       - name: Verify frontend upload
@@ -212,8 +212,17 @@ jobs:
           password: ${{ secrets.CAFE24_PASSWORD }}
           port: ${{ secrets.CAFE24_PORT }}
           script: |
-            echo "=== 프론트엔드 업로드 확인 ==="
+            echo "=== 프론트엔드 업로드 확인 및 정리 ==="
             FRONTEND_DIR="/home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend"
+            
+            # frontend-build 디렉토리가 있으면 파일을 상위로 이동
+            if [ -d "$FRONTEND_DIR/frontend-build" ]; then
+              echo "frontend-build 디렉토리 발견, 파일 이동 중..."
+              mv $FRONTEND_DIR/frontend-build/* $FRONTEND_DIR/ 2>/dev/null || true
+              mv $FRONTEND_DIR/frontend-build/.* $FRONTEND_DIR/ 2>/dev/null || true
+              rmdir $FRONTEND_DIR/frontend-build 2>/dev/null || true
+              echo "파일 이동 완료"
+            fi
             
             echo "업로드된 파일 목록:"
             ls -la $FRONTEND_DIR/ | head -20
