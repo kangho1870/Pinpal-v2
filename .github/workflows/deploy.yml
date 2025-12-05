@@ -181,6 +181,52 @@ jobs:
           source: "frontend-build/*"
           target: "/home/${{ secrets.CAFE24_USERNAME }}/pinpal-frontend"
 
+      - name: Renew SSL Certificate
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.CAFE24_HOST }}
+          username: ${{ secrets.CAFE24_USERNAME }}
+          password: ${{ secrets.CAFE24_PASSWORD }}
+          port: ${{ secrets.CAFE24_PORT }}
+          script: |
+            echo "=== SSL 인증서 갱신 시작 ==="
+            
+            # certbot이 설치되어 있는지 확인
+            if ! command -v certbot &> /dev/null; then
+              echo "⚠️  certbot이 설치되어 있지 않습니다. 설치를 진행합니다..."
+              sudo apt-get update
+              sudo apt-get install -y certbot python3-certbot-nginx
+            fi
+            
+            # 현재 인증서 만료일 확인
+            echo "=== 현재 인증서 상태 확인 ==="
+            sudo certbot certificates
+            
+            # 인증서 갱신 (만료 30일 이내인 경우 자동 갱신)
+            echo "=== 인증서 갱신 시도 ==="
+            sudo certbot renew --nginx --non-interactive --quiet || {
+              echo "⚠️  자동 갱신 실패. 강제 갱신을 시도합니다..."
+              # 강제 갱신 시도
+              sudo certbot renew --force-renewal --nginx --non-interactive || {
+                echo "❌ 인증서 갱신 실패"
+                exit 1
+              }
+            }
+            
+            # 갱신 후 인증서 상태 확인
+            echo "=== 갱신 후 인증서 상태 ==="
+            sudo certbot certificates
+            
+            # 인증서 파일 존재 확인
+            if [ -f /etc/letsencrypt/live/pinpal.co.kr/fullchain.pem ] && [ -f /etc/letsencrypt/live/pinpal.co.kr/privkey.pem ]; then
+              echo "✅ SSL 인증서 파일 확인 완료"
+              echo "인증서 만료일:"
+              sudo openssl x509 -in /etc/letsencrypt/live/pinpal.co.kr/fullchain.pem -noout -enddate
+            else
+              echo "❌ SSL 인증서 파일을 찾을 수 없습니다"
+              exit 1
+            fi
+
       - name: Setup Nginx WebSocket proxy
         uses: appleboy/ssh-action@v1.0.3
         with:
